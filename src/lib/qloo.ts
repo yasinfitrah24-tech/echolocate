@@ -748,6 +748,11 @@ function distanceKm(aLat: number, aLon: number, bLat: number, bLon: number): num
   return 2 * 6371 * Math.asin(Math.sqrt(h));
 }
 
+/** Qloo sends ratings as floats like 4.699999809265137. */
+function roundRating(value: number | null): number | null {
+  return value === null ? null : Math.round(value * 10) / 10;
+}
+
 function toPlace(
   entity: Json,
   category: PlaceCategoryDef,
@@ -778,7 +783,7 @@ function toPlace(
     neighborhood: asString(asObject(props.geocode).name),
     website: asString(props.website),
     phone: asString(props.phone),
-    rating: asNumber(props.business_rating),
+    rating: roundRating(asNumber(props.business_rating)),
     priceLevel: asNumber(props.price_level),
     imageUrl: asString(firstImage.url),
     description: asString(props.short_description) ?? asString(props.description),

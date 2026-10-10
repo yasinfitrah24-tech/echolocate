@@ -171,7 +171,7 @@ export function LocalSponsors({ artists, genreTags, city, age, admission }: Loca
                           place.categoryLabel,
                           place.neighborhood,
                           place.rating ? `${place.rating}★` : null,
-                          `${place.distanceKm} km from center`,
+                          `${place.distanceKm} km from city center`,
                         ]
                           .filter(Boolean)
                           .join(" · ")}
@@ -206,8 +206,10 @@ export function LocalSponsors({ artists, genreTags, city, age, admission }: Loca
 
           <p className="border-t border-zinc-200 px-5 py-2.5 text-xs text-zinc-500">
             {data.calls.length} Qloo place searches in {(data.tookMs / 1000).toFixed(1)} s.
-            {data.droppedDuplicates > 0 && ` ${data.droppedDuplicates} repeat chain branches hidden.`}
-            {data.droppedFar > 0 && ` ${data.droppedFar} places far outside the city hidden.`}
+            {data.droppedDuplicates > 0 &&
+              ` ${data.droppedDuplicates} repeat chain ${data.droppedDuplicates === 1 ? "branch" : "branches"} hidden.`}
+            {data.droppedFar > 0 &&
+              ` ${data.droppedFar} ${data.droppedFar === 1 ? "place" : "places"} far outside the city hidden.`}
             {!data.input.barsIncluded && " Bars only show for 21+ events."}
           </p>
         </>
