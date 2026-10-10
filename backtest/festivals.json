@@ -1,0 +1,1282 @@
+[
+  {
+    "festival": "Coachella Valley Music and Arts Festival",
+    "year": 2025,
+    "city": "Indio, CA",
+    "headliners": [
+      "Lady Gaga",
+      "Green Day",
+      "Post Malone"
+    ],
+    "headliners_source": "https://abc7.com/post/coachella-2025-lineup-lady-gaga-green-day-post-malone-among-headliners-socal-desert-music-festival/15565438/",
+    "sponsors": [
+      {
+        "name": "American Express",
+        "category": "bank_or_card",
+        "source": "https://web.archive.org/web/20250417120253/https://www.coachella.com/partners"
+      },
+      {
+        "name": "Absolut",
+        "category": "spirits",
+        "source": "https://web.archive.org/web/20250417120253/https://www.coachella.com/partners"
+      },
+      {
+        "name": "Alaska Airlines",
+        "category": "other",
+        "source": "https://web.archive.org/web/20250417120253/https://www.coachella.com/partners"
+      },
+      {
+        "name": "Anker",
+        "category": "other",
+        "source": "https://web.archive.org/web/20250417120253/https://www.coachella.com/partners"
+      },
+      {
+        "name": "Aperol",
+        "category": "spirits",
+        "source": "https://web.archive.org/web/20250417120253/https://www.coachella.com/partners"
+      },
+      {
+        "name": "BMW",
+        "category": "auto",
+        "source": "https://web.archive.org/web/20250417120253/https://www.coachella.com/partners"
+      },
+      {
+        "name": "Buldak",
+        "category": "food",
+        "source": "https://web.archive.org/web/20250417120253/https://www.coachella.com/partners"
+      },
+      {
+        "name": "Always / Tampax",
+        "category": "other",
+        "source": "https://web.archive.org/web/20250417120253/https://www.coachella.com/partners"
+      },
+      {
+        "name": "Coca-Cola",
+        "category": "soft_drink",
+        "source": "https://web.archive.org/web/20250417120253/https://www.coachella.com/partners"
+      },
+      {
+        "name": "Código 1530",
+        "category": "spirits",
+        "source": "https://web.archive.org/web/20250417120253/https://www.coachella.com/partners"
+      },
+      {
+        "name": "Dark Horse Wines",
+        "category": "other",
+        "source": "https://web.archive.org/web/20250417120253/https://www.coachella.com/partners"
+      },
+      {
+        "name": "Electrolit",
+        "category": "other",
+        "source": "https://web.archive.org/web/20250417120253/https://www.coachella.com/partners"
+      },
+      {
+        "name": "Google Pixel",
+        "category": "other",
+        "source": "https://web.archive.org/web/20250417120253/https://www.coachella.com/partners"
+      },
+      {
+        "name": "Heineken",
+        "category": "beer",
+        "source": "https://web.archive.org/web/20250417120253/https://www.coachella.com/partners"
+      },
+      {
+        "name": "Hi-Chew",
+        "category": "food",
+        "source": "https://web.archive.org/web/20250417120253/https://www.coachella.com/partners"
+      },
+      {
+        "name": "International Delight",
+        "category": "food",
+        "source": "https://web.archive.org/web/20250417120253/https://www.coachella.com/partners"
+      },
+      {
+        "name": "JisuLife",
+        "category": "other",
+        "source": "https://web.archive.org/web/20250417120253/https://www.coachella.com/partners"
+      },
+      {
+        "name": "Loop Earplugs",
+        "category": "other",
+        "source": "https://web.archive.org/web/20250417120253/https://www.coachella.com/partners"
+      },
+      {
+        "name": "Method",
+        "category": "other",
+        "source": "https://web.archive.org/web/20250417120253/https://www.coachella.com/partners"
+      },
+      {
+        "name": "Neutrogena",
+        "category": "beauty",
+        "source": "https://web.archive.org/web/20250417120253/https://www.coachella.com/partners"
+      },
+      {
+        "name": "Pinterest",
+        "category": "app_or_streaming",
+        "source": "https://web.archive.org/web/20250417120253/https://www.coachella.com/partners"
+      },
+      {
+        "name": "Postmates",
+        "category": "app_or_streaming",
+        "source": "https://web.archive.org/web/20250417120253/https://www.coachella.com/partners"
+      },
+      {
+        "name": "Slurpee",
+        "category": "soft_drink",
+        "source": "https://web.archive.org/web/20250417120253/https://www.coachella.com/partners"
+      },
+      {
+        "name": "Snapdragon",
+        "category": "other",
+        "source": "https://web.archive.org/web/20250417120253/https://www.coachella.com/partners"
+      },
+      {
+        "name": "Ray-Ban Meta",
+        "category": "other",
+        "source": "https://web.archive.org/web/20250417120253/https://www.coachella.com/partners"
+      },
+      {
+        "name": "Sol de Janeiro",
+        "category": "beauty",
+        "source": "https://web.archive.org/web/20250417120253/https://www.coachella.com/partners"
+      },
+      {
+        "name": "Takis",
+        "category": "food",
+        "source": "https://web.archive.org/web/20250417120253/https://www.coachella.com/partners"
+      },
+      {
+        "name": "The New Bar",
+        "category": "other",
+        "source": "https://web.archive.org/web/20250417120253/https://www.coachella.com/partners"
+      },
+      {
+        "name": "T-Mobile",
+        "category": "telecom",
+        "source": "https://web.archive.org/web/20250417120253/https://www.coachella.com/partners"
+      },
+      {
+        "name": "UCLA Health",
+        "category": "other",
+        "source": "https://web.archive.org/web/20250417120253/https://www.coachella.com/partners"
+      },
+      {
+        "name": "White Claw",
+        "category": "hard_seltzer",
+        "source": "https://web.archive.org/web/20250417120253/https://www.coachella.com/partners"
+      },
+      {
+        "name": "YouTube",
+        "category": "app_or_streaming",
+        "source": "https://web.archive.org/web/20250417120253/https://www.coachella.com/partners"
+      }
+    ]
+  },
+  {
+    "festival": "Stagecoach",
+    "year": 2025,
+    "city": "Indio, CA",
+    "headliners": [
+      "Zach Bryan",
+      "Jelly Roll",
+      "Luke Combs"
+    ],
+    "headliners_source": "https://www.digitalmusicnews.com/2024/09/06/stagecoach-2025-lineup/",
+    "sponsors": [
+      {
+        "name": "American Express",
+        "category": "bank_or_card",
+        "source": "https://web.archive.org/web/20250404210809/https://www.stagecoachfestival.com/partners"
+      },
+      {
+        "name": "Alaska Airlines",
+        "category": "other",
+        "source": "https://web.archive.org/web/20250404210809/https://www.stagecoachfestival.com/partners"
+      },
+      {
+        "name": "Allē",
+        "category": "beauty",
+        "source": "https://web.archive.org/web/20250404210809/https://www.stagecoachfestival.com/partners"
+      },
+      {
+        "name": "Ariat",
+        "category": "fashion",
+        "source": "https://web.archive.org/web/20250404210809/https://www.stagecoachfestival.com/partners"
+      },
+      {
+        "name": "Barefoot",
+        "category": "other",
+        "source": "https://web.archive.org/web/20250404210809/https://www.stagecoachfestival.com/partners"
+      },
+      {
+        "name": "BÉIS",
+        "category": "fashion",
+        "source": "https://web.archive.org/web/20250404210809/https://www.stagecoachfestival.com/partners"
+      },
+      {
+        "name": "Bud Light",
+        "category": "beer",
+        "source": "https://web.archive.org/web/20250404210809/https://www.stagecoachfestival.com/partners"
+      },
+      {
+        "name": "Coca-Cola",
+        "category": "soft_drink",
+        "source": "https://web.archive.org/web/20250404210809/https://www.stagecoachfestival.com/partners"
+      },
+      {
+        "name": "Código 1530",
+        "category": "spirits",
+        "source": "https://web.archive.org/web/20250404210809/https://www.stagecoachfestival.com/partners"
+      },
+      {
+        "name": "e.l.f. Cosmetics",
+        "category": "beauty",
+        "source": "https://web.archive.org/web/20250404210809/https://www.stagecoachfestival.com/partners"
+      },
+      {
+        "name": "Electrolit",
+        "category": "other",
+        "source": "https://web.archive.org/web/20250404210809/https://www.stagecoachfestival.com/partners"
+      },
+      {
+        "name": "Fritos",
+        "category": "food",
+        "source": "https://web.archive.org/web/20250404210809/https://www.stagecoachfestival.com/partners"
+      },
+      {
+        "name": "Free People",
+        "category": "fashion",
+        "source": "https://web.archive.org/web/20250404210809/https://www.stagecoachfestival.com/partners"
+      },
+      {
+        "name": "Hey Dude",
+        "category": "fashion",
+        "source": "https://web.archive.org/web/20250404210809/https://www.stagecoachfestival.com/partners"
+      },
+      {
+        "name": "Malibu",
+        "category": "spirits",
+        "source": "https://web.archive.org/web/20250404210809/https://www.stagecoachfestival.com/partners"
+      },
+      {
+        "name": "Mango Cart",
+        "category": "beer",
+        "source": "https://web.archive.org/web/20250404210809/https://www.stagecoachfestival.com/partners"
+      },
+      {
+        "name": "Marriott Bonvoy",
+        "category": "other",
+        "source": "https://web.archive.org/web/20250404210809/https://www.stagecoachfestival.com/partners"
+      },
+      {
+        "name": "Monster Energy",
+        "category": "energy_drink",
+        "source": "https://web.archive.org/web/20250404210809/https://www.stagecoachfestival.com/partners"
+      },
+      {
+        "name": "Neutrogena",
+        "category": "beauty",
+        "source": "https://web.archive.org/web/20250404210809/https://www.stagecoachfestival.com/partners"
+      },
+      {
+        "name": "The New Bar",
+        "category": "other",
+        "source": "https://web.archive.org/web/20250404210809/https://www.stagecoachfestival.com/partners"
+      },
+      {
+        "name": "Saint James Iced Tea",
+        "category": "other",
+        "source": "https://web.archive.org/web/20250404210809/https://www.stagecoachfestival.com/partners"
+      },
+      {
+        "name": "Shein",
+        "category": "fashion",
+        "source": "https://web.archive.org/web/20250404210809/https://www.stagecoachfestival.com/partners"
+      },
+      {
+        "name": "T-Mobile",
+        "category": "telecom",
+        "source": "https://web.archive.org/web/20250404210809/https://www.stagecoachfestival.com/partners"
+      },
+      {
+        "name": "Toyota",
+        "category": "auto",
+        "source": "https://web.archive.org/web/20250404210809/https://www.stagecoachfestival.com/partners"
+      },
+      {
+        "name": "Twisted Tea",
+        "category": "hard_seltzer",
+        "source": "https://web.archive.org/web/20250404210809/https://www.stagecoachfestival.com/partners"
+      },
+      {
+        "name": "UCLA Health",
+        "category": "other",
+        "source": "https://web.archive.org/web/20250404210809/https://www.stagecoachfestival.com/partners"
+      },
+      {
+        "name": "Wrangler",
+        "category": "fashion",
+        "source": "https://web.archive.org/web/20250404210809/https://www.stagecoachfestival.com/partners"
+      },
+      {
+        "name": "Wynn",
+        "category": "other",
+        "source": "https://web.archive.org/web/20250404210809/https://www.stagecoachfestival.com/partners"
+      },
+      {
+        "name": "Yellowstone",
+        "category": "app_or_streaming",
+        "source": "https://web.archive.org/web/20250404210809/https://www.stagecoachfestival.com/partners"
+      }
+    ]
+  },
+  {
+    "festival": "BottleRock Napa Valley",
+    "year": 2025,
+    "city": "Napa, CA",
+    "headliners": [
+      "Green Day",
+      "Justin Timberlake",
+      "Noah Kahan"
+    ],
+    "headliners_source": "https://www.cbsnews.com/sacramento/news/bottlerock-2025-headliners-green-day-justin-timberlake-noah-kahan/",
+    "sponsors": [
+      {
+        "name": "JaM Cellars",
+        "category": "other",
+        "source": "https://web.archive.org/web/20250522144112/https://www.bottlerocknapavalley.com/sponsors/"
+      },
+      {
+        "name": "Marriott Bonvoy American Express",
+        "category": "bank_or_card",
+        "source": "https://web.archive.org/web/20250522144112/https://www.bottlerocknapavalley.com/sponsors/"
+      },
+      {
+        "name": "Prudential",
+        "category": "other",
+        "source": "https://web.archive.org/web/20250522144112/https://www.bottlerocknapavalley.com/sponsors/"
+      },
+      {
+        "name": "Cisco",
+        "category": "other",
+        "source": "https://web.archive.org/web/20250522144112/https://www.bottlerocknapavalley.com/sponsors/"
+      },
+      {
+        "name": "PayPal",
+        "category": "bank_or_card",
+        "source": "https://web.archive.org/web/20250522144112/https://www.bottlerocknapavalley.com/sponsors/"
+      },
+      {
+        "name": "Venmo",
+        "category": "bank_or_card",
+        "source": "https://web.archive.org/web/20250522144112/https://www.bottlerocknapavalley.com/sponsors/"
+      },
+      {
+        "name": "Allē",
+        "category": "beauty",
+        "source": "https://web.archive.org/web/20250522144112/https://www.bottlerocknapavalley.com/sponsors/"
+      },
+      {
+        "name": "Verizon",
+        "category": "telecom",
+        "source": "https://web.archive.org/web/20250522144112/https://www.bottlerocknapavalley.com/sponsors/"
+      },
+      {
+        "name": "Workday",
+        "category": "other",
+        "source": "https://web.archive.org/web/20250522144112/https://www.bottlerocknapavalley.com/sponsors/"
+      },
+      {
+        "name": "Land Rover Defender",
+        "category": "auto",
+        "source": "https://web.archive.org/web/20250522144112/https://www.bottlerocknapavalley.com/sponsors/"
+      },
+      {
+        "name": "Williams Sonoma",
+        "category": "other",
+        "source": "https://web.archive.org/web/20250522144112/https://www.bottlerocknapavalley.com/sponsors/"
+      },
+      {
+        "name": "lululemon",
+        "category": "fashion",
+        "source": "https://web.archive.org/web/20250522144112/https://www.bottlerocknapavalley.com/sponsors/"
+      },
+      {
+        "name": "Allianz",
+        "category": "other",
+        "source": "https://web.archive.org/web/20250522144112/https://www.bottlerocknapavalley.com/sponsors/"
+      },
+      {
+        "name": "Salesforce",
+        "category": "other",
+        "source": "https://web.archive.org/web/20250522144112/https://www.bottlerocknapavalley.com/sponsors/"
+      },
+      {
+        "name": "BeLOVE",
+        "category": "other",
+        "source": "https://web.archive.org/web/20250522144112/https://www.bottlerocknapavalley.com/sponsors/"
+      },
+      {
+        "name": "Tito's",
+        "category": "spirits",
+        "source": "https://web.archive.org/web/20250522144112/https://www.bottlerocknapavalley.com/sponsors/"
+      },
+      {
+        "name": "Coors Light",
+        "category": "beer",
+        "source": "https://web.archive.org/web/20250522144112/https://www.bottlerocknapavalley.com/sponsors/"
+      },
+      {
+        "name": "Pacifico",
+        "category": "beer",
+        "source": "https://web.archive.org/web/20250522144112/https://www.bottlerocknapavalley.com/sponsors/"
+      },
+      {
+        "name": "Don Julio",
+        "category": "spirits",
+        "source": "https://web.archive.org/web/20250522144112/https://www.bottlerocknapavalley.com/sponsors/"
+      },
+      {
+        "name": "Kaiser Permanente",
+        "category": "other",
+        "source": "https://web.archive.org/web/20250522144112/https://www.bottlerocknapavalley.com/sponsors/"
+      },
+      {
+        "name": "White Claw",
+        "category": "hard_seltzer",
+        "source": "https://web.archive.org/web/20250522144112/https://www.bottlerocknapavalley.com/sponsors/"
+      },
+      {
+        "name": "Sunbelt Rentals",
+        "category": "other",
+        "source": "https://web.archive.org/web/20250522144112/https://www.bottlerocknapavalley.com/sponsors/"
+      },
+      {
+        "name": "High West",
+        "category": "spirits",
+        "source": "https://web.archive.org/web/20250522144112/https://www.bottlerocknapavalley.com/sponsors/"
+      },
+      {
+        "name": "Aperol",
+        "category": "spirits",
+        "source": "https://web.archive.org/web/20250522144112/https://www.bottlerocknapavalley.com/sponsors/"
+      },
+      {
+        "name": "21 Seeds",
+        "category": "spirits",
+        "source": "https://web.archive.org/web/20250522144112/https://www.bottlerocknapavalley.com/sponsors/"
+      },
+      {
+        "name": "Lagunitas Brewing Company",
+        "category": "beer",
+        "source": "https://web.archive.org/web/20250522144112/https://www.bottlerocknapavalley.com/sponsors/"
+      },
+      {
+        "name": "NetJets",
+        "category": "other",
+        "source": "https://web.archive.org/web/20250522144112/https://www.bottlerocknapavalley.com/sponsors/"
+      },
+      {
+        "name": "Aviator Nation",
+        "category": "fashion",
+        "source": "https://web.archive.org/web/20250522144112/https://www.bottlerocknapavalley.com/sponsors/"
+      },
+      {
+        "name": "Hendrick's Gin",
+        "category": "spirits",
+        "source": "https://web.archive.org/web/20250522144112/https://www.bottlerocknapavalley.com/sponsors/"
+      },
+      {
+        "name": "Blue Moon",
+        "category": "beer",
+        "source": "https://web.archive.org/web/20250522144112/https://www.bottlerocknapavalley.com/sponsors/"
+      },
+      {
+        "name": "Coors Banquet",
+        "category": "beer",
+        "source": "https://web.archive.org/web/20250522144112/https://www.bottlerocknapavalley.com/sponsors/"
+      },
+      {
+        "name": "Athletic Brewing Company",
+        "category": "beer",
+        "source": "https://web.archive.org/web/20250522144112/https://www.bottlerocknapavalley.com/sponsors/"
+      },
+      {
+        "name": "Jolene Coffee",
+        "category": "other",
+        "source": "https://web.archive.org/web/20250522144112/https://www.bottlerocknapavalley.com/sponsors/"
+      },
+      {
+        "name": "Modelo",
+        "category": "beer",
+        "source": "https://web.archive.org/web/20250522144112/https://www.bottlerocknapavalley.com/sponsors/"
+      },
+      {
+        "name": "Caymus Vineyards",
+        "category": "other",
+        "source": "https://web.archive.org/web/20250522144112/https://www.bottlerocknapavalley.com/sponsors/"
+      },
+      {
+        "name": "Cardinale",
+        "category": "other",
+        "source": "https://web.archive.org/web/20250522144112/https://www.bottlerocknapavalley.com/sponsors/"
+      },
+      {
+        "name": "Kosta Browne",
+        "category": "other",
+        "source": "https://web.archive.org/web/20250522144112/https://www.bottlerocknapavalley.com/sponsors/"
+      },
+      {
+        "name": "JCB",
+        "category": "other",
+        "source": "https://web.archive.org/web/20250522144112/https://www.bottlerocknapavalley.com/sponsors/"
+      },
+      {
+        "name": "Waterloo Sparkling Water",
+        "category": "water",
+        "source": "https://web.archive.org/web/20250522144112/https://www.bottlerocknapavalley.com/sponsors/"
+      },
+      {
+        "name": "Simply Spiked Lemonade",
+        "category": "hard_seltzer",
+        "source": "https://web.archive.org/web/20250522144112/https://www.bottlerocknapavalley.com/sponsors/"
+      },
+      {
+        "name": "Paul Hobbs Winery",
+        "category": "other",
+        "source": "https://web.archive.org/web/20250522144112/https://www.bottlerocknapavalley.com/sponsors/"
+      },
+      {
+        "name": "Far Niente Winery",
+        "category": "other",
+        "source": "https://web.archive.org/web/20250522144112/https://www.bottlerocknapavalley.com/sponsors/"
+      },
+      {
+        "name": "Shafer",
+        "category": "other",
+        "source": "https://web.archive.org/web/20250522144112/https://www.bottlerocknapavalley.com/sponsors/"
+      },
+      {
+        "name": "The Duckhorn Portfolio",
+        "category": "other",
+        "source": "https://web.archive.org/web/20250522144112/https://www.bottlerocknapavalley.com/sponsors/"
+      },
+      {
+        "name": "Cliff Lede",
+        "category": "other",
+        "source": "https://web.archive.org/web/20250522144112/https://www.bottlerocknapavalley.com/sponsors/"
+      },
+      {
+        "name": "Bella Union Winery",
+        "category": "other",
+        "source": "https://web.archive.org/web/20250522144112/https://www.bottlerocknapavalley.com/sponsors/"
+      },
+      {
+        "name": "Emmolo Wines",
+        "category": "other",
+        "source": "https://web.archive.org/web/20250522144112/https://www.bottlerocknapavalley.com/sponsors/"
+      },
+      {
+        "name": "Harvest Snaps",
+        "category": "food",
+        "source": "https://web.archive.org/web/20250522144112/https://www.bottlerocknapavalley.com/sponsors/"
+      },
+      {
+        "name": "Maui Jim",
+        "category": "fashion",
+        "source": "https://web.archive.org/web/20250522144112/https://www.bottlerocknapavalley.com/sponsors/"
+      },
+      {
+        "name": "Eargasm",
+        "category": "other",
+        "source": "https://web.archive.org/web/20250522144112/https://www.bottlerocknapavalley.com/sponsors/"
+      },
+      {
+        "name": "Fever-Tree",
+        "category": "soft_drink",
+        "source": "https://web.archive.org/web/20250522144112/https://www.bottlerocknapavalley.com/sponsors/"
+      },
+      {
+        "name": "Westin Hotels & Resorts",
+        "category": "other",
+        "source": "https://web.archive.org/web/20250522144112/https://www.bottlerocknapavalley.com/sponsors/"
+      },
+      {
+        "name": "Visit Napa Valley",
+        "category": "other",
+        "source": "https://web.archive.org/web/20250522144112/https://www.bottlerocknapavalley.com/sponsors/"
+      },
+      {
+        "name": "Downtown Napa",
+        "category": "other",
+        "source": "https://web.archive.org/web/20250522144112/https://www.bottlerocknapavalley.com/sponsors/"
+      },
+      {
+        "name": "PG&E",
+        "category": "other",
+        "source": "https://web.archive.org/web/20250522144112/https://www.bottlerocknapavalley.com/sponsors/"
+      }
+    ]
+  },
+  {
+    "festival": "Sonic Temple Art + Music Festival",
+    "year": 2025,
+    "city": "Columbus, OH",
+    "headliners": [
+      "Metallica",
+      "Linkin Park",
+      "Korn"
+    ],
+    "headliners_source": "https://www.abc6onyourside.com/news/local/sonic-temple-announces-full-lineup-for-2025-festival-metallica-korn-linkin-park",
+    "sponsors": [
+      {
+        "name": "Bud Light",
+        "category": "beer",
+        "source": "https://web.archive.org/web/20250509225208/https://www.sonictemplefestival.com/partners"
+      },
+      {
+        "name": "Michelob Ultra",
+        "category": "beer",
+        "source": "https://web.archive.org/web/20250509225208/https://www.sonictemplefestival.com/partners"
+      },
+      {
+        "name": "Celsius",
+        "category": "energy_drink",
+        "source": "https://web.archive.org/web/20250509225208/https://www.sonictemplefestival.com/partners"
+      },
+      {
+        "name": "Jack Daniel's",
+        "category": "spirits",
+        "source": "https://web.archive.org/web/20250509225208/https://www.sonictemplefestival.com/partners"
+      },
+      {
+        "name": "Cutwater Spirits",
+        "category": "spirits",
+        "source": "https://web.archive.org/web/20250509225208/https://www.sonictemplefestival.com/partners"
+      },
+      {
+        "name": "BeatBox",
+        "category": "hard_seltzer",
+        "source": "https://web.archive.org/web/20250509225208/https://www.sonictemplefestival.com/partners"
+      },
+      {
+        "name": "Goose Island",
+        "category": "beer",
+        "source": "https://web.archive.org/web/20250509225208/https://www.sonictemplefestival.com/partners"
+      },
+      {
+        "name": "White Claw",
+        "category": "hard_seltzer",
+        "source": "https://web.archive.org/web/20250509225208/https://www.sonictemplefestival.com/partners"
+      },
+      {
+        "name": "Eargasm",
+        "category": "other",
+        "source": "https://web.archive.org/web/20250509225208/https://www.sonictemplefestival.com/partners"
+      },
+      {
+        "name": "Middle West Spirits",
+        "category": "spirits",
+        "source": "https://web.archive.org/web/20250509225208/https://www.sonictemplefestival.com/partners"
+      },
+      {
+        "name": "Dimebag Hardware",
+        "category": "other",
+        "source": "https://web.archive.org/web/20250509225208/https://www.sonictemplefestival.com/partners"
+      },
+      {
+        "name": "Mountain Dew",
+        "category": "soft_drink",
+        "source": "https://web.archive.org/web/20250509225208/https://www.sonictemplefestival.com/partners"
+      },
+      {
+        "name": "Casamigos",
+        "category": "spirits",
+        "source": "https://web.archive.org/web/20250509225208/https://www.sonictemplefestival.com/partners"
+      },
+      {
+        "name": "U.S. Army",
+        "category": "other",
+        "source": "https://web.archive.org/web/20250509225208/https://www.sonictemplefestival.com/partners"
+      },
+      {
+        "name": "Parlor",
+        "category": "other",
+        "source": "https://web.archive.org/web/20250509225208/https://www.sonictemplefestival.com/partners"
+      },
+      {
+        "name": "Acathla",
+        "category": "other",
+        "source": "https://web.archive.org/web/20250509225208/https://www.sonictemplefestival.com/partners"
+      },
+      {
+        "name": "U.S. Marines",
+        "category": "other",
+        "source": "https://web.archive.org/web/20250509225208/https://www.sonictemplefestival.com/partners"
+      },
+      {
+        "name": "Ohio Lottery",
+        "category": "other",
+        "source": "https://web.archive.org/web/20250509225208/https://www.sonictemplefestival.com/partners"
+      },
+      {
+        "name": "Blackcraft Cult",
+        "category": "fashion",
+        "source": "https://web.archive.org/web/20250509225208/https://www.sonictemplefestival.com/partners"
+      },
+      {
+        "name": "Blacktooth Beverages & Spirits",
+        "category": "spirits",
+        "source": "https://web.archive.org/web/20250509225208/https://www.sonictemplefestival.com/partners"
+      }
+    ]
+  },
+  {
+    "festival": "Boston Calling Music Festival",
+    "year": 2023,
+    "city": "Boston, MA",
+    "headliners": [
+      "Foo Fighters",
+      "The Lumineers",
+      "Paramore"
+    ],
+    "headliners_source": "https://relix.com/festivals/festival_news/detail/boston-calling-music-festival-announces-2023-lineup-foo-fighters-the-lumineers-paramore-and-more/",
+    "sponsors": [
+      {
+        "name": "Samuel Adams",
+        "category": "beer",
+        "source": "https://web.archive.org/web/20230518120903/https://www.bostoncalling.com/partners"
+      },
+      {
+        "name": "Miller Lite",
+        "category": "beer",
+        "source": "https://web.archive.org/web/20230518120903/https://www.bostoncalling.com/partners"
+      },
+      {
+        "name": "Chase",
+        "category": "bank_or_card",
+        "source": "https://web.archive.org/web/20230518120903/https://www.bostoncalling.com/partners"
+      },
+      {
+        "name": "Happy Valley",
+        "category": "other",
+        "source": "https://web.archive.org/web/20230518120903/https://www.bostoncalling.com/partners"
+      },
+      {
+        "name": "Thomas Tew Rum",
+        "category": "spirits",
+        "source": "https://web.archive.org/web/20230518120903/https://www.bostoncalling.com/partners"
+      },
+      {
+        "name": "Subaru of New England",
+        "category": "auto",
+        "source": "https://web.archive.org/web/20230518120903/https://www.bostoncalling.com/partners"
+      },
+      {
+        "name": "Jack Daniel's",
+        "category": "spirits",
+        "source": "https://web.archive.org/web/20230518120903/https://www.bostoncalling.com/partners"
+      },
+      {
+        "name": "Red Bull",
+        "category": "energy_drink",
+        "source": "https://web.archive.org/web/20230518120903/https://www.bostoncalling.com/partners"
+      },
+      {
+        "name": "Tivoli Audio",
+        "category": "other",
+        "source": "https://web.archive.org/web/20230518120903/https://www.bostoncalling.com/partners"
+      },
+      {
+        "name": "DoorDash",
+        "category": "app_or_streaming",
+        "source": "https://web.archive.org/web/20230518120903/https://www.bostoncalling.com/partners"
+      },
+      {
+        "name": "Dunkin'",
+        "category": "food",
+        "source": "https://web.archive.org/web/20230518120903/https://www.bostoncalling.com/partners"
+      },
+      {
+        "name": "Jersey Mike's",
+        "category": "food",
+        "source": "https://web.archive.org/web/20230518120903/https://www.bostoncalling.com/partners"
+      },
+      {
+        "name": "Josh Cellars",
+        "category": "other",
+        "source": "https://web.archive.org/web/20230518120903/https://www.bostoncalling.com/partners"
+      },
+      {
+        "name": "Liquid Death",
+        "category": "water",
+        "source": "https://web.archive.org/web/20230518120903/https://www.bostoncalling.com/partners"
+      },
+      {
+        "name": "About-Face",
+        "category": "beauty",
+        "source": "https://web.archive.org/web/20230518120903/https://www.bostoncalling.com/partners"
+      },
+      {
+        "name": "Lesser Evil",
+        "category": "food",
+        "source": "https://web.archive.org/web/20230518120903/https://www.bostoncalling.com/partners"
+      },
+      {
+        "name": "HEYDUDE",
+        "category": "fashion",
+        "source": "https://web.archive.org/web/20230518120903/https://www.bostoncalling.com/partners"
+      },
+      {
+        "name": "Music Drives Us",
+        "category": "other",
+        "source": "https://web.archive.org/web/20230518120903/https://www.bostoncalling.com/partners"
+      },
+      {
+        "name": "Front Gate Tickets",
+        "category": "other",
+        "source": "https://web.archive.org/web/20230518120903/https://www.bostoncalling.com/partners"
+      }
+    ]
+  },
+  {
+    "festival": "Bonnaroo Music & Arts Festival",
+    "year": 2023,
+    "city": "Manchester, TN",
+    "headliners": [
+      "Kendrick Lamar",
+      "ODESZA",
+      "Foo Fighters"
+    ],
+    "headliners_source": "https://thefader.com/2023/01/10/kendrick-lamar-odesza-and-foo-fighters-to-headline-bonaroo-2023",
+    "sponsors": [
+      {
+        "name": "About-Face",
+        "category": "beauty",
+        "source": "https://web.archive.org/web/20230604110330/https://www.bonnaroo.com/partners"
+      },
+      {
+        "name": "Allegiant",
+        "category": "other",
+        "source": "https://web.archive.org/web/20230604110330/https://www.bonnaroo.com/partners"
+      },
+      {
+        "name": "Toyota",
+        "category": "auto",
+        "source": "https://web.archive.org/web/20230604110330/https://www.bonnaroo.com/partners"
+      },
+      {
+        "name": "Coca-Cola",
+        "category": "soft_drink",
+        "source": "https://web.archive.org/web/20230604110330/https://www.bonnaroo.com/partners"
+      },
+      {
+        "name": "Basico",
+        "category": "other",
+        "source": "https://web.archive.org/web/20230604110330/https://www.bonnaroo.com/partners"
+      },
+      {
+        "name": "Corona",
+        "category": "beer",
+        "source": "https://web.archive.org/web/20230604110330/https://www.bonnaroo.com/partners"
+      },
+      {
+        "name": "Corona Seltzer",
+        "category": "hard_seltzer",
+        "source": "https://web.archive.org/web/20230604110330/https://www.bonnaroo.com/partners"
+      },
+      {
+        "name": "Cracker Barrel",
+        "category": "food",
+        "source": "https://web.archive.org/web/20230604110330/https://www.bonnaroo.com/partners"
+      },
+      {
+        "name": "Hulu",
+        "category": "app_or_streaming",
+        "source": "https://web.archive.org/web/20230604110330/https://www.bonnaroo.com/partners"
+      },
+      {
+        "name": "Jack Daniel's",
+        "category": "spirits",
+        "source": "https://web.archive.org/web/20230604110330/https://www.bonnaroo.com/partners"
+      },
+      {
+        "name": "Liquid I.V.",
+        "category": "other",
+        "source": "https://web.archive.org/web/20230604110330/https://www.bonnaroo.com/partners"
+      },
+      {
+        "name": "Mamitas",
+        "category": "hard_seltzer",
+        "source": "https://web.archive.org/web/20230604110330/https://www.bonnaroo.com/partners"
+      },
+      {
+        "name": "Owen's Mixers",
+        "category": "soft_drink",
+        "source": "https://web.archive.org/web/20230604110330/https://www.bonnaroo.com/partners"
+      },
+      {
+        "name": "PayPal",
+        "category": "bank_or_card",
+        "source": "https://web.archive.org/web/20230604110330/https://www.bonnaroo.com/partners"
+      },
+      {
+        "name": "Snapchat",
+        "category": "app_or_streaming",
+        "source": "https://web.archive.org/web/20230604110330/https://www.bonnaroo.com/partners"
+      },
+      {
+        "name": "Supermush",
+        "category": "food",
+        "source": "https://web.archive.org/web/20230604110330/https://www.bonnaroo.com/partners"
+      },
+      {
+        "name": "Sonic",
+        "category": "food",
+        "source": "https://web.archive.org/web/20230604110330/https://www.bonnaroo.com/partners"
+      },
+      {
+        "name": "Tito's",
+        "category": "spirits",
+        "source": "https://web.archive.org/web/20230604110330/https://www.bonnaroo.com/partners"
+      },
+      {
+        "name": "Venmo",
+        "category": "bank_or_card",
+        "source": "https://web.archive.org/web/20230604110330/https://www.bonnaroo.com/partners"
+      },
+      {
+        "name": "Verizon",
+        "category": "telecom",
+        "source": "https://web.archive.org/web/20230604110330/https://www.bonnaroo.com/partners"
+      },
+      {
+        "name": "Propeller",
+        "category": "other",
+        "source": "https://web.archive.org/web/20230604110330/https://www.bonnaroo.com/partners"
+      }
+    ]
+  },
+  {
+    "festival": "Hangout Music Fest",
+    "year": 2023,
+    "city": "Gulf Shores, AL",
+    "headliners": [
+      "Red Hot Chili Peppers",
+      "SZA",
+      "Calvin Harris"
+    ],
+    "headliners_source": "https://digital-release.wkrg.com/baldwin-county/hangout-music-festival-lineup-announced-for-2023/amp/",
+    "sponsors": [
+      {
+        "name": "Shein",
+        "category": "fashion",
+        "source": "https://web.archive.org/web/20230527095526/https://www.hangoutmusicfest.com/partners/"
+      },
+      {
+        "name": "Corona",
+        "category": "beer",
+        "source": "https://web.archive.org/web/20230527095526/https://www.hangoutmusicfest.com/partners/"
+      },
+      {
+        "name": "Autograph",
+        "category": "other",
+        "source": "https://web.archive.org/web/20230527095526/https://www.hangoutmusicfest.com/partners/"
+      },
+      {
+        "name": "Malibu Rum",
+        "category": "spirits",
+        "source": "https://web.archive.org/web/20230527095526/https://www.hangoutmusicfest.com/partners/"
+      },
+      {
+        "name": "M&M's",
+        "category": "food",
+        "source": "https://web.archive.org/web/20230527095526/https://www.hangoutmusicfest.com/partners/"
+      },
+      {
+        "name": "Monster Energy",
+        "category": "energy_drink",
+        "source": "https://web.archive.org/web/20230527095526/https://www.hangoutmusicfest.com/partners/"
+      },
+      {
+        "name": "Coca-Cola",
+        "category": "soft_drink",
+        "source": "https://web.archive.org/web/20230527095526/https://www.hangoutmusicfest.com/partners/"
+      },
+      {
+        "name": "Teva",
+        "category": "fashion",
+        "source": "https://web.archive.org/web/20230527095526/https://www.hangoutmusicfest.com/partners/"
+      },
+      {
+        "name": "Jose Cuervo",
+        "category": "spirits",
+        "source": "https://web.archive.org/web/20230527095526/https://www.hangoutmusicfest.com/partners/"
+      },
+      {
+        "name": "Tanqueray",
+        "category": "spirits",
+        "source": "https://web.archive.org/web/20230527095526/https://www.hangoutmusicfest.com/partners/"
+      },
+      {
+        "name": "Ford Bronco",
+        "category": "auto",
+        "source": "https://web.archive.org/web/20230527095526/https://www.hangoutmusicfest.com/partners/"
+      },
+      {
+        "name": "Jim Beam",
+        "category": "spirits",
+        "source": "https://web.archive.org/web/20230527095526/https://www.hangoutmusicfest.com/partners/"
+      },
+      {
+        "name": "Dove",
+        "category": "beauty",
+        "source": "https://web.archive.org/web/20230527095526/https://www.hangoutmusicfest.com/partners/"
+      },
+      {
+        "name": "Aperol",
+        "category": "spirits",
+        "source": "https://web.archive.org/web/20230527095526/https://www.hangoutmusicfest.com/partners/"
+      },
+      {
+        "name": "BeatBox",
+        "category": "hard_seltzer",
+        "source": "https://web.archive.org/web/20230527095526/https://www.hangoutmusicfest.com/partners/"
+      },
+      {
+        "name": "Elite Eyewear",
+        "category": "fashion",
+        "source": "https://web.archive.org/web/20230527095526/https://www.hangoutmusicfest.com/partners/"
+      },
+      {
+        "name": "Twisted Tea",
+        "category": "hard_seltzer",
+        "source": "https://web.archive.org/web/20230527095526/https://www.hangoutmusicfest.com/partners/"
+      },
+      {
+        "name": "Marriott Bonvoy",
+        "category": "other",
+        "source": "https://web.archive.org/web/20230527095526/https://www.hangoutmusicfest.com/partners/"
+      },
+      {
+        "name": "Sharetea",
+        "category": "food",
+        "source": "https://web.archive.org/web/20230527095526/https://www.hangoutmusicfest.com/partners/"
+      },
+      {
+        "name": "Inweekly",
+        "category": "other",
+        "source": "https://web.archive.org/web/20230527095526/https://www.hangoutmusicfest.com/partners/"
+      },
+      {
+        "name": "Propeller",
+        "category": "other",
+        "source": "https://web.archive.org/web/20230527095526/https://www.hangoutmusicfest.com/partners/"
+      },
+      {
+        "name": "Brett-Robinson",
+        "category": "other",
+        "source": "https://web.archive.org/web/20230527095526/https://www.hangoutmusicfest.com/partners/"
+      }
+    ]
+  },
+  {
+    "festival": "Sueños Music Festival",
+    "year": 2025,
+    "city": "Chicago, IL",
+    "headliners": [
+      "Shakira",
+      "Peso Pluma",
+      "Don Omar"
+    ],
+    "headliners_source": "https://abc7chicago.com/post/suenos-2025-lineup-includes-peso-pluma-summer-festivals-chicago/15864605/",
+    "sponsors": [
+      {
+        "name": "Bacardi",
+        "category": "spirits",
+        "source": "https://web.archive.org/web/20250520074806/https://www.suenosmusicfestival.com/sponsors/"
+      },
+      {
+        "name": "BeatBox",
+        "category": "hard_seltzer",
+        "source": "https://web.archive.org/web/20250520074806/https://www.suenosmusicfestival.com/sponsors/"
+      },
+      {
+        "name": "Blue Diamond",
+        "category": "food",
+        "source": "https://web.archive.org/web/20250520074806/https://www.suenosmusicfestival.com/sponsors/"
+      },
+      {
+        "name": "Buchanan's",
+        "category": "spirits",
+        "source": "https://web.archive.org/web/20250520074806/https://www.suenosmusicfestival.com/sponsors/"
+      },
+      {
+        "name": "Chase",
+        "category": "bank_or_card",
+        "source": "https://web.archive.org/web/20250520074806/https://www.suenosmusicfestival.com/sponsors/"
+      },
+      {
+        "name": "Corona",
+        "category": "beer",
+        "source": "https://web.archive.org/web/20250520074806/https://www.suenosmusicfestival.com/sponsors/"
+      },
+      {
+        "name": "Don Julio",
+        "category": "spirits",
+        "source": "https://web.archive.org/web/20250520074806/https://www.suenosmusicfestival.com/sponsors/"
+      },
+      {
+        "name": "DoorDash",
+        "category": "app_or_streaming",
+        "source": "https://web.archive.org/web/20250520074806/https://www.suenosmusicfestival.com/sponsors/"
+      },
+      {
+        "name": "Electrolit",
+        "category": "other",
+        "source": "https://web.archive.org/web/20250520074806/https://www.suenosmusicfestival.com/sponsors/"
+      },
+      {
+        "name": "Garnier",
+        "category": "beauty",
+        "source": "https://web.archive.org/web/20250520074806/https://www.suenosmusicfestival.com/sponsors/"
+      },
+      {
+        "name": "Hennessy",
+        "category": "spirits",
+        "source": "https://web.archive.org/web/20250520074806/https://www.suenosmusicfestival.com/sponsors/"
+      },
+      {
+        "name": "Starry",
+        "category": "soft_drink",
+        "source": "https://web.archive.org/web/20250520074806/https://www.suenosmusicfestival.com/sponsors/"
+      },
+      {
+        "name": "Tito's",
+        "category": "spirits",
+        "source": "https://web.archive.org/web/20250520074806/https://www.suenosmusicfestival.com/sponsors/"
+      },
+      {
+        "name": "Toyota",
+        "category": "auto",
+        "source": "https://web.archive.org/web/20250520074806/https://www.suenosmusicfestival.com/sponsors/"
+      },
+      {
+        "name": "Verizon",
+        "category": "telecom",
+        "source": "https://web.archive.org/web/20250520074806/https://www.suenosmusicfestival.com/sponsors/"
+      }
+    ]
+  },
+  {
+    "festival": "Ultra Music Festival",
+    "year": 2025,
+    "city": "Miami, FL",
+    "headliners": [
+      "John Summit",
+      "Carl Cox",
+      "Axwell"
+    ],
+    "headliners_source": "https://www.miaminewtimes.com/music/ultra-miami-2025-phase-one-lineup-john-summit-carl-cox-axwell-21425665/",
+    "sponsors": [
+      {
+        "name": "Red Bull",
+        "category": "energy_drink",
+        "source": "https://web.archive.org/web/20250320042742/https://ultramusicfestival.com/sponsors/"
+      },
+      {
+        "name": "Dom Pérignon",
+        "category": "other",
+        "source": "https://web.archive.org/web/20250320042742/https://ultramusicfestival.com/sponsors/"
+      },
+      {
+        "name": "Volcán X.A",
+        "category": "spirits",
+        "source": "https://web.archive.org/web/20250320042742/https://ultramusicfestival.com/sponsors/"
+      },
+      {
+        "name": "Belvedere Vodka",
+        "category": "spirits",
+        "source": "https://web.archive.org/web/20250320042742/https://ultramusicfestival.com/sponsors/"
+      },
+      {
+        "name": "Hennessy",
+        "category": "spirits",
+        "source": "https://web.archive.org/web/20250320042742/https://ultramusicfestival.com/sponsors/"
+      },
+      {
+        "name": "NÜTRL",
+        "category": "hard_seltzer",
+        "source": "https://web.archive.org/web/20250320042742/https://ultramusicfestival.com/sponsors/"
+      },
+      {
+        "name": "White Claw",
+        "category": "hard_seltzer",
+        "source": "https://web.archive.org/web/20250320042742/https://ultramusicfestival.com/sponsors/"
+      },
+      {
+        "name": "Miami Music Week",
+        "category": "other",
+        "source": "https://web.archive.org/web/20250320042742/https://ultramusicfestival.com/sponsors/"
+      }
+    ]
+  },
+  {
+    "festival": "Dreamville Festival",
+    "year": 2025,
+    "city": "Raleigh, NC",
+    "headliners": [
+      "J. Cole",
+      "Lil Wayne",
+      "Erykah Badu"
+    ],
+    "headliners_source": "https://www.okayplayer.com/lil-wayne-erykah-badu-dreamville-fest-2025",
+    "sponsors": [
+      {
+        "name": "Chase Freedom",
+        "category": "bank_or_card",
+        "source": "https://www.bizbash.com/experiential-marketing/see-how-brands-engaged-music-fans-at-the-fifth-and-final-dreamville-fest"
+      },
+      {
+        "name": "Hennessy",
+        "category": "spirits",
+        "source": "https://www.bizbash.com/experiential-marketing/see-how-brands-engaged-music-fans-at-the-fifth-and-final-dreamville-fest"
+      },
+      {
+        "name": "Bacardi",
+        "category": "spirits",
+        "source": "https://www.bizbash.com/experiential-marketing/see-how-brands-engaged-music-fans-at-the-fifth-and-final-dreamville-fest"
+      },
+      {
+        "name": "Patrón",
+        "category": "spirits",
+        "source": "https://www.bizbash.com/experiential-marketing/see-how-brands-engaged-music-fans-at-the-fifth-and-final-dreamville-fest"
+      },
+      {
+        "name": "Smirnoff Ice",
+        "category": "hard_seltzer",
+        "source": "https://www.bizbash.com/experiential-marketing/see-how-brands-engaged-music-fans-at-the-fifth-and-final-dreamville-fest"
+      },
+      {
+        "name": "American Apparel",
+        "category": "fashion",
+        "source": "https://www.bizbash.com/experiential-marketing/see-how-brands-engaged-music-fans-at-the-fifth-and-final-dreamville-fest"
+      },
+      {
+        "name": "DoorDash",
+        "category": "app_or_streaming",
+        "source": "https://www.bizbash.com/experiential-marketing/see-how-brands-engaged-music-fans-at-the-fifth-and-final-dreamville-fest"
+      },
+      {
+        "name": "Tito's",
+        "category": "spirits",
+        "source": "https://www.bizbash.com/experiential-marketing/see-how-brands-engaged-music-fans-at-the-fifth-and-final-dreamville-fest"
+      },
+      {
+        "name": "Electrolit",
+        "category": "other",
+        "source": "https://www.bizbash.com/experiential-marketing/see-how-brands-engaged-music-fans-at-the-fifth-and-final-dreamville-fest"
+      }
+    ]
+  }
+]
