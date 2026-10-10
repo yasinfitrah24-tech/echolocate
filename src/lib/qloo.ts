@@ -441,11 +441,14 @@ function reasonSentence(
   listSize: number,
   source: "general" | "category",
   categoryLabel: string,
+  /** Word after the category, e.g. "brands". Empty for places ("cafes"). */
+  noun = "brands",
 ): string {
+  const things = noun ? `${categoryLabel.toLowerCase()} ${noun}` : categoryLabel.toLowerCase();
   const rankPart =
     source === "general"
       ? `#${rank} of the top ${listSize} brands for this crowd, across all categories.`
-      : `#${rank} of ${listSize} ${categoryLabel.toLowerCase()} brands for this crowd.`;
+      : `#${rank} of ${listSize} ${things} for this crowd.`;
 
   const strong = reasons.filter((reason) => reason.share > 0);
   if (strong.length === 0) return rankPart;
@@ -649,4 +652,258 @@ export async function getSponsorBrands(
   });
 
   return { categories: result, calls };
+}
+
+// ---------- 3. Local sponsors (places) ----------
+//
+// Tested 10 Oct (scripts/try-places.mjs, indie line-up, Austin):
+// - Every place has location.lat/lon, properties.address, business_rating, and
+//   most have price_level and website. One call takes 0.5-1.1 s.
+// - filter.location.radius does nothing with a city name in
+//   filter.location.query: the same list comes back with or without it, and a
+//   few results sit outside the city (Buda, Southwest Pkwy). So the distance
+//   filter is done here, around the middle of the results.
+// - The generic restaurant tag returns mostly bars and music venues, so it is
+//   not used.
+// - Chains show up more than once (Urban Outfitters x2, REI x2): keep one.
+
+const PLACE_TAKE = 15;
+/** Places farther than this from the middle of the results are dropped. */
+const MAX_PLACE_DISTANCE_KM = 20;
+
+export interface PlaceCategoryDef {
+  id: string;
+  label: string;
+  tag: string;
+  /** Bars only show for 21+ events, like alcohol brands. */
+  alcohol: boolean;
+}
+
+export const PLACE_CATEGORIES: readonly PlaceCategoryDef[] = [
+  { id: "cafes", label: "Cafes", tag: "urn:tag:genre:place:restaurant:cafe", alcohol: false },
+  { id: "clothing", label: "Clothing stores", tag: "urn:tag:category:place:clothing_store", alcohol: false },
+  { id: "bars", label: "Bars", tag: "urn:tag:genre:place:restaurant:bar", alcohol: true },
+];
+
+export interface LocalPlace {
+  entityId: string;
+  name: string;
+  categoryId: string;
+  categoryLabel: string;
+  lat: number;
+  lon: number;
+  /** Straight-line distance from the middle of all results, km. */
+  distanceKm: number;
+  address: string | null;
+  neighborhood: string | null;
+  website: string | null;
+  phone: string | null;
+  rating: number | null;
+  /** 1-4, like $ to $$$$. */
+  priceLevel: number | null;
+  imageUrl: string | null;
+  description: string | null;
+  fitScore: number;
+  rank: number;
+  listSize: number;
+  affinity: number | null;
+  reasons: BrandReason[];
+  reasonText: string;
+}
+
+export interface LocalSponsorsInput {
+  artists?: { entityId: string; name: string }[];
+  genreTags?: GenreTag[];
+  /** Required: places are searched in this city. */
+  city: string;
+  age?: AgeGroup;
+  /** True only for 21+ events. Adds bars. */
+  includeBars?: boolean;
+}
+
+export interface LocalSponsorsResult {
+  places: LocalPlace[];
+  /** Middle of the kept places, for centering the map. Null when nothing was found. */
+  center: { lat: number; lon: number } | null;
+  /** Places dropped for being too far from the middle. */
+  droppedFar: number;
+  /** Duplicate chain branches dropped. */
+  droppedDuplicates: number;
+  calls: QlooCall[];
+}
+
+function median(values: number[]): number {
+  const sorted = [...values].sort((a, b) => a - b);
+  const middle = Math.floor(sorted.length / 2);
+  return sorted.length % 2 ? sorted[middle] : (sorted[middle - 1] + sorted[middle]) / 2;
+}
+
+function distanceKm(aLat: number, aLon: number, bLat: number, bLon: number): number {
+  const rad = Math.PI / 180;
+  const dLat = (bLat - aLat) * rad;
+  const dLon = (bLon - aLon) * rad;
+  const h =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos(aLat * rad) * Math.cos(bLat * rad) * Math.sin(dLon / 2) ** 2;
+  return 2 * 6371 * Math.asin(Math.sqrt(h));
+}
+
+function toPlace(
+  entity: Json,
+  category: PlaceCategoryDef,
+  rank: number,
+  listSize: number,
+  signalNames: Map<string, string>,
+): Omit<LocalPlace, "distanceKm"> | null {
+  const entityId = asString(entity.entity_id);
+  const name = asString(entity.name);
+  const location = asObject(entity.location);
+  const lat = asNumber(location.lat);
+  const lon = asNumber(location.lon);
+  if (!entityId || !name || lat === null || lon === null) return null;
+
+  const props = asObject(entity.properties);
+  if (props.is_closed === true) return null;
+
+  const reasons = readReasons(entity, signalNames);
+  const firstImage = asObject(asArray(props.images)[0]);
+  return {
+    entityId,
+    name,
+    categoryId: category.id,
+    categoryLabel: category.label,
+    lat,
+    lon,
+    address: asString(props.address),
+    neighborhood: asString(asObject(props.geocode).name),
+    website: asString(props.website),
+    phone: asString(props.phone),
+    rating: asNumber(props.business_rating),
+    priceLevel: asNumber(props.price_level),
+    imageUrl: asString(firstImage.url),
+    description: asString(props.short_description) ?? asString(props.description),
+    fitScore: fitScore(rank, listSize, "category", reasons),
+    rank,
+    listSize,
+    affinity: asNumber(asObject(entity.query).affinity),
+    reasons,
+    reasonText: reasonSentence(reasons, rank, listSize, "category", category.label, ""),
+  };
+}
+
+/**
+ * Local businesses near the event that this crowd likes: one Qloo call per
+ * place category, in parallel. A failed category is logged and skipped.
+ */
+export async function getLocalSponsors(
+  input: LocalSponsorsInput,
+): Promise<LocalSponsorsResult> {
+  const artists = input.artists ?? [];
+  const genreTags = input.genreTags ?? [];
+  const city = input.city.trim();
+  if (!city) throw new QlooError("A city is needed to find local sponsors.");
+  if (artists.length === 0 && genreTags.length === 0) {
+    throw new QlooError("Give at least one artist or one genre.");
+  }
+
+  const signalNames = new Map<string, string>();
+  for (const artist of artists) signalNames.set(artist.entityId, artist.name);
+  for (const tag of genreTags) signalNames.set(tag.id, tag.name);
+
+  const categories = PLACE_CATEGORIES.filter(
+    (category) => input.includeBars || !category.alcohol,
+  );
+  const calls: QlooCall[] = [];
+
+  const lists = await Promise.all(
+    categories.map(async (category) => {
+      const label = `${category.label} near ${city}`;
+      const started = Date.now();
+      try {
+        const { data, ms, sent, retries } = await qlooGet("/v2/insights", {
+          "filter.type": "urn:entity:place",
+          "filter.location.query": city,
+          "filter.tags": category.tag,
+          "signal.interests.entities":
+            artists.map((artist) => artist.entityId).join(",") || undefined,
+          "signal.interests.tags": genreTags.map((tag) => tag.id).join(",") || undefined,
+          "signal.demographics.age": input.age,
+          "feature.explainability": "true",
+          take: PLACE_TAKE,
+        });
+        const entities = asArray(asObject(data.results).entities).map(asObject);
+        calls.push({ label, endpoint: "/v2/insights", params: sent, ms, resultCount: entities.length, retries });
+        return entities;
+      } catch (error) {
+        calls.push({
+          label,
+          endpoint: "/v2/insights",
+          params: {},
+          ms: Date.now() - started,
+          resultCount: 0,
+          retries: error instanceof QlooError ? error.retries : 0,
+          error: error instanceof Error ? error.message : String(error),
+        });
+        return [];
+      }
+    }),
+  );
+
+  if (lists.every((list) => list.length === 0) && calls.every((call) => call.error)) {
+    throw new QlooError(calls[0]?.error ?? "Qloo place search failed");
+  }
+
+  // Same place in two categories -> keep the better score. Same chain name ->
+  // keep the first (higher-ranked) branch.
+  const byId = new Map<string, Omit<LocalPlace, "distanceKm">>();
+  lists.forEach((entities, index) => {
+    const category = categories[index];
+    entities.forEach((entity, position) => {
+      const place = toPlace(entity, category, position + 1, entities.length, signalNames);
+      if (!place) return;
+      const existing = byId.get(place.entityId);
+      if (!existing || place.fitScore > existing.fitScore) byId.set(place.entityId, place);
+    });
+  });
+
+  const sorted = [...byId.values()].sort((a, b) => b.fitScore - a.fitScore || a.rank - b.rank);
+  const seenNames = new Set<string>();
+  const unique = sorted.filter((place) => {
+    const key = normalizeName(place.name);
+    if (seenNames.has(key)) return false;
+    seenNames.add(key);
+    return true;
+  });
+  const droppedDuplicates = sorted.length - unique.length;
+
+  if (unique.length === 0) {
+    return { places: [], center: null, droppedFar: 0, droppedDuplicates, calls };
+  }
+
+  // The median point is not pulled away by a few far-off results.
+  const middle = {
+    lat: median(unique.map((place) => place.lat)),
+    lon: median(unique.map((place) => place.lon)),
+  };
+  const withDistance: LocalPlace[] = unique.map((place) => ({
+    ...place,
+    distanceKm: Math.round(distanceKm(middle.lat, middle.lon, place.lat, place.lon) * 10) / 10,
+  }));
+  const places = withDistance.filter((place) => place.distanceKm <= MAX_PLACE_DISTANCE_KM);
+
+  const center =
+    places.length > 0
+      ? {
+          lat: places.reduce((sum, place) => sum + place.lat, 0) / places.length,
+          lon: places.reduce((sum, place) => sum + place.lon, 0) / places.length,
+        }
+      : null;
+
+  return {
+    places,
+    center,
+    droppedFar: withDistance.length - places.length,
+    droppedDuplicates,
+    calls,
+  };
 }

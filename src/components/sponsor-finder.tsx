@@ -6,6 +6,7 @@
 import { useState, type FormEvent } from "react";
 import { ADMISSIONS, AUDIENCE_AGES, DEFAULT_ADMISSION, findAdmission } from "@/lib/audience";
 import type { ArtistMatch, BrandCategory, QlooCall } from "@/lib/qloo";
+import { LocalSponsors } from "./local-sponsors";
 
 interface ConfirmedArtist {
   entityId: string;
@@ -14,6 +15,7 @@ interface ConfirmedArtist {
 
 interface BrandsResponse {
   input: {
+    city: string | null;
     age: string | null;
     admission: string;
     includeAlcohol: boolean;
@@ -77,6 +79,8 @@ export function SponsorFinder() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<BrandsResponse | null>(null);
+  // Changes with every successful search, so the local sponsors map reloads.
+  const [searchId, setSearchId] = useState(0);
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
 
   const [pitchFor, setPitchFor] = useState<string | null>(null);
@@ -114,6 +118,7 @@ export function SponsorFinder() {
         return;
       }
       setResult(data as BrandsResponse);
+      setSearchId((id) => id + 1);
       setExpanded({});
     } catch {
       setResult(null);
@@ -506,6 +511,21 @@ export function SponsorFinder() {
                 );
               })}
             </div>
+
+            {result.input.city ? (
+              <LocalSponsors
+                key={searchId}
+                artists={result.artists}
+                genreTags={result.genreTags}
+                city={result.input.city}
+                age={result.input.age}
+                admission={result.input.admission}
+              />
+            ) : (
+              <p className="mt-5 rounded-xl border border-zinc-200 bg-white px-5 py-3 text-sm text-zinc-600">
+                Add a city to see local sponsors on a map.
+              </p>
+            )}
 
             <details className="mt-6 rounded-xl border border-zinc-200 bg-white px-5 py-3 text-sm">
               <summary className="cursor-pointer font-medium">How the agent got this</summary>
