@@ -2,13 +2,20 @@
 // Body (JSON):
 //   brand: { name: string; categoryLabel: string; reasonText: string }   one brand from /api/brands
 //   artists?: string[]            line-up names
-//   event?: { name?, city?, crowdSize?, age?, genre?, organizer? }
+//   event?: { name?, city?, crowdSize?, age?, admission?, genre?, organizer? }
 //
 // Returns { subject, body, source: "deepseek" | "template", model, note, ms }.
 
 import { NextResponse } from "next/server";
 import { writePitch } from "@/lib/pitch";
-import { AGE_GROUPS, type AgeGroup } from "@/lib/qloo";
+import {
+  ADMISSIONS,
+  AUDIENCE_AGES,
+  findAdmission,
+  findAudienceAge,
+  type Admission,
+  type AudienceAge,
+} from "@/lib/audience";
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
@@ -61,11 +68,20 @@ export async function POST(request: Request) {
     crowdSize = value;
   }
 
-  let age: AgeGroup | null = null;
+  let age: AudienceAge | null = null;
   if (event.age !== undefined && event.age !== null && event.age !== "") {
-    const match = AGE_GROUPS.find((group) => group === event.age);
-    if (!match) return bad(`event.age must be one of: ${AGE_GROUPS.join(", ")}`);
-    age = match;
+    age = findAudienceAge(event.age);
+    if (!age) {
+      return bad(`event.age must be one of: ${AUDIENCE_AGES.map((option) => option.id).join(", ")}`);
+    }
+  }
+
+  let admission: Admission | null = null;
+  if (event.admission !== undefined && event.admission !== null && event.admission !== "") {
+    admission = findAdmission(event.admission);
+    if (!admission) {
+      return bad(`event.admission must be one of: ${ADMISSIONS.map((option) => option.id).join(", ")}`);
+    }
   }
 
   const draft = await writePitch({
@@ -76,6 +92,7 @@ export async function POST(request: Request) {
     city: cleanText(event.city, 100),
     crowdSize,
     age,
+    admission,
     organizer: cleanText(event.organizer, 100),
   });
 

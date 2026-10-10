@@ -7,7 +7,7 @@
 const base = process.env.APP_URL ?? "http://localhost:3000";
 const wanted = process.argv[2]?.toLowerCase();
 const artistNames = ["Phoebe Bridgers", "boygenius", "Clairo"];
-const event = { name: "Spring Quad Fest", city: "Austin, TX", crowdSize: 800, age: "24_and_younger" };
+const event = { name: "Spring Quad Fest", city: "Austin, TX", crowdSize: 800, age: "24_and_younger", admission: "all_ages" };
 
 async function post(path, body) {
   let response;
@@ -32,7 +32,7 @@ async function post(path, body) {
 }
 
 console.log(`1. /api/brands (${artistNames.join(", ")} | ${event.city})`);
-const brands = await post("/api/brands", { artistNames, city: event.city, age: event.age });
+const brands = await post("/api/brands", { artistNames, city: event.city, age: event.age, admission: event.admission });
 console.log(`   ${brands.categories.length} categories in ${brands.tookMs} ms`);
 
 let pick = null;

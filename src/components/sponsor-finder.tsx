@@ -4,6 +4,7 @@
 // Rough on purpose; design comes in the 16-22 Oct pass.
 
 import { useState, type FormEvent } from "react";
+import { ADMISSIONS, AUDIENCE_AGES, DEFAULT_ADMISSION, findAdmission } from "@/lib/audience";
 import type { ArtistMatch, BrandCategory, QlooCall } from "@/lib/qloo";
 
 interface ConfirmedArtist {
@@ -12,6 +13,12 @@ interface ConfirmedArtist {
 }
 
 interface BrandsResponse {
+  input: {
+    age: string | null;
+    admission: string;
+    includeAlcohol: boolean;
+    alcoholBlocked: boolean;
+  };
   artists: ConfirmedArtist[];
   genreTags: { id: string; name: string }[];
   unresolved: { query: string; candidates: ArtistMatch[] }[];
@@ -28,15 +35,9 @@ interface PitchResponse {
   note: string | null;
 }
 
-// Only "24_and_younger" is confirmed to change Qloo's results (tested 6 Oct).
 const AGE_OPTIONS = [
   { value: "", label: "Any age" },
-  { value: "24_and_younger", label: "24 and younger" },
-  { value: "25_to_29", label: "25 to 29" },
-  { value: "30_to_34", label: "30 to 34" },
-  { value: "35_to_44", label: "35 to 44" },
-  { value: "45_to_54", label: "45 to 54" },
-  { value: "55_and_older", label: "55 and older" },
+  ...AUDIENCE_AGES.map((option) => ({ value: option.id as string, label: option.label })),
 ];
 
 const EXAMPLE = {
@@ -44,6 +45,7 @@ const EXAMPLE = {
   artistsText: "Phoebe Bridgers, boygenius, Clairo",
   city: "Austin, TX",
   age: "24_and_younger",
+  admission: "all_ages",
   crowdSize: "800",
 };
 
@@ -68,8 +70,9 @@ export function SponsorFinder() {
   const [city, setCity] = useState("");
   const [age, setAge] = useState("");
   const [crowdSize, setCrowdSize] = useState("");
-  // null = follow the default: no alcohol brands for a 24-and-younger crowd.
-  const [alcoholChoice, setAlcoholChoice] = useState<boolean | null>(null);
+  const [admission, setAdmission] = useState<string>(DEFAULT_ADMISSION.id);
+  // Only takes effect for a 21+ event; the box is locked otherwise.
+  const [wantsAlcohol, setWantsAlcohol] = useState(true);
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -82,7 +85,8 @@ export function SponsorFinder() {
   const [pitchError, setPitchError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
 
-  const includeAlcohol = alcoholChoice ?? age !== "24_and_younger";
+  const alcoholBlocked = !(findAdmission(admission) ?? DEFAULT_ADMISSION).alcoholAllowed;
+  const includeAlcohol = !alcoholBlocked && wantsAlcohol;
 
   async function findBrands(names: string[], confirmed: ConfirmedArtist[]) {
     setLoading(true);
@@ -99,6 +103,7 @@ export function SponsorFinder() {
           genre: genre.trim() || undefined,
           city: city.trim() || undefined,
           age: age || undefined,
+          admission,
           includeAlcohol,
         }),
       });
@@ -131,7 +136,8 @@ export function SponsorFinder() {
     setCity(EXAMPLE.city);
     setAge(EXAMPLE.age);
     setCrowdSize(EXAMPLE.crowdSize);
-    setAlcoholChoice(null);
+    setAdmission(EXAMPLE.admission);
+    setWantsAlcohol(true);
   }
 
   /** The user confirms which artist a typed name meant. */
@@ -171,6 +177,7 @@ export function SponsorFinder() {
             city: city.trim() || undefined,
             crowdSize: crowdSize.trim() || undefined,
             age: age || undefined,
+            admission,
             genre: genre.trim() || undefined,
           },
         }),
@@ -316,6 +323,24 @@ export function SponsorFinder() {
             </div>
 
             <div>
+              <label htmlFor="admission" className={labelClass}>
+                Admission
+              </label>
+              <select
+                id="admission"
+                className={inputClass}
+                value={admission}
+                onChange={(event) => setAdmission(event.target.value)}
+              >
+                {ADMISSIONS.map((option) => (
+                  <option key={option.id} value={option.id}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div>
               <label htmlFor="crowd" className={labelClass}>
                 Expected crowd
               </label>
@@ -331,15 +356,23 @@ export function SponsorFinder() {
             </div>
           </div>
 
-          <label className="mt-4 flex items-center gap-2 text-sm text-zinc-700">
+          <label
+            className={`mt-4 flex items-center gap-2 text-sm ${alcoholBlocked ? "text-zinc-400" : "text-zinc-700"}`}
+          >
             <input
               type="checkbox"
               className="h-4 w-4"
               checked={includeAlcohol}
-              onChange={(event) => setAlcoholChoice(event.target.checked)}
+              disabled={alcoholBlocked}
+              onChange={(event) => setWantsAlcohol(event.target.checked)}
             />
-            Include beer and spirits brands
+            Include alcohol brands (beer and spirits)
           </label>
+          {alcoholBlocked && (
+            <p className="mt-1 text-xs text-zinc-500">
+              Alcohol brands only show for 21+ events.
+            </p>
+          )}
 
           <button
             type="submit"
@@ -493,6 +526,11 @@ export function SponsorFinder() {
                 The Sponsor Fit Score is our own 0 to 100 score. It comes from where a brand ranks in
                 Qloo&rsquo;s taste data for this crowd and how evenly the line-up supports it.
               </p>
+              {result.input.alcoholBlocked && (
+                <p className="mt-2 text-xs text-zinc-500">
+                  Beer, wine and spirits brands are left out because this is not a 21+ event.
+                </p>
+              )}
             </details>
           </section>
         )}

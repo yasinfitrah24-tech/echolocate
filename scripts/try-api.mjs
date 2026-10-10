@@ -10,14 +10,14 @@ const args = process.argv.slice(2);
 const city = args.length > 1 ? args[args.length - 1] : "Austin, TX";
 const artistNames = args.length > 1 ? args.slice(0, -1) : ["Phoebe Bridgers", "boygenius", "Clairo"];
 
-console.log(`POST ${base}/api/brands  (${artistNames.join(", ")} | ${city} | 24 and younger)`);
+console.log(`POST ${base}/api/brands  (${artistNames.join(", ")} | ${city} | 24 and younger, all ages)`);
 
 let response;
 try {
   response = await fetch(`${base}/api/brands`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ artistNames, city, age: "24_and_younger" }),
+    body: JSON.stringify({ artistNames, city, age: "24_and_younger", admission: "all_ages" }),
   });
 } catch (error) {
   console.log(`Could not reach ${base}. Is "npm run dev" running in another terminal?`);

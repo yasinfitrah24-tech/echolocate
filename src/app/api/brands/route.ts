@@ -4,20 +4,28 @@
 //   artists?: { entityId: string; name: string }[]   already confirmed in the UI
 //   genre?: string                               e.g. "indie pop", used with or instead of artists
 //   city?: string                                e.g. "Austin, TX"
-//   age?: one of AGE_GROUPS
-//   includeAlcohol?: boolean                     default true
+//   age?: an id from AUDIENCE_AGES, e.g. "24_and_younger"   (who mostly comes)
+//   admission?: "all_ages" | "18_plus" | "21_plus"            (who is allowed in; default all_ages)
+//   includeAlcohol?: boolean                     default false; only honored for 21_plus
 //
 // Returns brands grouped by category with a Sponsor Fit Score and reasons,
 // plus `unresolved` names the UI should ask the user about.
 
 import { NextResponse } from "next/server";
 import {
-  AGE_GROUPS,
+  ADMISSIONS,
+  AUDIENCE_AGES,
+  DEFAULT_ADMISSION,
+  findAdmission,
+  findAudienceAge,
+  type Admission,
+  type AudienceAge,
+} from "@/lib/audience";
+import {
   QlooError,
   getSponsorBrands,
   searchArtists,
   searchGenreTags,
-  type AgeGroup,
   type ArtistMatch,
   type GenreTag,
 } from "@/lib/qloo";
@@ -87,17 +95,29 @@ export async function POST(request: Request) {
   const genre = body.genre === undefined ? null : cleanText(body.genre, 60);
   const city = body.city === undefined ? null : cleanText(body.city, 100);
 
-  let age: AgeGroup | undefined;
+  let audience: AudienceAge | null = null;
   if (body.age !== undefined && body.age !== null && body.age !== "") {
-    const match = AGE_GROUPS.find((group) => group === body.age);
-    if (!match) return bad(`age must be one of: ${AGE_GROUPS.join(", ")}`);
-    age = match;
+    audience = findAudienceAge(body.age);
+    if (!audience) {
+      return bad(`age must be one of: ${AUDIENCE_AGES.map((option) => option.id).join(", ")}`);
+    }
   }
 
   if (body.includeAlcohol !== undefined && typeof body.includeAlcohol !== "boolean") {
     return bad("includeAlcohol must be true or false");
   }
-  const includeAlcohol = body.includeAlcohol ?? true;
+  let admission: Admission = DEFAULT_ADMISSION;
+  if (body.admission !== undefined && body.admission !== null && body.admission !== "") {
+    const match = findAdmission(body.admission);
+    if (!match) {
+      return bad(`admission must be one of: ${ADMISSIONS.map((option) => option.id).join(", ")}`);
+    }
+    admission = match;
+  }
+
+  // Alcohol brands only for 21+ events, whatever the request asks for.
+  const alcoholBlocked = !admission.alcoholAllowed;
+  const includeAlcohol = !alcoholBlocked && body.includeAlcohol === true;
 
   if (artistNames.length === 0 && confirmed.length === 0 && !genre) {
     return bad("Give at least one artist or a genre");
@@ -142,12 +162,19 @@ export async function POST(request: Request) {
       artists,
       genreTags: usedTags,
       city: city ?? undefined,
-      age,
+      age: audience?.id,
       includeAlcohol,
     });
 
     return NextResponse.json({
-      input: { city, age: age ?? null, includeAlcohol, genre },
+      input: {
+        city,
+        genre,
+        age: audience?.id ?? null,
+        admission: admission.id,
+        includeAlcohol,
+        alcoholBlocked,
+      },
       artists,
       genreTags: usedTags,
       unresolved,

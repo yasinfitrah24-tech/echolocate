@@ -21,6 +21,7 @@ const RETRY_BASE_MS = 500;
 const BRAND_TAG_PREFIX = "urn:tag:genre:brand:";
 const MUSIC_TAG_PREFIX = "urn:tag:genre:music:";
 const NGO_TAG_PREFIX = "urn:tag:genre:brand:ngo";
+const ALCOHOL_TAG_PREFIX = "urn:tag:genre:brand:wine_and_spirits";
 
 // Only "24_and_younger" has been tested against the API. The other values come
 // from the Qloo docs; check the result changes before relying on them.
@@ -106,7 +107,11 @@ export interface SponsorBrandsInput {
   /** e.g. "Austin, TX" */
   city?: string;
   age?: AgeGroup;
-  /** Beer and spirits. Turn off for events where alcohol sponsors are not allowed. Default true. */
+  /**
+   * Beer, wine and spirits. Default false. When false, the beer and spirits
+   * queries are skipped and any brand Qloo tags as wine_and_spirits is dropped
+   * from every list. The filter is only as good as Qloo's tags.
+   */
   includeAlcohol?: boolean;
 }
 
@@ -532,7 +537,7 @@ export async function getSponsorBrands(
     "feature.explainability": "true",
   };
 
-  const includeAlcohol = input.includeAlcohol ?? true;
+  const includeAlcohol = input.includeAlcohol ?? false;
   const categories = SPONSOR_CATEGORIES.filter(
     (category) => includeAlcohol || !category.alcohol,
   );
@@ -602,6 +607,7 @@ export async function getSponsorBrands(
     const tagIds = brandTagIds(entity);
     // Advocacy groups come back as "brands" (e.g. Black Lives Matter). Not sponsors.
     if (tagIds.some((id) => id.startsWith(NGO_TAG_PREFIX))) return;
+    if (!includeAlcohol && tagIds.some((id) => id.startsWith(ALCOHOL_TAG_PREFIX))) return;
     const category = categoryFromTags(tagIds);
     keep(
       toBrand(entity, category, index + 1, general.length, "general", signalNames),
@@ -612,7 +618,9 @@ export async function getSponsorBrands(
   perCategory.forEach((entities, categoryIndex) => {
     const category = categories[categoryIndex];
     entities.forEach((entity, index) => {
-      if (brandTagIds(entity).some((id) => id.startsWith(NGO_TAG_PREFIX))) return;
+      const tagIds = brandTagIds(entity);
+      if (tagIds.some((id) => id.startsWith(NGO_TAG_PREFIX))) return;
+      if (!includeAlcohol && tagIds.some((id) => id.startsWith(ALCOHOL_TAG_PREFIX))) return;
       keep(
         toBrand(entity, category, index + 1, entities.length, "category", signalNames),
         category.label,

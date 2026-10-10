@@ -4,7 +4,7 @@
 // fails, a plain template is used instead, so the app always returns a draft.
 // `source` in the result says which one it was.
 
-import type { AgeGroup } from "./qloo";
+import type { Admission, AudienceAge } from "./audience";
 
 const DEEPSEEK_URL = "https://api.deepseek.com/chat/completions";
 const DEFAULT_MODEL = "deepseek-flash";
@@ -22,7 +22,8 @@ export interface PitchInput {
   eventName: string | null;
   city: string | null;
   crowdSize: number | null;
-  age: AgeGroup | null;
+  age: AudienceAge | null;
+  admission: Admission | null;
   organizer: string | null;
 }
 
@@ -35,15 +36,6 @@ export interface PitchDraft {
   note: string | null;
   ms: number;
 }
-
-const AGE_LABELS: Record<AgeGroup, string> = {
-  "24_and_younger": "24 and younger",
-  "25_to_29": "25 to 29",
-  "30_to_34": "30 to 34",
-  "35_to_44": "35 to 44",
-  "45_to_54": "45 to 54",
-  "55_and_older": "55 and older",
-};
 
 function joinNames(names: string[]): string {
   if (names.length <= 1) return names[0] ?? "";
@@ -59,7 +51,8 @@ function facts(input: PitchInput): string[] {
   if (input.eventName) lines.push(`Event name: ${input.eventName}`);
   if (input.city) lines.push(`City: ${input.city}`);
   if (input.crowdSize) lines.push(`Expected crowd: about ${input.crowdSize.toLocaleString("en-US")} people`);
-  if (input.age) lines.push(`Audience age: mostly ${AGE_LABELS[input.age]}`);
+  if (input.age) lines.push(`Audience age: mostly ${input.age.label}`);
+  if (input.admission) lines.push(`Admission: ${input.admission.label} (${input.admission.phrase})`);
   if (input.artists.length > 0) lines.push(`Line-up: ${joinNames(input.artists)}`);
   if (input.genre) lines.push(`Genre: ${input.genre}`);
   if (input.organizer) lines.push(`Organizer (sender): ${input.organizer}`);
@@ -85,7 +78,7 @@ function templateDraft(input: PitchInput): { subject: string; body: string } {
   const about: string[] = [];
   if (input.city) about.push(`in ${input.city}`);
   if (input.crowdSize) about.push(`for about ${input.crowdSize.toLocaleString("en-US")} people`);
-  const audience = input.age ? `, mostly ${AGE_LABELS[input.age]}` : "";
+  const audience = input.age ? `, mostly ${input.age.label}` : "";
   const lineUp =
     input.artists.length > 0
       ? ` The line-up is ${joinNames(input.artists)}.`
@@ -98,7 +91,7 @@ function templateDraft(input: PitchInput): { subject: string; body: string } {
   const body = [
     "Hi [contact name],",
     "",
-    `I'm organizing ${event}, a show ${about.join(" ") || "[where and how big]"}${audience}.${lineUp}`,
+    `I'm organizing ${event}, ${input.admission?.phrase ?? "a show"} ${about.join(" ") || "[where and how big]"}${audience}.${lineUp}`,
     "",
     `I'm writing to ${brand} specifically. Qloo's taste data shows that ${crowd} already like your brand: ${brand} ${rankClause(input.brand.reasonText)}`,
     "",

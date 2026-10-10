@@ -39,7 +39,8 @@ if (artists.length === 0) {
 
 console.log(`\n== 3. Sponsor brands (${city}, 24 and younger) ==`);
 const started = Date.now();
-const { categories, calls } = await getSponsorBrands({ artists, city, age: "24_and_younger" });
+// includeAlcohol is on here only to exercise all five Qloo calls; the app keeps it off for a young crowd.
+const { categories, calls } = await getSponsorBrands({ artists, city, age: "24_and_younger", includeAlcohol: true });
 console.log(`  total time: ${Date.now() - started} ms for ${calls.length} parallel calls`);
 
 for (const category of categories) {
