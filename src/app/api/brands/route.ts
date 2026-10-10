@@ -158,7 +158,7 @@ export async function POST(request: Request) {
       );
     }
 
-    const { categories, calls } = await getSponsorBrands({
+    const { categories, calls, cityDropped } = await getSponsorBrands({
       artists,
       genreTags: usedTags,
       city: city ?? undefined,
@@ -169,6 +169,7 @@ export async function POST(request: Request) {
     return NextResponse.json({
       input: {
         city,
+        cityDropped,
         genre,
         age: audience?.id ?? null,
         admission: admission.id,

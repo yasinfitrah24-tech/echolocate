@@ -16,6 +16,7 @@ interface ConfirmedArtist {
 interface BrandsResponse {
   input: {
     city: string | null;
+    cityDropped: boolean;
     age: string | null;
     admission: string;
     includeAlcohol: boolean;
@@ -403,6 +404,19 @@ export function SponsorFinder() {
               </span>
               . Found in {(result.tookMs / 1000).toFixed(1)} s.
             </p>
+
+            {result.input.cityDropped && (
+              <p className="mt-4 rounded-md border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+                Qloo has no taste data for &ldquo;{result.input.city}&rdquo;, so these brands are matched to
+                the line-up alone. Try the nearest larger city to bring in local favourites.
+              </p>
+            )}
+
+            {brandCount === 0 && (
+              <p className="mt-4 rounded-md border border-zinc-200 bg-white px-4 py-3 text-sm text-zinc-700">
+                Qloo returned no brands for this line-up. Check the artist names, or add a genre.
+              </p>
+            )}
 
             {result.unresolved.map((item) => (
               <div key={item.query} className="mt-4 rounded-md border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">

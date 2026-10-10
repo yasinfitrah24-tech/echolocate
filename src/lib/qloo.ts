@@ -118,6 +118,11 @@ export interface SponsorBrandsInput {
 export interface SponsorBrandsResult {
   categories: BrandCategory[];
   calls: QlooCall[];
+  /**
+   * True when a city was given but Qloo returned nothing for it, so the brands
+   * are for the line-up alone. Seen with small places such as "Indio, CA".
+   */
+  cityDropped: boolean;
 }
 
 export class QlooError extends Error {
@@ -530,15 +535,16 @@ export async function getSponsorBrands(
   for (const artist of artists) signalNames.set(artist.entityId, artist.name);
   for (const tag of genreTags) signalNames.set(tag.id, tag.name);
 
-  const baseParams: Record<string, string | number | undefined> = {
+  const city = input.city?.trim() || undefined;
+  const paramsFor = (useCity: boolean): Record<string, string | number | undefined> => ({
     "filter.type": "urn:entity:brand",
     "signal.interests.entities":
       artists.map((artist) => artist.entityId).join(",") || undefined,
     "signal.interests.tags": genreTags.map((tag) => tag.id).join(",") || undefined,
-    "signal.location.query": input.city?.trim() || undefined,
+    "signal.location.query": useCity ? city : undefined,
     "signal.demographics.age": input.age,
     "feature.explainability": "true",
-  };
+  });
 
   const includeAlcohol = input.includeAlcohol ?? false;
   const categories = SPONSOR_CATEGORIES.filter(
@@ -549,10 +555,11 @@ export async function getSponsorBrands(
 
   async function fetchBrands(
     label: string,
+    base: Record<string, string | number | undefined>,
     extra: Record<string, string | number>,
     required: boolean,
   ): Promise<Json[]> {
-    const params = { ...baseParams, ...extra };
+    const params = { ...base, ...extra };
     const started = Date.now();
     try {
       const { data, ms, sent, retries } = await qlooGet("/v2/insights", params);
@@ -582,16 +589,32 @@ export async function getSponsorBrands(
     }
   }
 
-  const [general, ...perCategory] = await Promise.all([
-    fetchBrands("Top brands for this crowd", { take: GENERAL_TAKE }, true),
-    ...categories.map((category) =>
-      fetchBrands(
-        `${category.label} brands`,
-        { "filter.tags": category.tag, take: CATEGORY_TAKE },
-        false,
+  const runRound = (useCity: boolean, suffix: string) =>
+    Promise.all([
+      fetchBrands(`Top brands for this crowd${suffix}`, paramsFor(useCity), { take: GENERAL_TAKE }, true),
+      ...categories.map((category) =>
+        fetchBrands(
+          `${category.label} brands${suffix}`,
+          paramsFor(useCity),
+          { "filter.tags": category.tag, take: CATEGORY_TAKE },
+          false,
+        ),
       ),
-    ),
-  ]);
+    ]);
+
+  let lists = await runRound(Boolean(city), "");
+  let cityDropped = false;
+  // Qloo returns no brands at all, and no error, for a place it has no taste
+  // data for. "Indio, CA" gave zero in every category (11 Oct). Small towns are
+  // exactly where our users are, so fall back to the line-up alone and say so.
+  if (city && lists.every((list) => list.length === 0)) {
+    const retry = await runRound(false, " (line-up only)");
+    if (retry.some((list) => list.length > 0)) {
+      lists = retry;
+      cityDropped = true;
+    }
+  }
+  const [general, ...perCategory] = lists;
 
   // Keep the best-scoring copy when a brand shows up in more than one list.
   const best = new Map<string, Brand>();
@@ -651,7 +674,7 @@ export async function getSponsorBrands(
     return b.brands[0].fitScore - a.brands[0].fitScore || b.brands.length - a.brands.length;
   });
 
-  return { categories: result, calls };
+  return { categories: result, calls, cityDropped };
 }
 
 // ---------- 3. Local sponsors (places) ----------
