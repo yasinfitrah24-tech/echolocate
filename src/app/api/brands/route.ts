@@ -163,7 +163,10 @@ export async function POST(request: Request) {
           { status: 503 },
         );
       }
-      return NextResponse.json({ error: error.message }, { status: error.status ? 502 : 500 });
+      // Upstream error text stays in the server log; the browser gets a short message.
+      console.error(error.message);
+      const message = error.status ? `Qloo request failed (status ${error.status})` : error.message;
+      return NextResponse.json({ error: message }, { status: error.status ? 502 : 500 });
     }
     console.error(error);
     return NextResponse.json({ error: "Something went wrong" }, { status: 500 });

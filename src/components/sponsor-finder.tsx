@@ -1,0 +1,502 @@
+"use client";
+
+// The whole first version of the app on one page: form -> brands -> pitch draft.
+// Rough on purpose; design comes in the 16-22 Oct pass.
+
+import { useState, type FormEvent } from "react";
+import type { ArtistMatch, BrandCategory, QlooCall } from "@/lib/qloo";
+
+interface ConfirmedArtist {
+  entityId: string;
+  name: string;
+}
+
+interface BrandsResponse {
+  artists: ConfirmedArtist[];
+  genreTags: { id: string; name: string }[];
+  unresolved: { query: string; candidates: ArtistMatch[] }[];
+  categories: BrandCategory[];
+  calls: QlooCall[];
+  tookMs: number;
+}
+
+interface PitchResponse {
+  subject: string;
+  body: string;
+  source: "deepseek" | "template";
+  model: string | null;
+  note: string | null;
+}
+
+// Only "24_and_younger" is confirmed to change Qloo's results (tested 6 Oct).
+const AGE_OPTIONS = [
+  { value: "", label: "Any age" },
+  { value: "24_and_younger", label: "24 and younger" },
+  { value: "25_to_29", label: "25 to 29" },
+  { value: "30_to_34", label: "30 to 34" },
+  { value: "35_to_44", label: "35 to 44" },
+  { value: "45_to_54", label: "45 to 54" },
+  { value: "55_and_older", label: "55 and older" },
+];
+
+const EXAMPLE = {
+  eventName: "Spring Quad Fest",
+  artistsText: "Phoebe Bridgers, boygenius, Clairo",
+  city: "Austin, TX",
+  age: "24_and_younger",
+  crowdSize: "800",
+};
+
+const TOP_PER_CATEGORY = 5;
+
+function splitNames(text: string): string[] {
+  return text
+    .split(/[,\n]/)
+    .map((name) => name.trim())
+    .filter(Boolean);
+}
+
+const inputClass =
+  "w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 placeholder:text-zinc-400 focus:border-zinc-900 focus:outline-none";
+const labelClass = "mb-1 block text-sm font-medium text-zinc-800";
+
+export function SponsorFinder() {
+  const [eventName, setEventName] = useState("");
+  const [artistsText, setArtistsText] = useState("");
+  const [picked, setPicked] = useState<ConfirmedArtist[]>([]);
+  const [genre, setGenre] = useState("");
+  const [city, setCity] = useState("");
+  const [age, setAge] = useState("");
+  const [crowdSize, setCrowdSize] = useState("");
+  // null = follow the default: no alcohol brands for a 24-and-younger crowd.
+  const [alcoholChoice, setAlcoholChoice] = useState<boolean | null>(null);
+
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [result, setResult] = useState<BrandsResponse | null>(null);
+  const [expanded, setExpanded] = useState<Record<string, boolean>>({});
+
+  const [pitchFor, setPitchFor] = useState<string | null>(null);
+  const [pitchLoading, setPitchLoading] = useState(false);
+  const [pitch, setPitch] = useState<PitchResponse | null>(null);
+  const [pitchError, setPitchError] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
+
+  const includeAlcohol = alcoholChoice ?? age !== "24_and_younger";
+
+  async function findBrands(names: string[], confirmed: ConfirmedArtist[]) {
+    setLoading(true);
+    setError(null);
+    setPitchFor(null);
+    setPitch(null);
+    try {
+      const response = await fetch("/api/brands", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          artistNames: names,
+          artists: confirmed,
+          genre: genre.trim() || undefined,
+          city: city.trim() || undefined,
+          age: age || undefined,
+          includeAlcohol,
+        }),
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        setResult(null);
+        setError(data.error ?? "Something went wrong");
+        return;
+      }
+      setResult(data as BrandsResponse);
+      setExpanded({});
+    } catch {
+      setResult(null);
+      setError("Could not reach the server. Check your connection and try again.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  function onSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    void findBrands(splitNames(artistsText), picked);
+  }
+
+  function fillExample() {
+    setEventName(EXAMPLE.eventName);
+    setArtistsText(EXAMPLE.artistsText);
+    setPicked([]);
+    setGenre("");
+    setCity(EXAMPLE.city);
+    setAge(EXAMPLE.age);
+    setCrowdSize(EXAMPLE.crowdSize);
+    setAlcoholChoice(null);
+  }
+
+  /** The user confirms which artist a typed name meant. */
+  function confirmCandidate(query: string, candidate: ArtistMatch) {
+    const nextPicked = [...picked, { entityId: candidate.entityId, name: candidate.name }];
+    const nextNames = splitNames(artistsText).filter(
+      (name) => name.toLowerCase() !== query.toLowerCase(),
+    );
+    setPicked(nextPicked);
+    setArtistsText(nextNames.join(", "));
+    void findBrands(nextNames, nextPicked);
+  }
+
+  function removePicked(entityId: string) {
+    setPicked(picked.filter((artist) => artist.entityId !== entityId));
+  }
+
+  async function draftPitch(
+    key: string,
+    brand: { name: string; reasonText: string },
+    categoryLabel: string,
+  ) {
+    setPitchFor(key);
+    setPitch(null);
+    setPitchError(null);
+    setPitchLoading(true);
+    setCopied(false);
+    try {
+      const response = await fetch("/api/pitch", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          brand: { name: brand.name, categoryLabel, reasonText: brand.reasonText },
+          artists: result?.artists.map((artist) => artist.name) ?? [],
+          event: {
+            name: eventName.trim() || undefined,
+            city: city.trim() || undefined,
+            crowdSize: crowdSize.trim() || undefined,
+            age: age || undefined,
+            genre: genre.trim() || undefined,
+          },
+        }),
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        setPitchError(data.error ?? "Could not write the pitch");
+        return;
+      }
+      setPitch(data as PitchResponse);
+    } catch {
+      setPitchError("Could not reach the server. Try again.");
+    } finally {
+      setPitchLoading(false);
+    }
+  }
+
+  async function copyPitch() {
+    if (!pitch) return;
+    try {
+      await navigator.clipboard.writeText(`Subject: ${pitch.subject}\n\n${pitch.body}`);
+      setCopied(true);
+    } catch {
+      setCopied(false);
+    }
+  }
+
+  const brandCount = result?.categories.reduce((sum, category) => sum + category.brands.length, 0) ?? 0;
+
+  return (
+    <div className="min-h-screen w-full bg-zinc-50 text-zinc-900">
+      <main className="mx-auto w-full max-w-3xl px-4 py-10 sm:py-14">
+        <header className="mb-8">
+          <h1 className="text-3xl font-semibold tracking-tight">Echolocate</h1>
+          <p className="mt-1 text-lg text-zinc-600">Find sponsors your crowd already loves.</p>
+        </header>
+
+        <form onSubmit={onSubmit} className="rounded-xl border border-zinc-200 bg-white p-5 sm:p-6">
+          <div className="mb-4 flex items-center justify-between gap-3">
+            <h2 className="text-base font-semibold">Your event</h2>
+            <button
+              type="button"
+              onClick={fillExample}
+              className="rounded-md border border-zinc-300 px-3 py-1.5 text-sm font-medium text-zinc-700 hover:bg-zinc-100"
+            >
+              Try an example
+            </button>
+          </div>
+
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="sm:col-span-2">
+              <label htmlFor="artists" className={labelClass}>
+                Line-up
+              </label>
+              <input
+                id="artists"
+                className={inputClass}
+                value={artistsText}
+                onChange={(event) => setArtistsText(event.target.value)}
+                placeholder="Artist names, separated by commas"
+                autoComplete="off"
+              />
+              {picked.length > 0 && (
+                <ul className="mt-2 flex flex-wrap gap-2">
+                  {picked.map((artist) => (
+                    <li
+                      key={artist.entityId}
+                      className="flex items-center gap-1 rounded-full bg-zinc-900 py-1 pl-3 pr-1 text-xs font-medium text-white"
+                    >
+                      {artist.name}
+                      <button
+                        type="button"
+                        onClick={() => removePicked(artist.entityId)}
+                        aria-label={`Remove ${artist.name}`}
+                        className="rounded-full px-1.5 text-zinc-300 hover:text-white"
+                      >
+                        ×
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+
+            <div className="sm:col-span-2">
+              <label htmlFor="genre" className={labelClass}>
+                Genre <span className="font-normal text-zinc-500">(if your artists are not found)</span>
+              </label>
+              <input
+                id="genre"
+                className={inputClass}
+                value={genre}
+                onChange={(event) => setGenre(event.target.value)}
+                placeholder="e.g. indie pop"
+                autoComplete="off"
+              />
+            </div>
+
+            <div>
+              <label htmlFor="event-name" className={labelClass}>
+                Event name
+              </label>
+              <input
+                id="event-name"
+                className={inputClass}
+                value={eventName}
+                onChange={(event) => setEventName(event.target.value)}
+                placeholder="e.g. Spring Quad Fest"
+                autoComplete="off"
+              />
+            </div>
+
+            <div>
+              <label htmlFor="city" className={labelClass}>
+                City
+              </label>
+              <input
+                id="city"
+                className={inputClass}
+                value={city}
+                onChange={(event) => setCity(event.target.value)}
+                placeholder="e.g. Austin, TX"
+                autoComplete="off"
+              />
+            </div>
+
+            <div>
+              <label htmlFor="age" className={labelClass}>
+                Audience age
+              </label>
+              <select
+                id="age"
+                className={inputClass}
+                value={age}
+                onChange={(event) => setAge(event.target.value)}
+              >
+                {AGE_OPTIONS.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label htmlFor="crowd" className={labelClass}>
+                Expected crowd
+              </label>
+              <input
+                id="crowd"
+                className={inputClass}
+                value={crowdSize}
+                onChange={(event) => setCrowdSize(event.target.value.replace(/\D/g, ""))}
+                placeholder="e.g. 800"
+                inputMode="numeric"
+                autoComplete="off"
+              />
+            </div>
+          </div>
+
+          <label className="mt-4 flex items-center gap-2 text-sm text-zinc-700">
+            <input
+              type="checkbox"
+              className="h-4 w-4"
+              checked={includeAlcohol}
+              onChange={(event) => setAlcoholChoice(event.target.checked)}
+            />
+            Include beer and spirits brands
+          </label>
+
+          <button
+            type="submit"
+            disabled={loading}
+            className="mt-5 w-full rounded-md bg-zinc-900 px-4 py-2.5 text-sm font-semibold text-white hover:bg-zinc-700 disabled:cursor-not-allowed disabled:bg-zinc-400 sm:w-auto"
+          >
+            {loading ? "Finding sponsors…" : "Find sponsors"}
+          </button>
+        </form>
+
+        {error && (
+          <p role="alert" className="mt-5 rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
+            {error}
+          </p>
+        )}
+
+        {result && (
+          <section className="mt-8" aria-live="polite">
+            <p className="text-sm text-zinc-600">
+              {brandCount} brands in {result.categories.length} categories for fans of{" "}
+              <span className="font-medium text-zinc-900">
+                {[...result.artists.map((artist) => artist.name), ...result.genreTags.map((tag) => tag.name)].join(", ")}
+              </span>
+              . Found in {(result.tookMs / 1000).toFixed(1)} s.
+            </p>
+
+            {result.unresolved.map((item) => (
+              <div key={item.query} className="mt-4 rounded-md border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+                {item.candidates.length === 0 ? (
+                  <p>
+                    We could not find &ldquo;{item.query}&rdquo; in Qloo, so it was left out. Adding a genre helps cover it.
+                  </p>
+                ) : (
+                  <>
+                    <p>We left out &ldquo;{item.query}&rdquo; because the match was not exact. Did you mean:</p>
+                    <div className="mt-2 flex flex-wrap gap-2">
+                      {item.candidates.map((candidate) => (
+                        <button
+                          key={candidate.entityId}
+                          type="button"
+                          onClick={() => confirmCandidate(item.query, candidate)}
+                          disabled={loading}
+                          className="rounded-full border border-amber-300 bg-white px-3 py-1 text-xs font-medium hover:bg-amber-100 disabled:opacity-50"
+                        >
+                          {candidate.name}
+                        </button>
+                      ))}
+                    </div>
+                  </>
+                )}
+              </div>
+            ))}
+
+            <div className="mt-5 space-y-5">
+              {result.categories.map((category) => {
+                const showAll = expanded[category.id] ?? false;
+                const brands = showAll ? category.brands : category.brands.slice(0, TOP_PER_CATEGORY);
+                return (
+                  <div key={category.id} className="rounded-xl border border-zinc-200 bg-white">
+                    <h3 className="border-b border-zinc-200 px-5 py-3 text-sm font-semibold">
+                      {category.label}{" "}
+                      <span className="font-normal text-zinc-500">({category.brands.length})</span>
+                    </h3>
+                    <ul className="divide-y divide-zinc-100">
+                      {brands.map((brand) => {
+                        const key = `${category.id}:${brand.entityId}`;
+                        const open = pitchFor === key;
+                        return (
+                          <li key={brand.entityId} className="px-5 py-3">
+                            <div className="flex items-start gap-3">
+                              <span
+                                className="mt-0.5 w-10 shrink-0 rounded-md bg-zinc-900 py-1 text-center text-sm font-semibold tabular-nums text-white"
+                                title="Sponsor Fit Score, 0 to 100"
+                              >
+                                {brand.fitScore}
+                              </span>
+                              <div className="min-w-0 flex-1">
+                                <p className="text-sm font-medium">{brand.name}</p>
+                                <p className="mt-0.5 text-sm text-zinc-600">{brand.reasonText}</p>
+                              </div>
+                              <button
+                                type="button"
+                                onClick={() => draftPitch(key, brand, category.label)}
+                                disabled={pitchLoading && open}
+                                className="shrink-0 rounded-md border border-zinc-300 px-3 py-1.5 text-xs font-medium text-zinc-800 hover:bg-zinc-100 disabled:opacity-50"
+                              >
+                                {pitchLoading && open ? "Writing…" : "Draft pitch"}
+                              </button>
+                            </div>
+
+                            {open && pitchError && (
+                              <p role="alert" className="mt-3 rounded-md bg-red-50 px-3 py-2 text-sm text-red-800">
+                                {pitchError}
+                              </p>
+                            )}
+
+                            {open && pitch && (
+                              <div className="mt-3 rounded-lg border border-zinc-200 bg-zinc-50 p-4">
+                                <div className="flex flex-wrap items-center justify-between gap-2">
+                                  <p className="text-xs text-zinc-500">
+                                    {pitch.source === "deepseek" ? "Written by DeepSeek" : "Template draft"}
+                                    {" · edit the parts in [brackets] before sending"}
+                                  </p>
+                                  <button
+                                    type="button"
+                                    onClick={copyPitch}
+                                    className="rounded-md border border-zinc-300 bg-white px-2.5 py-1 text-xs font-medium hover:bg-zinc-100"
+                                  >
+                                    {copied ? "Copied" : "Copy email"}
+                                  </button>
+                                </div>
+                                <p className="mt-3 text-sm font-semibold">{pitch.subject}</p>
+                                <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-zinc-800">{pitch.body}</p>
+                                {pitch.note && <p className="mt-3 text-xs text-zinc-500">{pitch.note}</p>}
+                              </div>
+                            )}
+                          </li>
+                        );
+                      })}
+                    </ul>
+                    {category.brands.length > TOP_PER_CATEGORY && (
+                      <button
+                        type="button"
+                        onClick={() => setExpanded({ ...expanded, [category.id]: !showAll })}
+                        className="w-full border-t border-zinc-200 px-5 py-2.5 text-left text-xs font-medium text-zinc-600 hover:bg-zinc-50"
+                      >
+                        {showAll ? "Show fewer" : `Show all ${category.brands.length}`}
+                      </button>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+
+            <details className="mt-6 rounded-xl border border-zinc-200 bg-white px-5 py-3 text-sm">
+              <summary className="cursor-pointer font-medium">How the agent got this</summary>
+              <ul className="mt-3 space-y-1.5 text-zinc-600">
+                {result.calls.map((call) => (
+                  <li key={call.label} className="flex flex-wrap justify-between gap-x-4">
+                    <span>
+                      Qloo <code className="text-xs">{call.endpoint}</code> · {call.label}
+                    </span>
+                    <span className="tabular-nums">
+                      {call.error ? "failed" : `${call.resultCount} brands`} · {(call.ms / 1000).toFixed(1)} s
+                      {call.retries > 0 ? ` · retried ${call.retries}x` : ""}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+              <p className="mt-3 text-xs text-zinc-500">
+                The Sponsor Fit Score is our own 0 to 100 score. It comes from where a brand ranks in
+                Qloo&rsquo;s taste data for this crowd and how evenly the line-up supports it.
+              </p>
+            </details>
+          </section>
+        )}
+      </main>
+    </div>
+  );
+}
