@@ -8,6 +8,7 @@ import {
   BENEFITS,
   DETAIL_MAX_LENGTH,
   buildOnePager,
+  type ConfirmId,
   type OnePagerDetails,
   type Paper,
   type SearchFacts,
@@ -18,11 +19,21 @@ type TextField = {
   [K in keyof OnePagerDetails]: OnePagerDetails[K] extends string ? K : never;
 }[keyof OnePagerDetails];
 
-const FIELDS: { key: TextField; label: string; placeholder: string }[] = [
-  { key: "date", label: "Date", placeholder: "e.g. Sat, Nov 22, 7 pm" },
-  { key: "venue", label: "Venue", placeholder: "e.g. Student Union lawn" },
-  { key: "preRegistered", label: "Pre-registered so far", placeholder: "e.g. 120 people" },
-  { key: "otherSponsors", label: "Other sponsors so far", placeholder: "e.g. Bean There Cafe" },
+const FIELDS: { key: TextField; label: string; placeholder: string; confirm?: ConfirmId }[] = [
+  { key: "date", label: "Date", placeholder: "e.g. Sat, Nov 22, 7 pm", confirm: "date" },
+  { key: "venue", label: "Venue", placeholder: "e.g. Student Union lawn", confirm: "venue" },
+  {
+    key: "preRegistered",
+    label: "Pre-registered so far",
+    placeholder: "e.g. 120 people",
+    confirm: "preRegistered",
+  },
+  {
+    key: "otherSponsors",
+    label: "Other sponsors so far",
+    placeholder: "e.g. Bean There Cafe",
+    confirm: "otherSponsors",
+  },
   { key: "tier1Amount", label: "Supporter amount", placeholder: "e.g. $250" },
   { key: "tier1Includes", label: "Supporter includes", placeholder: "e.g. Logo on posters + shoutout" },
   { key: "tier2Amount", label: "Partner amount", placeholder: "e.g. $500+" },
@@ -88,22 +99,52 @@ export function OnePagerPanel({
     <div className="mt-3 rounded-lg border border-zinc-200 bg-zinc-50 p-4">
       <p className="text-xs text-zinc-500">
         All optional. Blank fields show as [brackets] in the PDF, so you can fill them in later.
+        Tick &ldquo;Confirmed&rdquo; only for what is locked in; those go in a &ldquo;Confirmed so far&rdquo; box.
       </p>
 
       <div className="mt-3 grid gap-3 sm:grid-cols-2">
-        {FIELDS.map((field) => (
-          <label key={field.key} className="block text-xs font-medium text-zinc-700">
-            {field.label}
-            <input
-              className={`${inputClass} mt-1`}
-              value={details[field.key]}
-              maxLength={DETAIL_MAX_LENGTH}
-              placeholder={field.placeholder}
-              autoComplete="off"
-              onChange={(event) => onDetailsChange({ ...details, [field.key]: event.target.value })}
-            />
-          </label>
-        ))}
+        {FIELDS.map((field) => {
+          const confirm = field.confirm;
+          const empty = details[field.key].trim() === "";
+          return (
+            <div key={field.key}>
+              <div className="flex items-center justify-between gap-2">
+                <label htmlFor={`one-pager-${field.key}`} className="text-xs font-medium text-zinc-700">
+                  {field.label}
+                </label>
+                {confirm && (
+                  <label
+                    className={`flex items-center gap-1.5 text-xs ${empty ? "text-zinc-400" : "text-zinc-700"}`}
+                    title={empty ? "Fill this in first" : undefined}
+                  >
+                    <input
+                      type="checkbox"
+                      className="h-3.5 w-3.5"
+                      checked={details.confirmed[confirm] && !empty}
+                      disabled={empty}
+                      onChange={(event) =>
+                        onDetailsChange({
+                          ...details,
+                          confirmed: { ...details.confirmed, [confirm]: event.target.checked },
+                        })
+                      }
+                    />
+                    Confirmed
+                  </label>
+                )}
+              </div>
+              <input
+                id={`one-pager-${field.key}`}
+                className={`${inputClass} mt-1`}
+                value={details[field.key]}
+                maxLength={DETAIL_MAX_LENGTH}
+                placeholder={field.placeholder}
+                autoComplete="off"
+                onChange={(event) => onDetailsChange({ ...details, [field.key]: event.target.value })}
+              />
+            </div>
+          );
+        })}
       </div>
 
       <fieldset className="mt-4">

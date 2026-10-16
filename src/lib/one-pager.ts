@@ -18,6 +18,9 @@ export type BenefitId = (typeof BENEFITS)[number]["id"];
 
 export type Paper = "LETTER" | "A4";
 
+/** Details the organizer can mark as confirmed. Filling a field is not enough. */
+export type ConfirmId = "date" | "venue" | "preRegistered" | "otherSponsors";
+
 /** What the organizer adds before downloading. Every field is optional. */
 export interface OnePagerDetails {
   date: string;
@@ -31,6 +34,7 @@ export interface OnePagerDetails {
   tier2Amount: string;
   tier2Includes: string;
   benefits: Record<BenefitId, boolean>;
+  confirmed: Record<ConfirmId, boolean>;
   exclusivity: boolean;
   discountCode: string;
   offerLink: string;
@@ -49,6 +53,7 @@ export const EMPTY_DETAILS: OnePagerDetails = {
   tier2Amount: "",
   tier2Includes: "",
   benefits: { signage: false, emails: false, booth: false, shoutout: false },
+  confirmed: { date: false, venue: false, preRegistered: false, otherSponsors: false },
   exclusivity: false,
   discountCode: "",
   offerLink: "",
@@ -188,13 +193,15 @@ export function buildOnePager(
     `${fans[0].toUpperCase()}${fans.slice(1)}`,
   ];
 
-  // Short on purpose: the values already show above. Sponsors want to see they
-  // would not be the first money in.
+  // Only what the organizer ticked as confirmed (and filled in). Sponsors want
+  // to see they would not be the first money in, but a typed venue is not a
+  // booked venue. Short on purpose: the values already show above.
+  const isConfirmed = (id: ConfirmId, value: string) => details.confirmed[id] && value.trim() !== "";
   const confirmed: string[] = [];
-  if (details.date.trim()) confirmed.push("Date is set");
-  if (details.venue.trim()) confirmed.push("Venue is booked");
-  if (preRegistered) confirmed.push(`${preRegistered} pre-registered`);
-  if (otherSponsors) confirmed.push("Other sponsors on board");
+  if (isConfirmed("date", details.date)) confirmed.push("Date confirmed");
+  if (isConfirmed("venue", details.venue)) confirmed.push("Venue confirmed");
+  if (isConfirmed("preRegistered", preRegistered)) confirmed.push(`Pre-registrations: ${preRegistered}`);
+  if (isConfirmed("otherSponsors", otherSponsors)) confirmed.push("Other sponsors confirmed");
 
   const code = orBracket(details.discountCode, "CODE");
   const link = orBracket(details.offerLink, "link to your offer");

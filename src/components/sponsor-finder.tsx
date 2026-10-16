@@ -64,6 +64,27 @@ function splitNames(text: string): string[] {
     .filter(Boolean);
 }
 
+/** The form fields that change the brands, as one comparable string. */
+function searchKey(form: {
+  names: string[];
+  confirmed: ConfirmedArtist[];
+  genre: string;
+  city: string;
+  age: string;
+  admission: string;
+}): string {
+  const lineUp = [...form.names, ...form.confirmed.map((artist) => artist.name)]
+    .map((name) => name.toLowerCase())
+    .sort();
+  return JSON.stringify([
+    lineUp,
+    form.genre.trim().toLowerCase(),
+    form.city.trim().toLowerCase(),
+    form.age,
+    form.admission,
+  ]);
+}
+
 const inputClass =
   "w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 placeholder:text-zinc-400 focus:border-zinc-900 focus:outline-none";
 const labelClass = "mb-1 block text-sm font-medium text-zinc-800";
@@ -86,6 +107,8 @@ export function SponsorFinder() {
   // Changes with every successful search, so the local sponsors map reloads.
   const [searchId, setSearchId] = useState(0);
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
+  // The form as it was for the last successful search.
+  const [searchedKey, setSearchedKey] = useState<string | null>(null);
 
   const [pitchFor, setPitchFor] = useState<string | null>(null);
   const [pitchLoading, setPitchLoading] = useState(false);
@@ -101,6 +124,7 @@ export function SponsorFinder() {
   const includeAlcohol = !alcoholBlocked && wantsAlcohol;
 
   async function findBrands(names: string[], confirmed: ConfirmedArtist[]) {
+    const key = searchKey({ names, confirmed, genre, city, age, admission });
     setLoading(true);
     setError(null);
     setPitchFor(null);
@@ -127,6 +151,7 @@ export function SponsorFinder() {
         return;
       }
       setResult(data as BrandsResponse);
+      setSearchedKey(key);
       setSearchId((id) => id + 1);
       setExpanded({});
     } catch {
@@ -242,6 +267,10 @@ export function SponsorFinder() {
       result !== null && onePagerAllowed(brand, result.input.admission) && onePagerAllowed(brand, admission)
     );
   }
+
+  const formChanged =
+    result !== null &&
+    searchedKey !== searchKey({ names: splitNames(artistsText), confirmed: picked, genre, city, age, admission });
 
   const brandCount = result?.categories.reduce((sum, category) => sum + category.brands.length, 0) ?? 0;
 
@@ -436,6 +465,23 @@ export function SponsorFinder() {
               </span>
               . Found in {(result.tookMs / 1000).toFixed(1)} s.
             </p>
+
+            {formChanged && (
+              <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-md border border-sky-200 bg-sky-50 px-4 py-3 text-sm text-sky-900">
+                <p>
+                  You changed the event since this search. Search again to update the brands, pitch and
+                  one-pager.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => void findBrands(splitNames(artistsText), picked)}
+                  disabled={loading}
+                  className="shrink-0 rounded-md border border-sky-300 bg-white px-3 py-1.5 text-xs font-medium hover:bg-sky-100 disabled:opacity-50"
+                >
+                  {loading ? "Searching…" : "Search again"}
+                </button>
+              </div>
+            )}
 
             {result.input.cityDropped && (
               <p className="mt-4 rounded-md border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
