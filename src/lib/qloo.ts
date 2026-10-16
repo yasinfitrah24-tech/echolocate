@@ -10,8 +10,9 @@
 // - The key is rate limited: 9 calls in a burst got 429 "Rate limit exceeded"
 //   on 2 of them (10 Oct). So at most MAX_CONCURRENT calls run at once, and a
 //   429 is retried with a growing wait.
-// - entity.query.affinity is flat (0.95-0.97), so the Sponsor Fit Score is
-//   computed here from ranking instead.
+// - entity.query.affinity sits in a narrow band per kind of list (top-50
+//   brands 0.94-0.97), so the Sponsor Fit Score puts it on a fixed scale; see
+//   fitScore().
 
 const BASE_URL = "https://hackathon.api.qloo.com";
 const TIMEOUT_MS = 20_000;
@@ -65,7 +66,7 @@ export interface Brand {
   entityId: string;
   name: string;
   categoryId: string;
-  /** Sponsor Fit Score, 0-100. Our own formula, see fitScore(). */
+  /** Sponsor Fit Score, 0-95. Our own formula, see fitScore(). */
   fitScore: number;
   /** Position in the Qloo list this brand came from (1 = best). */
   rank: number;
@@ -425,33 +426,39 @@ export async function searchGenreTags(
 // ---------- 3. Brands per category, with score and reasons ----------
 
 /**
- * Sponsor Fit Score, 0-100. This is our formula, not a Qloo number.
+ * Sponsor Fit Score, 0-95. This is our formula, not a Qloo number.
  *
- * - Rank (75%): position in the Qloo list, measured against the size we asked
- *   for (so #3 of a short list is still a strong match). A brand in the
- *   general top-50 never drops below half, because it already beat every
- *   other brand category to get there.
- * - Line-up support (25%): how evenly the line-up drives the match. A brand
- *   every artist's fans like beats one carried by a single artist. Only used
- *   when there are two or more signals.
+ * - Affinity (80%): Qloo's affinity of this crowd for the entity, on a fixed
+ *   scale. One scale for all brands, so a drinks brand and a fashion brand
+ *   can be compared; a separate scale for local places, whose affinity runs
+ *   lower. Fixed, not stretched per search, so the #1 of a weak list does not
+ *   look perfect. Ranges seen 16 Oct: top-50 brands 0.94-0.97, category lists
+ *   0.85-0.94, places 0.72-0.94 (indie Austin and country Nashville).
+ * - Rank (20%): position in the list it came from.
+ * - Capped at 95: nothing is a sure thing.
+ * Calibrated on the demo example and a country line-up
+ * (scripts/probe-score.mjs). Without an affinity the score sits mid-scale.
  */
+const AFFINITY_SCALE = {
+  brand: { low: 0.8, high: 0.975 },
+  place: { low: 0.65, high: 0.96 },
+} as const;
+const MAX_FIT_SCORE = 95;
+/** Below this, a category's #1 brand gets a note that the whole category is a smaller fit. */
+const WEAK_TOP_SCORE = 80;
+
 function fitScore(
   rank: number,
   listSize: number,
   source: "general" | "category",
-  reasons: BrandReason[],
+  affinity: number | null,
+  kind: "brand" | "place",
 ): number {
   const capacity = source === "general" ? GENERAL_TAKE : CATEGORY_TAKE;
-  let rankPart = 1 - (rank - 1) / Math.max(listSize, capacity);
-  if (source === "general") rankPart = 0.5 + 0.5 * rankPart;
-
-  if (reasons.length < 2) return Math.round(100 * rankPart);
-
-  const scores = reasons.map((reason) => Math.max(reason.score, 0));
-  const max = Math.max(...scores);
-  const mean = scores.reduce((sum, score) => sum + score, 0) / scores.length;
-  const support = max > 0 ? mean / max : 1;
-  return Math.round(100 * (0.75 * rankPart + 0.25 * support));
+  const rankPart = 1 - (rank - 1) / Math.max(listSize, capacity);
+  const { low, high } = AFFINITY_SCALE[kind];
+  const affinityPart = affinity === null ? 0.5 : Math.min(1, Math.max(0, (affinity - low) / (high - low)));
+  return Math.min(MAX_FIT_SCORE, Math.round(100 * (0.8 * affinityPart + 0.2 * rankPart)));
 }
 
 function readReasons(
@@ -556,7 +563,7 @@ function toBrand(
     entityId,
     name,
     categoryId: category.id,
-    fitScore: fitScore(rank, listSize, source, reasons),
+    fitScore: fitScore(rank, listSize, source, asNumber(asObject(entity.query).affinity), "brand"),
     rank,
     listSize,
     source,
@@ -729,6 +736,15 @@ export async function getSponsorBrands(
     return b.brands[0].fitScore - a.brands[0].fitScore || b.brands.length - a.brands.length;
   });
 
+  // A category's #1 can still be a modest fit. Say so, instead of letting
+  // "#1 of 15" read like a perfect match next to a lower score.
+  const strongest = result.find((category) => category.id !== "other");
+  for (const category of result) {
+    const top = category.brands[0];
+    if (!strongest || category === strongest || category.id === "other" || top.fitScore >= WEAK_TOP_SCORE) continue;
+    top.reasonText += ` Top pick among ${category.label.toLowerCase()} brands, a smaller fit for this crowd than ${strongest.label.toLowerCase()}.`;
+  }
+
   return { categories: result, calls, cityDropped };
 }
 
@@ -869,7 +885,7 @@ function toPlace(
     priceLevel: asNumber(props.price_level),
     imageUrl: asString(firstImage.url),
     description: asString(props.short_description) ?? asString(props.description),
-    fitScore: fitScore(rank, listSize, "category", reasons),
+    fitScore: fitScore(rank, listSize, "category", asNumber(asObject(entity.query).affinity), "place"),
     rank,
     listSize,
     affinity: asNumber(asObject(entity.query).affinity),

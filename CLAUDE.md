@@ -45,7 +45,7 @@ Built for the Qloo Agentic Hackathon (Devpost). Rule from the organizers: if the
 - Drop NGO "brands" (`urn:tag:genre:brand:ngo...`, e.g. Black Lives Matter).
 - Never show Qloo `urn:audience` segments (identity/political) anywhere.
 - The pitch only uses facts it was given; unknowns go in [square brackets].
-- Sponsor Fit Score = 75% rank in Qloo's list + 25% how evenly the line-up supports the brand. It is our own score; say so in the UI.
+- Sponsor Fit Score = 80% Qloo affinity on a fixed scale (brands 0.80-0.975, local places 0.65-0.96) + 20% rank in the list it came from, capped at 95. Calibrated 16 Oct on indie Austin and country Nashville (`scripts/probe-score.mjs`). It is our own score; say so in the UI. A category's #1 brand under 80 gets a note that the category is a smaller fit; never show raw affinity numbers.
 
 ## Rules for working in this repo
 - API keys live only in `.env.local` (and Vercel). Never commit keys, never print them, never put them in this file or in chat. `.env.example` lists the names only.

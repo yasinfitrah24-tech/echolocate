@@ -213,7 +213,7 @@ export function buildOnePager(
     fitScore: brand.fitScore,
     reasonText: brand.reasonText,
     scoreNote:
-      "Sponsor Fit Score is our own 0 to 100 score. It comes from where the brand ranks in Qloo's taste data for this crowd and how evenly the line-up supports it.",
+      "Our own score, never above 95: mostly how strongly this crowd likes the brand in Qloo's taste data, plus its rank in its list.",
     event: [
       { label: "Event", value: eventName },
       { label: "City", value: search.city ?? "[city]" },

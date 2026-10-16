@@ -11,12 +11,12 @@ const line = "#e4e4e7";
 const soft = "#f4f4f5";
 
 const styles = StyleSheet.create({
-  page: { padding: 28, fontFamily: "Helvetica", fontSize: 8.75, color: ink, lineHeight: 1.35 },
+  page: { padding: 24, fontFamily: "Helvetica", fontSize: 8.75, color: ink, lineHeight: 1.35 },
   eyebrow: { fontSize: 7.5, letterSpacing: 1, color: muted, fontFamily: "Helvetica-Bold" },
   title: { fontSize: 19, fontFamily: "Helvetica-Bold", lineHeight: 1.2, marginTop: 3 },
   subtitle: { fontSize: 10, color: muted, lineHeight: 1.3, marginTop: 2 },
-  row: { flexDirection: "row", gap: 10, marginTop: 8 },
-  section: { marginTop: 8 },
+  row: { flexDirection: "row", gap: 10, marginTop: 7 },
+  section: { marginTop: 7 },
   heading: { fontSize: 10.5, fontFamily: "Helvetica-Bold", marginBottom: 3 },
   box: { borderWidth: 1, borderColor: line, borderRadius: 4, padding: 8 },
   softBox: { backgroundColor: soft, borderRadius: 4, padding: 8 },
@@ -36,7 +36,7 @@ const styles = StyleSheet.create({
   kvValue: { flex: 1 },
   bold: { fontFamily: "Helvetica-Bold" },
   pair: { flexDirection: "row", gap: 8 },
-  cell: { flex: 1, borderWidth: 1, borderColor: line, borderRadius: 4, padding: 7 },
+  cell: { flex: 1, borderWidth: 1, borderColor: line, borderRadius: 4, padding: 6 },
   bullet: { flexDirection: "row", marginTop: 1.5 },
   dot: { width: 9 },
   option: { flex: 1, borderWidth: 1, borderColor: line, borderRadius: 4, padding: 8 },
