@@ -8,6 +8,7 @@
 
 import { NextResponse } from "next/server";
 import { writePitch } from "@/lib/pitch";
+import { blockPitch } from "@/lib/rate-limit";
 import {
   ADMISSIONS,
   AUDIENCE_AGES,
@@ -32,6 +33,9 @@ function bad(message: string) {
 }
 
 export async function POST(request: Request) {
+  const blocked = blockPitch(request);
+  if (blocked) return blocked;
+
   let body: unknown;
   try {
     body = await request.json();

@@ -34,7 +34,14 @@ interface BrandsResponse {
   unresolved: { query: string; candidates: ArtistMatch[] }[];
   categories: BrandCategory[];
   calls: QlooCall[];
+  /** When the saved example was recorded; null for a live search. */
+  savedExample: string | null;
   tookMs: number;
+}
+
+/** "Oct 17" from an ISO date. */
+function shortDate(iso: string): string {
+  return new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric" });
 }
 
 interface PitchResponse {
@@ -466,8 +473,15 @@ export function SponsorFinder() {
               <span className="font-medium text-zinc-900">
                 {[...result.artists.map((artist) => artist.name), ...result.genreTags.map((tag) => tag.name)].join(", ")}
               </span>
-              . Found in {(result.tookMs / 1000).toFixed(1)} s.
+              .{" "}
+              {result.savedExample ? "" : `Found in ${(result.tookMs / 1000).toFixed(1)} s.`}
             </p>
+
+            {result.savedExample && (
+              <p className="mt-2 inline-block rounded-full bg-zinc-100 px-3 py-1 text-xs text-zinc-600">
+                Saved example: real Qloo data from {shortDate(result.savedExample)}. Change anything to run it live.
+              </p>
+            )}
 
             {formChanged && (
               <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-md border border-sky-200 bg-sky-50 px-4 py-3 text-sm text-sky-900">
@@ -677,7 +691,8 @@ export function SponsorFinder() {
                       Qloo <code className="text-xs">{call.endpoint}</code> · {call.label}
                     </span>
                     <span className="tabular-nums">
-                      {call.error ? "failed" : `${call.resultCount} brands`} · {(call.ms / 1000).toFixed(1)} s
+                      {call.error ? "failed" : `${call.resultCount} brands`} ·{" "}
+                      {call.saved ? "saved" : `${(call.ms / 1000).toFixed(1)} s`}
                       {call.retries > 0 ? ` · retried ${call.retries}x` : ""}
                     </span>
                   </li>
@@ -688,7 +703,8 @@ export function SponsorFinder() {
                       Qloo <code className="text-xs">{call.endpoint}</code> · {call.label}
                     </span>
                     <span className="tabular-nums">
-                      {call.error ? "failed" : `${call.resultCount} places`} · {(call.ms / 1000).toFixed(1)} s
+                      {call.error ? "failed" : `${call.resultCount} places`} ·{" "}
+                      {call.saved ? "saved" : `${(call.ms / 1000).toFixed(1)} s`}
                       {call.retries > 0 ? ` · retried ${call.retries}x` : ""}
                     </span>
                   </li>

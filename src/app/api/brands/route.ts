@@ -23,7 +23,9 @@ import {
   type Admission,
   type AudienceAge,
 } from "@/lib/audience";
+import { isSavedExample, savedAt } from "@/lib/demo-recording";
 import { findGenreByTagId } from "@/lib/genres";
+import { blockLiveSearch } from "@/lib/rate-limit";
 import {
   QlooError,
   getSponsorBrands,
@@ -128,6 +130,25 @@ export async function POST(request: Request) {
     return bad("Give at least one artist or a genre");
   }
 
+  // The saved "Try an example" search is answered from the recording and is
+  // not limited. Everything else is a live search and counts. Exact match on
+  // purpose: Qloo is asked with these exact strings, in this order, so any
+  // change (even letter case) needs a live call.
+  const example = isSavedExample("brands", {
+    artistNames,
+    artists: confirmed.map((artist) => artist.entityId),
+    genreTagId: curated?.tagId ?? null,
+    genre: curated ? null : genre,
+    city,
+    age: audience?.id ?? null,
+    admission: admission.id,
+    includeAlcohol,
+  });
+  if (!example) {
+    const blocked = blockLiveSearch(request, "search");
+    if (blocked) return blocked;
+  }
+
   // ----- talk to Qloo -----
   try {
     const [searches, genreTags] = await Promise.all([
@@ -192,6 +213,7 @@ export async function POST(request: Request) {
       unresolved,
       categories,
       calls,
+      savedExample: example && calls.every((call) => call.saved) ? savedAt : null,
       tookMs: Date.now() - started,
     });
   } catch (error) {

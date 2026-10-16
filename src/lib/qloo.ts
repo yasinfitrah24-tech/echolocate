@@ -99,6 +99,8 @@ export interface QlooCall {
   /** How many times the call was repeated after a rate limit or server error. */
   retries: number;
   error?: string;
+  /** Answered from the saved demo recording, without calling Qloo. */
+  saved?: boolean;
 }
 
 export interface SponsorBrandsInput {
@@ -217,6 +219,47 @@ function humanize(segment: string): string {
 
 // ---------- HTTP ----------
 
+/**
+ * Optional store of saved Qloo responses, keyed by path + parameters. Plugged
+ * in by src/lib/demo-recording.ts (Next routes only), so this file still runs
+ * under plain Node for the probe scripts.
+ */
+export interface QlooCache {
+  get(key: string): unknown;
+  put?(path: string, key: string, data: unknown): void;
+}
+
+let cache: QlooCache | null = null;
+
+export function setQlooCache(next: QlooCache | null): void {
+  cache = next;
+}
+
+function requestKey(path: string, sent: Record<string, string>): string {
+  const query = Object.keys(sent)
+    .sort()
+    .map((key) => `${key}=${sent[key]}`)
+    .join("&");
+  return `${path}?${query}`;
+}
+
+// Live calls to Qloo today (UTC), counted per server instance, for the demo budget.
+let liveDay = "";
+let liveCount = 0;
+
+function countLiveCall(): void {
+  const today = new Date().toISOString().slice(0, 10);
+  if (today !== liveDay) {
+    liveDay = today;
+    liveCount = 0;
+  }
+  liveCount += 1;
+}
+
+export function liveCallsToday(): number {
+  return liveDay === new Date().toISOString().slice(0, 10) ? liveCount : 0;
+}
+
 let activeCalls = 0;
 const waitingCalls: (() => void)[] = [];
 
@@ -250,12 +293,7 @@ function retryDelay(response: Response, attempt: number): number {
 async function qlooGet(
   path: string,
   params: Record<string, string | number | undefined>,
-): Promise<{ data: Json; ms: number; sent: Record<string, string>; retries: number }> {
-  const apiKey = process.env.QLOO_API_KEY;
-  if (!apiKey) {
-    throw new QlooError("QLOO_API_KEY is not set. Add it to .env.local.");
-  }
-
+): Promise<{ data: Json; ms: number; sent: Record<string, string>; retries: number; saved: boolean }> {
   const sent: Record<string, string> = {};
   const url = new URL(path, BASE_URL);
   for (const [key, value] of Object.entries(params)) {
@@ -264,10 +302,23 @@ async function qlooGet(
     url.searchParams.set(key, String(value));
   }
 
+  // The saved demo example works without a key and without calling Qloo.
+  const key = requestKey(path, sent);
+  const saved = cache?.get(key);
+  if (saved !== undefined) {
+    return { data: asObject(saved), ms: 0, sent, retries: 0, saved: true };
+  }
+
+  const apiKey = process.env.QLOO_API_KEY;
+  if (!apiKey) {
+    throw new QlooError("QLOO_API_KEY is not set. Add it to .env.local.");
+  }
+
   const started = Date.now();
   return withSlot(async () => {
     for (let attempt = 0; ; attempt += 1) {
       let response: Response;
+      countLiveCall();
       try {
         response = await fetch(url, {
           headers: { "X-Api-Key": apiKey, Accept: "application/json" },
@@ -293,16 +344,14 @@ async function qlooGet(
         );
       }
 
+      let data: Json;
       try {
-        return {
-          data: asObject(JSON.parse(text)),
-          ms: Date.now() - started,
-          sent,
-          retries: attempt,
-        };
+        data = asObject(JSON.parse(text));
       } catch {
         throw new QlooError(`Qloo returned non-JSON for ${path}`, response.status);
       }
+      cache?.put?.(path, key, data);
+      return { data, ms: Date.now() - started, sent, retries: attempt, saved: false };
     }
   });
 }
@@ -567,7 +616,7 @@ export async function getSponsorBrands(
     const params = { ...base, ...extra };
     const started = Date.now();
     try {
-      const { data, ms, sent, retries } = await qlooGet("/v2/insights", params);
+      const { data, ms, sent, retries, saved } = await qlooGet("/v2/insights", params);
       const entities = asArray(asObject(data.results).entities).map(asObject);
       calls.push({
         label,
@@ -576,6 +625,7 @@ export async function getSponsorBrands(
         ms,
         resultCount: entities.length,
         retries,
+        saved,
       });
       return entities;
     } catch (error) {
@@ -879,7 +929,7 @@ export async function getLocalSponsors(
             : `${category.label} near ${city}`;
         const started = Date.now();
         try {
-          const { data, ms, sent, retries } = await qlooGet("/v2/insights", {
+          const { data, ms, sent, retries, saved } = await qlooGet("/v2/insights", {
             "filter.type": "urn:entity:place",
             ...where,
             "filter.tags": category.tag,
@@ -891,7 +941,7 @@ export async function getLocalSponsors(
             take: PLACE_TAKE,
           });
           const entities = asArray(asObject(data.results).entities).map(asObject);
-          calls.push({ label, endpoint: "/v2/insights", params: sent, ms, resultCount: entities.length, retries });
+          calls.push({ label, endpoint: "/v2/insights", params: sent, ms, resultCount: entities.length, retries, saved });
           return entities;
         } catch (error) {
           calls.push({

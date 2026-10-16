@@ -24,6 +24,8 @@ const COLORS: Record<string, string> = {
 export interface PlacesSearchInfo {
   calls: QlooCall[];
   search: { by: "point" | "city"; radiusKm: number | null; widened: boolean };
+  /** When the saved example was recorded; null for a live search. */
+  savedExample: string | null;
   tookMs: number;
 }
 
@@ -218,7 +220,9 @@ export function LocalSponsors({ artists, genreTags, city, age, admission, onLoad
             {data.search.by === "point"
               ? `Within ${data.search.radiusKm} km of ${city}${data.search.widened ? " (widened, few places closer)" : ""}. `
               : ""}
-            {data.calls.length} Qloo place searches in {(data.tookMs / 1000).toFixed(1)} s.
+            {data.savedExample
+              ? `${data.calls.length} saved Qloo place searches.`
+              : `${data.calls.length} Qloo place searches in ${(data.tookMs / 1000).toFixed(1)} s.`}
             {data.droppedDuplicates > 0 &&
               ` ${data.droppedDuplicates} repeat chain ${data.droppedDuplicates === 1 ? "branch" : "branches"} hidden.`}
             {data.droppedFar > 0 &&
