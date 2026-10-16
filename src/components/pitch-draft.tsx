@@ -8,7 +8,7 @@ import { useState } from "react";
 export interface PitchResponse {
   subject: string;
   body: string;
-  source: "deepseek" | "template";
+  source: "ai" | "template";
   model: string | null;
   note: string | null;
 }
@@ -110,7 +110,7 @@ export function PitchBox({
     <div className="mt-3 rounded-lg border border-zinc-200 bg-zinc-50 p-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <p className="text-xs text-zinc-500">
-          {pitch.source === "deepseek" ? "Written by DeepSeek" : "Template draft"}
+          {pitch.source === "ai" ? `Written by AI (${pitch.model})` : "Template draft"}
           {" · edit the parts in [brackets] before sending"}
         </p>
         <button

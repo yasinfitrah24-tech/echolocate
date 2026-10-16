@@ -7,7 +7,7 @@
 //   artists?: string[]            line-up names
 //   event?: { name?, city?, crowdSize?, age?, admission?, genre?, organizer? }
 //
-// Returns { subject, body, source: "deepseek" | "template", model, note, ms }.
+// Returns { subject, body, source: "ai" | "template", model, note, ms }.
 
 import { NextResponse } from "next/server";
 import { writePitch } from "@/lib/pitch";

@@ -1,13 +1,18 @@
-// Writes the sponsorship email draft. Server-side only (reads DEEPSEEK_API_KEY).
+// Writes the sponsorship email draft. Server-side only (reads API keys).
 //
-// DeepSeek writes the draft when a key is set. Without a key, or when the call
-// fails, a plain template is used instead, so the app always returns a draft.
-// `source` in the result says which one it was.
+// A language model writes the draft when a key is set:
+// - OPENROUTER_API_KEY + LLM_MODEL (any OpenRouter model id, e.g. a ":free"
+//   one for testing and a paid one later; changing the env var is enough), or
+// - DEEPSEEK_API_KEY (DeepSeek's own API; DEEPSEEK_MODEL, default deepseek-flash).
+// Without a key, or when the call fails (a free model hitting its rate limit
+// with 429 included), a plain template is used, so the app always returns a
+// draft. `source` and `note` in the result say which one it was and why.
 
 import type { Admission, AudienceAge } from "./audience";
 
+const OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions";
 const DEEPSEEK_URL = "https://api.deepseek.com/chat/completions";
-const DEFAULT_MODEL = "deepseek-flash";
+const DEFAULT_DEEPSEEK_MODEL = "deepseek-flash";
 const TIMEOUT_MS = 30_000;
 
 export interface PitchInput {
@@ -38,7 +43,8 @@ export interface PitchInput {
 export interface PitchDraft {
   subject: string;
   body: string;
-  source: "deepseek" | "template";
+  /** "ai": written by the language model named in `model`. */
+  source: "ai" | "template";
   model: string | null;
   /** Why the template was used, when it was. */
   note: string | null;
@@ -152,28 +158,65 @@ function rankClause(reasonText: string): string {
   return first.startsWith("#") ? `ranks ${first}` : `is a strong match. ${first}`;
 }
 
-async function deepseekDraft(
-  input: PitchInput,
-  apiKey: string,
-  model: string,
-): Promise<{ subject: string; body: string }> {
-  const response = await fetch(DEEPSEEK_URL, {
+interface Provider {
+  name: "OpenRouter" | "DeepSeek";
+  url: string;
+  apiKey: string;
+  model: string;
+  /** Provider-specific request fields. */
+  extra: Record<string, unknown>;
+  headers: Record<string, string>;
+}
+
+/** Which model to ask, or why none can be asked. */
+function chooseProvider(): Provider | { missing: string } {
+  const openRouterKey = process.env.OPENROUTER_API_KEY?.trim();
+  if (openRouterKey) {
+    const model = process.env.LLM_MODEL?.trim();
+    if (!model) return { missing: "LLM_MODEL is not set" };
+    return {
+      name: "OpenRouter",
+      url: OPENROUTER_URL,
+      apiKey: openRouterKey,
+      model,
+      // Not every model on OpenRouter takes response_format, so the JSON shape
+      // comes from the prompt and is read leniently (see parseDraft).
+      extra: {},
+      headers: { "X-Title": "Echolocate" },
+    };
+  }
+  const deepseekKey = process.env.DEEPSEEK_API_KEY?.trim();
+  if (deepseekKey) {
+    return {
+      name: "DeepSeek",
+      url: DEEPSEEK_URL,
+      apiKey: deepseekKey,
+      model: process.env.DEEPSEEK_MODEL?.trim() || DEFAULT_DEEPSEEK_MODEL,
+      extra: { thinking: { type: "disabled" }, response_format: { type: "json_object" } },
+      headers: {},
+    };
+  }
+  return { missing: "no AI key is set (OPENROUTER_API_KEY or DEEPSEEK_API_KEY)" };
+}
+
+async function llmDraft(input: PitchInput, provider: Provider): Promise<{ subject: string; body: string }> {
+  const response = await fetch(provider.url, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      Authorization: `Bearer ${apiKey}`,
+      Authorization: `Bearer ${provider.apiKey}`,
+      ...provider.headers,
     },
     body: JSON.stringify({
-      model,
+      model: provider.model,
       messages: [
         { role: "system", content: SYSTEM_PROMPT },
         { role: "user", content: `Facts:\n- ${facts(input).join("\n- ")}` },
       ],
-      thinking: { type: "disabled" },
-      response_format: { type: "json_object" },
       temperature: 0.7,
       max_tokens: 700,
       stream: false,
+      ...provider.extra,
     }),
     cache: "no-store",
     signal: AbortSignal.timeout(TIMEOUT_MS),
@@ -181,42 +224,56 @@ async function deepseekDraft(
 
   const text = await response.text();
   if (!response.ok) {
-    throw new DeepSeekError(response.status, text.trim().slice(0, 300));
+    throw new LlmError(provider.name, response.status, text.trim().slice(0, 300));
   }
 
-  const data: unknown = JSON.parse(text);
-  const content = readContent(data);
-  if (!content) throw new Error("DeepSeek returned an empty message");
+  const content = readContent(JSON.parse(text));
+  if (!content) throw new Error(`${provider.name} returned an empty message`);
+  return parseDraft(content);
+}
 
-  const draft: unknown = JSON.parse(content);
-  if (typeof draft !== "object" || draft === null) throw new Error("DeepSeek draft is not an object");
+/**
+ * Reads {"subject", "body"} from the model's reply. Some models wrap JSON in
+ * a code fence or add a line around it, so take the outermost {...}.
+ */
+function parseDraft(content: string): { subject: string; body: string } {
+  const start = content.indexOf("{");
+  const end = content.lastIndexOf("}");
+  if (start < 0 || end <= start) throw new Error("The model reply has no JSON object");
+  const draft: unknown = JSON.parse(content.slice(start, end + 1));
+  if (typeof draft !== "object" || draft === null) throw new Error("The model draft is not an object");
   const { subject, body } = draft as { subject?: unknown; body?: unknown };
   if (typeof subject !== "string" || typeof body !== "string" || !subject.trim() || !body.trim()) {
-    throw new Error("DeepSeek draft is missing subject or body");
+    throw new Error("The model draft is missing subject or body");
   }
   return { subject: subject.trim(), body: body.trim() };
 }
 
-class DeepSeekError extends Error {
+class LlmError extends Error {
   status: number;
 
-  constructor(status: number, detail: string) {
-    super(`DeepSeek returned ${status}: ${detail}`);
-    this.name = "DeepSeekError";
+  constructor(provider: string, status: number, detail: string) {
+    super(`${provider} returned ${status}: ${detail}`);
+    this.name = "LlmError";
     this.status = status;
   }
 }
 
 /** Short reason that is safe to show in the browser. Full details go to the server log only. */
-function publicReason(error: unknown): string {
-  if (error instanceof DeepSeekError) {
-    if (error.status === 401) return "the DeepSeek key was rejected";
-    if (error.status === 402) return "the DeepSeek account has no balance";
-    if (error.status === 429) return "DeepSeek is rate limiting us";
-    return `DeepSeek returned status ${error.status}`;
+function publicReason(error: unknown, provider: Provider): string {
+  if (error instanceof LlmError) {
+    if (error.status === 401) return `the ${provider.name} key was rejected`;
+    if (error.status === 402) return `the ${provider.name} account has no credit`;
+    if (error.status === 404) return `the model ${provider.model} was not found`;
+    if (error.status === 429) {
+      return provider.model.endsWith(":free")
+        ? "the free AI model is busy (rate limit)"
+        : `${provider.name} is rate limiting us`;
+    }
+    return `${provider.name} returned status ${error.status}`;
   }
-  if (error instanceof Error && error.name === "TimeoutError") return "DeepSeek took too long";
-  return "DeepSeek gave an unusable reply";
+  if (error instanceof Error && error.name === "TimeoutError") return "the AI model took too long";
+  return "the AI model gave an unusable reply";
 }
 
 function readContent(data: unknown): string | null {
@@ -230,22 +287,21 @@ function readContent(data: unknown): string | null {
 
 export async function writePitch(input: PitchInput): Promise<PitchDraft> {
   const started = Date.now();
-  const apiKey = process.env.DEEPSEEK_API_KEY?.trim();
-  const model = process.env.DEEPSEEK_MODEL?.trim() || DEFAULT_MODEL;
+  const provider = chooseProvider();
 
-  if (!apiKey) {
+  if ("missing" in provider) {
     return {
       ...templateDraft(input),
       source: "template",
       model: null,
-      note: "This draft comes from the built-in template because DEEPSEEK_API_KEY is not set.",
+      note: `This draft comes from the built-in template because ${provider.missing}.`,
       ms: Date.now() - started,
     };
   }
 
   try {
-    const draft = await deepseekDraft(input, apiKey, model);
-    return { ...draft, source: "deepseek", model, note: null, ms: Date.now() - started };
+    const draft = await llmDraft(input, provider);
+    return { ...draft, source: "ai", model: provider.model, note: null, ms: Date.now() - started };
   } catch (error) {
     // The upstream message can echo part of the API key, so it stays in the server log.
     console.error(`Pitch fell back to the template: ${error instanceof Error ? error.message : String(error)}`);
@@ -253,7 +309,7 @@ export async function writePitch(input: PitchInput): Promise<PitchDraft> {
       ...templateDraft(input),
       source: "template",
       model: null,
-      note: `This draft comes from the built-in template because ${publicReason(error)}.`,
+      note: `This draft comes from the built-in template because ${publicReason(error, provider)}.`,
       ms: Date.now() - started,
     };
   }

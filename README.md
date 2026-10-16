@@ -52,7 +52,7 @@ Every Qloo call is listed in the app under "How the agent got this", with its re
    - `filter.location=POINT(lon lat)` and `filter.location.radius` for a US city picked from the list. The radius is 5, 10 or 15 km by the city's population. With fewer than 6 places, the search runs once more with twice the radius (at most 30 km).
 
    A city typed by hand uses `filter.location.query` instead.
-7. **Pitch email.** The language model (DeepSeek) writes the email from a fixed list of facts: the brand, the rank and reason from Qloo, and the event details. Anything it does not know stays in [square brackets]. Without a DeepSeek key, a built-in template writes it, and the app says which one was used.
+7. **Pitch email.** A language model (through OpenRouter, or DeepSeek's own API) writes the email from a fixed list of facts: the brand, the rank and reason from Qloo, and the event details. Anything it does not know stays in [square brackets]. Without a key, or when the model is busy or fails, a built-in template writes it, and the app says which one was used.
 8. **One-pager.** Built in the browser with `@react-pdf/renderer` from the same facts. Optional details the organizer adds (date, venue, tiers, discount code) fill the brackets. Items under "Confirmed so far" appear only when the organizer ticks them as confirmed.
 
 ## Why Qloo, not just a language model
@@ -102,7 +102,7 @@ Open http://localhost:3000.
 - **Without any keys:** "Try an example" works (saved data), and pitches use the template.
 - **With keys:** copy `.env.example` to `.env.local` and fill in:
   - `QLOO_API_KEY` for live searches,
-  - `DEEPSEEK_API_KEY` (optional) for written pitches. `DEEPSEEK_MODEL` defaults to `deepseek-flash`.
+  - for written pitches (optional): `OPENROUTER_API_KEY` and `LLM_MODEL`, any OpenRouter model id (a free `:free` model works for testing; set a paid one later, no code change). Or `DEEPSEEK_API_KEY` for DeepSeek's own API (`DEEPSEEK_MODEL` defaults to `deepseek-flash`). If the model hits its rate limit or fails, the pitch falls back to the template.
 
 `npm run lint` checks the code. `npx tsc --noEmit` checks types.
 
