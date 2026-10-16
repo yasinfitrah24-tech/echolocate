@@ -182,7 +182,12 @@ function chooseProvider(): Provider | { missing: string } {
       model,
       // Not every model on OpenRouter takes response_format, so the JSON shape
       // comes from the prompt and is read leniently (see parseDraft).
-      extra: {},
+      // Reasoning off by default: a reasoning model can spend the whole
+      // max_tokens budget thinking or run past TIMEOUT_MS (Nemotron 3 Ultra
+      // free did, 18 Oct). OpenRouter docs: reasoning.effort "none" disables
+      // it; models that require reasoning reject it, so LLM_REASONING_EFFORT
+      // can name another effort, or "default" to send nothing.
+      extra: reasoningField(process.env.LLM_REASONING_EFFORT?.trim() || "none"),
       headers: { "X-Title": "Echolocate" },
     };
   }
@@ -198,6 +203,10 @@ function chooseProvider(): Provider | { missing: string } {
     };
   }
   return { missing: "no AI key is set (LLM_API_KEY / OPENROUTER_API_KEY, or DEEPSEEK_API_KEY)" };
+}
+
+function reasoningField(effort: string): Record<string, unknown> {
+  return effort === "default" ? {} : { reasoning: { effort } };
 }
 
 async function llmDraft(input: PitchInput, provider: Provider): Promise<{ subject: string; body: string }> {
