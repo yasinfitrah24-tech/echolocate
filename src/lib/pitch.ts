@@ -107,9 +107,9 @@ Rules:
 - End with one clear ask: a 15-minute call.
 - Under 170 words. Plain, friendly and specific. No hype, no emojis, no exclamation marks.
 
-Return a JSON object only, in this shape: {"subject": "...", "body": "..."}. Use \\n for line breaks in the body.`;
+Return a JSON object only, in this shape: {"body": "..."}. Use \\n for line breaks in the body. The subject line is added for you.`;
 
-function templateDraft(input: PitchInput): { subject: string; body: string } {
+function templateBody(input: PitchInput): string {
   const event = input.eventName ?? "[event name]";
   const brand = input.brand.name;
 
@@ -147,11 +147,15 @@ function templateDraft(input: PitchInput): { subject: string; body: string } {
     "Could we set up a 15-minute call this week?",
   ].join("\n");
 
-  const subject =
-    input.brand.nearbyKm !== null
-      ? `${brand} x ${event}: a sponsor spot in ${input.city ?? "[city]"}`
-      : `${brand} x ${event}: a crowd that already likes you`;
-  return { subject, body };
+  return body;
+}
+
+/** The subject line comes from code, for AI and template drafts alike. */
+function subjectLine(input: PitchInput): string {
+  const event = input.eventName ?? "[event name]";
+  return input.brand.kind === "place"
+    ? `A sponsor spot for ${input.brand.name} at ${event} in ${input.city ?? "[city]"}`
+    : `Sponsorship idea for ${input.brand.name}: ${event}`;
 }
 
 /** Greeting and sign-off come from code, for AI and template drafts alike. */
@@ -181,9 +185,9 @@ function numbersIn(text: string): string[] {
  * number must appear in the facts (15, for the 15-minute call, is allowed),
  * and a local place's pitch must not mention the venue at all.
  */
-function factProblem(draft: { subject: string; body: string }, input: PitchInput): string | null {
+function factProblem(body: string, input: PitchInput): string | null {
   const allowed = new Set([...numbersIn(facts(input).join("\n")), "15"]);
-  const text = `${draft.subject}\n${draft.body}`;
+  const text = body;
   const extra = numbersIn(text).filter((number) => !allowed.has(number));
   if (extra.length > 0) return `numbers not in the facts: ${extra.join(", ")}`;
   if (input.brand.kind === "place" && /venue/i.test(text)) return "a local place pitch mentions the venue";
@@ -247,7 +251,7 @@ function reasoningField(effort: string): Record<string, unknown> {
   return effort === "default" ? {} : { reasoning: { effort } };
 }
 
-async function llmDraft(input: PitchInput, provider: Provider): Promise<{ subject: string; body: string }> {
+async function llmDraft(input: PitchInput, provider: Provider): Promise<string> {
   const response = await fetch(provider.url, {
     method: "POST",
     headers: {
@@ -281,20 +285,21 @@ async function llmDraft(input: PitchInput, provider: Provider): Promise<{ subjec
 }
 
 /**
- * Reads {"subject", "body"} from the model's reply. Some models wrap JSON in
- * a code fence or add a line around it, so take the outermost {...}.
+ * Reads {"body"} from the model's reply; a "subject" it adds is ignored. Some
+ * models wrap JSON in a code fence or add a line around it, so take the
+ * outermost {...}.
  */
-function parseDraft(content: string): { subject: string; body: string } {
+function parseDraft(content: string): string {
   const start = content.indexOf("{");
   const end = content.lastIndexOf("}");
   if (start < 0 || end <= start) throw new Error("The model reply has no JSON object");
   const draft: unknown = JSON.parse(content.slice(start, end + 1));
   if (typeof draft !== "object" || draft === null) throw new Error("The model draft is not an object");
-  const { subject, body } = draft as { subject?: unknown; body?: unknown };
-  if (typeof subject !== "string" || typeof body !== "string" || !subject.trim() || !body.trim()) {
-    throw new Error("The model draft is missing subject or body");
+  const { body } = draft as { body?: unknown };
+  if (typeof body !== "string" || !body.trim()) {
+    throw new Error("The model draft has no body");
   }
-  return { subject: subject.trim(), body: body.trim() };
+  return body.trim();
 }
 
 class LlmError extends Error {
@@ -338,8 +343,7 @@ export async function writePitch(input: PitchInput): Promise<PitchDraft> {
   const provider = chooseProvider();
 
   const template = () => {
-    const draft = templateDraft(input);
-    return { subject: draft.subject, body: wrapBody(draft.body, input) };
+    return { subject: subjectLine(input), body: wrapBody(templateBody(input), input) };
   };
 
   if ("missing" in provider) {
@@ -353,9 +357,8 @@ export async function writePitch(input: PitchInput): Promise<PitchDraft> {
   }
 
   try {
-    const raw = await llmDraft(input, provider);
-    const draft = { subject: raw.subject, body: stripGreetingAndSignOff(raw.body) };
-    const problem = factProblem(draft, input);
+    const body = stripGreetingAndSignOff(await llmDraft(input, provider));
+    const problem = factProblem(body, input);
     if (problem) {
       console.error(`Pitch AI draft rejected (${problem}); using the template.`);
       return {
@@ -367,8 +370,8 @@ export async function writePitch(input: PitchInput): Promise<PitchDraft> {
       };
     }
     return {
-      subject: draft.subject,
-      body: wrapBody(draft.body, input),
+      subject: subjectLine(input),
+      body: wrapBody(body, input),
       source: "ai",
       model: provider.model,
       note: null,
