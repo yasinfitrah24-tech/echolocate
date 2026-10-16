@@ -1,7 +1,7 @@
 // Writes the sponsorship email draft. Server-side only (reads API keys).
 //
 // A language model writes the draft when a key is set:
-// - OPENROUTER_API_KEY + LLM_MODEL (any OpenRouter model id, e.g. a ":free"
+// - OPENROUTER_API_KEY (or LLM_API_KEY, same thing) + LLM_MODEL (any OpenRouter model id, e.g. a ":free"
 //   one for testing and a paid one later; changing the env var is enough), or
 // - DEEPSEEK_API_KEY (DeepSeek's own API; DEEPSEEK_MODEL, default deepseek-flash).
 // Without a key, or when the call fails (a free model hitting its rate limit
@@ -170,7 +170,8 @@ interface Provider {
 
 /** Which model to ask, or why none can be asked. */
 function chooseProvider(): Provider | { missing: string } {
-  const openRouterKey = process.env.OPENROUTER_API_KEY?.trim();
+  // Either name works, so a typo between the two cannot silently switch the AI off.
+  const openRouterKey = process.env.OPENROUTER_API_KEY?.trim() || process.env.LLM_API_KEY?.trim();
   if (openRouterKey) {
     const model = process.env.LLM_MODEL?.trim();
     if (!model) return { missing: "LLM_MODEL is not set" };
@@ -196,7 +197,7 @@ function chooseProvider(): Provider | { missing: string } {
       headers: {},
     };
   }
-  return { missing: "no AI key is set (OPENROUTER_API_KEY or DEEPSEEK_API_KEY)" };
+  return { missing: "no AI key is set (LLM_API_KEY / OPENROUTER_API_KEY, or DEEPSEEK_API_KEY)" };
 }
 
 async function llmDraft(input: PitchInput, provider: Provider): Promise<{ subject: string; body: string }> {

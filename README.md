@@ -102,7 +102,7 @@ Open http://localhost:3000.
 - **Without any keys:** "Try an example" works (saved data), and pitches use the template.
 - **With keys:** copy `.env.example` to `.env.local` and fill in:
   - `QLOO_API_KEY` for live searches,
-  - for written pitches (optional): `OPENROUTER_API_KEY` and `LLM_MODEL`, any OpenRouter model id (a free `:free` model works for testing; set a paid one later, no code change). Or `DEEPSEEK_API_KEY` for DeepSeek's own API (`DEEPSEEK_MODEL` defaults to `deepseek-flash`). If the model hits its rate limit or fails, the pitch falls back to the template.
+  - for written pitches (optional): an OpenRouter key as `LLM_API_KEY` (or `OPENROUTER_API_KEY`) and `LLM_MODEL`, any OpenRouter model id (a free `:free` model works for testing; set a paid one later, no code change). Or `DEEPSEEK_API_KEY` for DeepSeek's own API (`DEEPSEEK_MODEL` defaults to `deepseek-flash`). If the model hits its rate limit or fails, the pitch falls back to the template.
 
 `npm run lint` checks the code. `npx tsc --noEmit` checks types.
 
