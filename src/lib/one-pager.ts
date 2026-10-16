@@ -170,13 +170,13 @@ export function buildOnePager(
   const fans = search.artists.length > 0 ? "fans of this line-up" : "fans of this kind of music";
 
   // Brands from other categories, all already filtered by the server (alcohol, NGOs).
-  const alsoLikes = categories
+  const alsoLikeTop = categories
     .filter((other) => other.id !== category.id)
     .flatMap((other) => other.brands.map((item) => ({ item, label: other.label })))
     .filter(({ item }) => item.entityId !== brand.entityId && onePagerAllowed(item, search.admission))
     .sort((a, b) => b.item.fitScore - a.item.fitScore)
-    .slice(0, ALSO_LIKES)
-    .map(({ item, label }) => `${item.name} (${label.toLowerCase()})`);
+    .slice(0, ALSO_LIKES);
+  const alsoLikes = alsoLikeTop.map(({ item, label }) => `${item.name} (${label.toLowerCase()})`);
 
   const similarBrands = category.brands
     .filter((item) => item.entityId !== brand.entityId && onePagerAllowed(item, search.admission))
@@ -190,7 +190,10 @@ export function buildOnePager(
   const who = [
     age ? `Mostly ${age.label}` : "[age range]",
     admission ? `${admission.label} event` : "[admission]",
-    `${fans[0].toUpperCase()}${fans.slice(1)}`,
+    // Who they are, told through what they like (Qloo taste data), not identity.
+    alsoLikeTop.length > 0
+      ? `Fans who also like ${joinNames(alsoLikeTop.slice(0, 2).map(({ item }) => item.name))}`
+      : `${fans[0].toUpperCase()}${fans.slice(1)}`,
   ];
 
   // Only what the organizer ticked as confirmed (and filled in). Sponsors want
