@@ -233,14 +233,27 @@ export function buildOnePager(
     questions: [
       {
         question: "How many people?",
-        answer: [crowd, ...(preRegistered ? [`${preRegistered} pre-registered so far`] : [])],
+        answer: [
+          crowd,
+          ...(isConfirmed("preRegistered", preRegistered) ? [`${preRegistered} pre-registered so far`] : []),
+        ],
       },
       { question: "Who comes?", answer: who },
       {
         question: "What do you get?",
         answer: benefits.length > 0 ? benefits : ["[signage, opt-in email sign-ups, a booth, shoutouts]"],
       },
-      { question: "Who else is sponsoring?", answer: [orBracket(otherSponsors, "other sponsors so far")] },
+      {
+        question: "Who else is sponsoring?",
+        // Names only once the organizer ticks them as confirmed.
+        answer: [
+          !otherSponsors
+            ? "[other sponsors]"
+            : isConfirmed("otherSponsors", otherSponsors)
+              ? otherSponsors
+              : "Other sponsors: to be confirmed",
+        ],
+      },
     ],
     options: [
       {
