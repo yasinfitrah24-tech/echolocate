@@ -573,7 +573,7 @@ function reasonSentence(
   const things = noun ? `${categoryLabel.toLowerCase()} ${noun}` : categoryLabel.toLowerCase();
   const rankPart =
     source === "general"
-      ? `#${rank} of the top ${listSize} brands for this crowd, across all categories.`
+      ? `#${rank} of ${listSize} brands Qloo matched to this crowd.`
       : `#${rank} of ${listSize} ${things} for this crowd.`;
 
   const strong = reasons.filter((reason) => reason.share > 0);
@@ -756,25 +756,30 @@ export async function getSponsorBrands(
     }
   }
 
-  general.forEach((entity, index) => {
-    const tagIds = brandTagIds(entity);
-    if (notASponsor(tagIds)) return;
-    if (!includeAlcohol && tagIds.some((id) => id.startsWith(ALCOHOL_TAG_PREFIX))) return;
-    const category = categoryFromTags(tagIds);
+  // Filter first, then number: "#3 of 38" counts only brands we show, so the
+  // rank in the reason, the pitch, the one-pager and the score all agree.
+  const shown = (entities: Json[]) =>
+    entities.filter((entity) => {
+      const tagIds = brandTagIds(entity);
+      if (notASponsor(tagIds)) return false;
+      return includeAlcohol || !tagIds.some((id) => id.startsWith(ALCOHOL_TAG_PREFIX));
+    });
+
+  const generalShown = shown(general);
+  generalShown.forEach((entity, index) => {
+    const category = categoryFromTags(brandTagIds(entity));
     keep(
-      toBrand(entity, category, index + 1, general.length, "general", signalNames),
+      toBrand(entity, category, index + 1, generalShown.length, "general", signalNames),
       category.label,
     );
   });
 
   perCategory.forEach((entities, categoryIndex) => {
     const category = categories[categoryIndex];
-    entities.forEach((entity, index) => {
-      const tagIds = brandTagIds(entity);
-      if (notASponsor(tagIds)) return;
-      if (!includeAlcohol && tagIds.some((id) => id.startsWith(ALCOHOL_TAG_PREFIX))) return;
+    const categoryShown = shown(entities);
+    categoryShown.forEach((entity, index) => {
       keep(
-        toBrand(entity, category, index + 1, entities.length, "category", signalNames),
+        toBrand(entity, category, index + 1, categoryShown.length, "category", signalNames),
         category.label,
       );
     });
