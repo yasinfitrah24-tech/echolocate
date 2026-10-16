@@ -199,6 +199,20 @@ const SPONSOR_CATEGORIES: {
 ];
 
 const GENERAL_TAKE = 50;
+
+/** Brand cards come in this order first: the categories that usually sponsor events. */
+const MAIN_SPONSOR_CATEGORIES = [
+  "drinks",
+  "beer",
+  "spirits",
+  "wine_and_spirits",
+  "financial_services",
+  "dining",
+  "fashion",
+  "retail",
+];
+/** Shown last (before "Other"): rarely a sponsor for a small show. */
+const LOW_CATEGORIES = ["mobile_app", "website", "entertainment"];
 const CATEGORY_TAKE = 15;
 
 // ---------- small helpers for reading untyped JSON ----------
@@ -802,16 +816,28 @@ export async function getSponsorBrands(
     brands: brands.sort((a, b) => b.fitScore - a.fitScore || a.rank - b.rank),
   }));
 
-  // Strongest category first; "Other" always last.
-  result.sort((a, b) => {
-    if (a.id === "other") return 1;
-    if (b.id === "other") return -1;
-    return b.brands[0].fitScore - a.brands[0].fitScore || b.brands.length - a.brands.length;
-  });
-
   // A category's #1 can still be a modest fit. Say so, instead of letting
-  // "#1 of 15" read like a perfect match next to a lower score.
-  const strongest = result.find((category) => category.id !== "other");
+  // "#1 of 15" read like a perfect match next to a lower score. Compared with
+  // the category whose best brand scores highest, whatever the card order.
+  const strongest = result
+    .filter((category) => category.id !== "other")
+    .sort((a, b) => b.brands[0].fitScore - a.brands[0].fitScore)[0];
+
+  // Card order: the categories that usually sponsor events first, in a fixed
+  // order; then the rest by their best score; media-like categories and
+  // "Other" last. Nothing is dropped.
+  const groupOf = (id: string) => {
+    const main = MAIN_SPONSOR_CATEGORIES.indexOf(id);
+    if (main >= 0) return main;
+    if (id === "other") return 1000;
+    return LOW_CATEGORIES.includes(id) ? 999 : 500;
+  };
+  result.sort(
+    (a, b) =>
+      groupOf(a.id) - groupOf(b.id) ||
+      b.brands[0].fitScore - a.brands[0].fitScore ||
+      b.brands.length - a.brands.length,
+  );
   for (const category of result) {
     const top = category.brands[0];
     if (!strongest || category === strongest || category.id === "other" || top.fitScore >= WEAK_TOP_SCORE) continue;

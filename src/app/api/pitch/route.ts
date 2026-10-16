@@ -1,7 +1,9 @@
 // POST /api/pitch
 // Body (JSON):
-//   brand: { name, categoryLabel, reasonText, kind?: "brand" | "place" }
-//          one brand from /api/brands, or one place from /api/places (kind "place")
+//   brand: { name, categoryLabel, reasonText, kind?: "brand" | "place", nearbyKm? }
+//          one brand from /api/brands, or one place from /api/places (kind "place").
+//          nearbyKm: only for a place with little taste data; the pitch then
+//          pitches being nearby and makes no taste claim.
 //   artists?: string[]            line-up names
 //   event?: { name?, city?, crowdSize?, age?, admission?, genre?, organizer? }
 //
@@ -54,6 +56,14 @@ export async function POST(request: Request) {
   }
   const kind = body.brand.kind ?? "brand";
   if (kind !== "brand" && kind !== "place") return bad('brand.kind must be "brand" or "place"');
+  let nearbyKm: number | null = null;
+  if (body.brand.nearbyKm !== undefined && body.brand.nearbyKm !== null) {
+    const value = Number(body.brand.nearbyKm);
+    if (kind !== "place" || !Number.isFinite(value) || value < 0 || value > 100) {
+      return bad("brand.nearbyKm must be a distance in km, for a place only");
+    }
+    nearbyKm = value;
+  }
 
   const artists: string[] = [];
   if (body.artists !== undefined) {
@@ -92,7 +102,7 @@ export async function POST(request: Request) {
   }
 
   const draft = await writePitch({
-    brand: { name, categoryLabel, reasonText, kind },
+    brand: { name, categoryLabel, reasonText, kind, nearbyKm },
     artists,
     genre: cleanText(event.genre, 60),
     eventName: cleanText(event.name, 100),

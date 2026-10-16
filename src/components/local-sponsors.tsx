@@ -112,8 +112,9 @@ export function LocalSponsors({
           {data && <span className="font-normal text-zinc-500">({data.places.length})</span>}
         </h3>
         <p className="mt-0.5 text-xs text-zinc-500">
-          Local businesses this crowd already goes to. Easier to sign than national brands, often for
-          in-kind deals.
+          {data && data.places.length > 0 && data.places.every((place) => place.littleData)
+            ? "Local businesses near the event. Easier to sign than national brands, often for in-kind deals."
+            : "Local businesses this crowd already goes to. Easier to sign than national brands, often for in-kind deals."}
         </p>
       </div>
 
@@ -180,8 +181,8 @@ export function LocalSponsors({
             {listed.map((place) => {
               const selected = place.entityId === selectedId;
               const open = pitch.pitchFor === place.entityId;
-              // No pitch without taste data: it would claim a match Qloo does not show.
-              const pitchAllowed = !place.littleData && (place.categoryId !== "bars" || barsAllowed);
+              // Places with little taste data still get a pitch, about being nearby.
+              const pitchAllowed = place.categoryId !== "bars" || barsAllowed;
               return (
                 <li key={place.entityId} className={`px-5 py-3 hover:bg-zinc-50 ${selected ? "bg-zinc-50" : ""}`}>
                   <div className="flex flex-wrap items-start gap-x-3 gap-y-2 sm:flex-nowrap">
@@ -226,18 +227,13 @@ export function LocalSponsors({
                                 categoryLabel: place.categoryLabel,
                                 reasonText: place.reasonText,
                                 kind: "place",
+                                ...(place.littleData ? { nearbyKm: place.distanceKm } : {}),
                               },
                               pitchContext,
                             )
                           }
                           disabled={!pitchAllowed || (pitch.loading && open)}
-                          title={
-                            pitchAllowed
-                              ? undefined
-                              : place.littleData
-                                ? "Qloo has little taste data for this place, so there is no match to pitch."
-                                : "Bars need a 21+ event. Search again as 21+."
-                          }
+                          title={pitchAllowed ? undefined : "Bars need a 21+ event. Search again as 21+."}
                           className="rounded-md border border-zinc-300 bg-white px-3 py-1.5 text-xs font-medium text-zinc-800 hover:bg-zinc-100 disabled:opacity-50"
                         >
                           {pitch.loading && open ? "Writing…" : "Draft pitch"}

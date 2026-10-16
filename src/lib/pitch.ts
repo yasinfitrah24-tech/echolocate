@@ -18,6 +18,12 @@ export interface PitchInput {
     reasonText: string;
     /** A national brand, or a local business near the event (cafe, shop, bar). */
     kind: "brand" | "place";
+    /**
+     * For a local place Qloo has little taste data for: its distance from the
+     * search center, km. Then the pitch makes no taste claim at all; it pitches
+     * being nearby. Null for everything else.
+     */
+    nearbyKm: number | null;
   };
   artists: string[];
   genre: string | null;
@@ -39,6 +45,11 @@ export interface PitchDraft {
   ms: number;
 }
 
+/** 0.6 -> "0.6 km", 12.4 -> "12 km". */
+function formatKm(km: number): string {
+  return `${km < 10 ? km.toFixed(1) : Math.round(km)} km`;
+}
+
 /** "Cafes" -> "cafe", "Clothing stores" -> "clothing store". */
 function placeNoun(categoryLabel: string): string {
   return categoryLabel.toLowerCase().replace(/s$/, "");
@@ -55,7 +66,9 @@ function facts(input: PitchInput): string[] {
     input.brand.kind === "place"
       ? `Sponsor: ${input.brand.name}, a local ${placeNoun(input.brand.categoryLabel)} near the event`
       : `Brand: ${input.brand.name} (${input.brand.categoryLabel})`,
-    `Why it fits, from Qloo taste data: ${input.brand.reasonText}`,
+    input.brand.nearbyKm !== null
+      ? `No taste match: Qloo has little taste data for this business. It is about ${formatKm(input.brand.nearbyKm)} from the center of ${input.city ?? "the city"}. Do not say or suggest that the crowd likes it.`
+      : `Why it fits, from Qloo taste data: ${input.brand.reasonText}`,
   ];
   if (input.eventName) lines.push(`Event name: ${input.eventName}`);
   if (input.city) lines.push(`City: ${input.city}`);
@@ -76,6 +89,7 @@ Rules:
 - Lead with why this brand fits this crowd, using the ranking given, and say it comes from Qloo taste data. Describe the "this crowd" as fans of the line-up.
 - Offer one or two concrete ways to take part, written as options in square brackets for the organizer to edit.
 - If the sponsor is a local business, say it is near the event and lead with in-kind options, such as [a discount for our attendees] or [your products at our table].
+- If the facts say "No taste match", do not mention Qloo or taste data and do not say or suggest that the crowd likes the business. Lead with how close it is, the crowd size and age, and what the sponsor gets.
 - End with one clear ask: a 15-minute call.
 - Under 170 words. Plain, friendly and specific. No hype, no emojis, no exclamation marks.
 
@@ -103,12 +117,18 @@ function templateDraft(input: PitchInput): { subject: string; body: string } {
     ? `We'd like to offer ${brand} [a table at the event] in return for [a discount for our attendees] or [your products for our crew]. Details are flexible.`
     : `We'd like to offer ${brand} [a booth or sampling spot] and [logo placement on our posters and social posts]. Details are flexible.`;
 
+  // No taste data: pitch being close by, never a taste match.
+  const why =
+    input.brand.nearbyKm !== null
+      ? `I'm writing to ${brand} because you're close by: about ${formatKm(input.brand.nearbyKm)} from the center of ${input.city ?? "[city]"}. Our venue is [venue].`
+      : `I'm writing to ${brand} specifically. Qloo's taste data shows that ${crowd} already like ${yours}: ${brand} ${rankClause(input.brand.reasonText)}`;
+
   const body = [
     "Hi [contact name],",
     "",
     `I'm organizing ${event}, ${input.admission?.phrase ?? "a show"} ${about.join(" ") || "[where and how big]"}${audience}.${lineUp}`,
     "",
-    `I'm writing to ${brand} specifically. Qloo's taste data shows that ${crowd} already like ${yours}: ${brand} ${rankClause(input.brand.reasonText)}`,
+    why,
     "",
     offer,
     "",
@@ -119,7 +139,11 @@ function templateDraft(input: PitchInput): { subject: string; body: string } {
     "[phone or email]",
   ].join("\n");
 
-  return { subject: `${brand} x ${event}: a crowd that already likes you`, body };
+  const subject =
+    input.brand.nearbyKm !== null
+      ? `${brand} x ${event}: a sponsor spot just down the road`
+      : `${brand} x ${event}: a crowd that already likes you`;
+  return { subject, body };
 }
 
 /** Turns the first sentence of reasonText into "ranks #2 of 15 beer brands for this crowd." */

@@ -31,6 +31,8 @@ export interface PitchTarget {
   categoryLabel: string;
   reasonText: string;
   kind: "brand" | "place";
+  /** For a place Qloo has little taste data for: its distance, km. */
+  nearbyKm?: number;
 }
 
 export function usePitch() {

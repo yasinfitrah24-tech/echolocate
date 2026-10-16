@@ -42,7 +42,7 @@ Every Qloo call is listed in the app under "How the agent got this", with its re
    - Qloo's audience segments (`urn:audience`) are never used or shown.
 5. **Score and reason.** The Sponsor Fit Score is our own score, not a Qloo number. It is never above 95.
    - **Brands** are compared with the other brands for the same crowd. Score = 40 + 55 × (0.8 × the brand's affinity percentile among all brands of the search + 0.2 × its rank in its list). Every category is in one pool, so a weak category's #1 does not look perfect, and it gets a note saying the category is a smaller fit.
-   - **Local places** are scored the same way, against the other places of the search, but only places Qloo has taste data for take part. With fewer than 5 such places, they use a fixed scale instead (80% affinity, 20% rank). When Qloo has little taste data for a place (its affinity sits at Qloo's default value), the place gets no score. It is listed after the scored places, nearest first, as "Nearby · little taste data".
+   - **Local places** are scored the same way, against the other places of the search, but only places Qloo has taste data for take part. With fewer than 5 such places, they use a fixed scale instead (80% affinity, 20% rank). When Qloo has little taste data for a place (its affinity sits at Qloo's default value), the place gets no score. It is listed after the scored places, nearest first, as "Nearby · little taste data". Its pitch email talks about being nearby, the crowd and the offer, and never says the crowd likes the place.
 
    The reason starts from the rank. It names an artist only when that artist's share of Qloo's explainability is clearly higher than the others'.
 6. **Local places.** `GET /v2/insights` with:
