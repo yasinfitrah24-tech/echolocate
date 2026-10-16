@@ -181,10 +181,15 @@ function numbersIn(text: string): string[] {
   );
 }
 
+/** Fit verdicts the pitch may not make; it states the rank and its source instead. */
+const FIT_VERDICTS =
+  /\b(strong fit|perfect fit|great fit|great match|strong match|perfect match|ideal partner|ideal fit)\b/i;
+
 /**
  * Null when the AI draft keeps to the facts, else why not. Checked: every
  * number must appear in the facts (15, for the 15-minute call, is allowed),
- * and a local place's pitch must not mention the venue at all.
+ * a local place's pitch must not mention the venue at all, and no fit
+ * verdict (FIT_VERDICTS).
  */
 function factProblem(body: string, input: PitchInput): string | null {
   const allowed = new Set([...numbersIn(facts(input).join("\n")), "15"]);
@@ -192,6 +197,8 @@ function factProblem(body: string, input: PitchInput): string | null {
   const extra = numbersIn(text).filter((number) => !allowed.has(number));
   if (extra.length > 0) return `numbers not in the facts: ${extra.join(", ")}`;
   if (input.brand.kind === "place" && /venue/i.test(text)) return "a local place pitch mentions the venue";
+  const verdict = text.match(FIT_VERDICTS);
+  if (verdict) return `the draft judges the fit ("${verdict[0]}")`;
   return null;
 }
 
@@ -199,7 +206,7 @@ function factProblem(body: string, input: PitchInput): string | null {
 function rankClause(reasonText: string): string {
   const first = reasonText.split(/(?<=\.)\s+/)[0] ?? reasonText;
   // State the rank, never a verdict like "a strong match".
-  return first.startsWith("#") ? `ranks ${first}` : `is on the list. ${first}`;
+  return first.startsWith("#") ? `ranks ${first}` : `is on Qloo's list of brands for this crowd. ${first}`;
 }
 
 interface Provider {
