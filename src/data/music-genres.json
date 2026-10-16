@@ -34,10 +34,17 @@
     ]
   },
   {
-    "label": "Country",
-    "tagId": null,
+    "label": "Country pop",
+    "tagId": "urn:tag:genre:music:country_pop",
     "also": [
-      "country music"
+      "country"
+    ]
+  },
+  {
+    "label": "Country rock",
+    "tagId": "urn:tag:genre:music:country_rock",
+    "also": [
+      "country"
     ]
   },
   {
