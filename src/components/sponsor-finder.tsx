@@ -253,7 +253,7 @@ export function SponsorFinder() {
       <main className="mx-auto w-full max-w-3xl px-4 py-10 sm:py-14">
         <header className="mb-8">
           <h1 className="text-3xl font-semibold tracking-tight">Echolocate</h1>
-          <p className="mt-1 text-lg text-zinc-600">Find sponsors your crowd already loves.</p>
+          <p className="mt-1 text-lg text-zinc-600">Sponsors for events too small to have a sponsorship team.</p>
         </header>
 
         <form onSubmit={onSubmit} className="rounded-xl border border-zinc-200 bg-white p-5 sm:p-6">

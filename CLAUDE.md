@@ -1,6 +1,6 @@
 # Echolocate
 
-Sponsor finder for small events (tagline not final; see CLAUDE.local.md).
+Sponsors for events too small to have a sponsorship team.
 
 An AI agent for small event organizers (campus, community). The organizer enters a line-up (or a genre), city, audience age, admission (All ages / 18+ / 21+) and crowd size. Echolocate uses Qloo taste data to rank brands per category with a Sponsor Fit Score and a reason, shows local sponsors (cafes, clothing stores, bars) on a map, and drafts the pitch email. A one-page sponsor PDF is next.
 

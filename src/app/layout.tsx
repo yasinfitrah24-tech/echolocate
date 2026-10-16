@@ -14,7 +14,7 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "Echolocate",
-  description: "Find sponsors your crowd already loves.",
+  description: "Sponsors for events too small to have a sponsorship team.",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
