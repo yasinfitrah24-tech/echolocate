@@ -200,7 +200,7 @@ const SPONSOR_CATEGORIES: {
 
 const GENERAL_TAKE = 50;
 
-/** Brand cards come in this order first: the categories that usually sponsor events. */
+/** Brand cards for these come first (sorted by score among themselves): the categories that usually sponsor events. */
 const MAIN_SPONSOR_CATEGORIES = [
   "drinks",
   "beer",
@@ -823,14 +823,13 @@ export async function getSponsorBrands(
     .filter((category) => category.id !== "other")
     .sort((a, b) => b.brands[0].fitScore - a.brands[0].fitScore)[0];
 
-  // Card order: the categories that usually sponsor events first, in a fixed
-  // order; then the rest by their best score; media-like categories and
-  // "Other" last. Nothing is dropped.
+  // Card order: the categories that usually sponsor events first, then the
+  // rest, then media-like categories, then "Other". Inside each group the
+  // category with the best top brand comes first. Nothing is dropped.
   const groupOf = (id: string) => {
-    const main = MAIN_SPONSOR_CATEGORIES.indexOf(id);
-    if (main >= 0) return main;
-    if (id === "other") return 1000;
-    return LOW_CATEGORIES.includes(id) ? 999 : 500;
+    if (MAIN_SPONSOR_CATEGORIES.includes(id)) return 0;
+    if (id === "other") return 3;
+    return LOW_CATEGORIES.includes(id) ? 2 : 1;
   };
   result.sort(
     (a, b) =>
@@ -841,7 +840,7 @@ export async function getSponsorBrands(
   for (const category of result) {
     const top = category.brands[0];
     if (!strongest || category === strongest || category.id === "other" || top.fitScore >= WEAK_TOP_SCORE) continue;
-    top.reasonText += ` Top pick among ${category.label.toLowerCase()} brands, a smaller fit for this crowd than ${strongest.label.toLowerCase()}.`;
+    top.reasonText += ` Top pick among ${category.label.toLowerCase()} brands, a smaller fit for this crowd than the top ${strongest.label.toLowerCase()} brands.`;
   }
 
   return { categories: result, calls, cityDropped };
