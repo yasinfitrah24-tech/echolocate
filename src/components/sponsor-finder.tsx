@@ -7,7 +7,9 @@ import { useState, type FormEvent } from "react";
 import { ADMISSIONS, AUDIENCE_AGES, DEFAULT_ADMISSION, findAdmission } from "@/lib/audience";
 import { EMPTY_DETAILS, onePagerAllowed, type OnePagerDetails, type SearchFacts } from "@/lib/one-pager";
 import type { ArtistMatch, Brand, BrandCategory, QlooCall } from "@/lib/qloo";
+import { findGenreByLabel } from "@/lib/genres";
 import { CityCombobox } from "./city-combobox";
+import { GenreCombobox } from "./genre-combobox";
 import { LocalSponsors } from "./local-sponsors";
 import { OnePagerPanel } from "./one-pager-panel";
 
@@ -28,6 +30,7 @@ interface BrandsResponse {
   };
   artists: ConfirmedArtist[];
   genreTags: { id: string; name: string }[];
+  genreMatch: { query: string; tag: { id: string; name: string } | null } | null;
   unresolved: { query: string; candidates: ArtistMatch[] }[];
   categories: BrandCategory[];
   calls: QlooCall[];
@@ -126,6 +129,7 @@ export function SponsorFinder() {
 
   async function findBrands(names: string[], confirmed: ConfirmedArtist[]) {
     const key = searchKey({ names, confirmed, genre, city, age, admission });
+    const pickedGenre = findGenreByLabel(genre);
     setLoading(true);
     setError(null);
     setPitchFor(null);
@@ -138,7 +142,9 @@ export function SponsorFinder() {
         body: JSON.stringify({
           artistNames: names,
           artists: confirmed,
-          genre: genre.trim() || undefined,
+          // A genre from our list goes by its Qloo tag id; anything else is looked up.
+          genreTagId: pickedGenre?.tagId,
+          genre: pickedGenre ? undefined : genre.trim() || undefined,
           city: city.trim() || undefined,
           age: age || undefined,
           admission,
@@ -165,7 +171,12 @@ export function SponsorFinder() {
 
   function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    void findBrands(splitNames(artistsText), picked);
+    const names = splitNames(artistsText);
+    if (names.length === 0 && picked.length === 0 && !genre.trim()) {
+      setError("Pick a kind of music, or add an artist.");
+      return;
+    }
+    void findBrands(names, picked);
   }
 
   function fillExample() {
@@ -297,8 +308,16 @@ export function SponsorFinder() {
 
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="sm:col-span-2">
+              <label htmlFor="genre" className={labelClass}>
+                What kind of music?
+              </label>
+              <GenreCombobox id="genre" className={inputClass} value={genre} onChange={setGenre} />
+            </div>
+
+            <div className="sm:col-span-2">
               <label htmlFor="artists" className={labelClass}>
-                Line-up
+                Artists on your line-up, or artists they sound like{" "}
+                <span className="font-normal text-zinc-500">(optional)</span>
               </label>
               <input
                 id="artists"
@@ -330,19 +349,6 @@ export function SponsorFinder() {
               )}
             </div>
 
-            <div className="sm:col-span-2">
-              <label htmlFor="genre" className={labelClass}>
-                Genre <span className="font-normal text-zinc-500">(if your artists are not found)</span>
-              </label>
-              <input
-                id="genre"
-                className={inputClass}
-                value={genre}
-                onChange={(event) => setGenre(event.target.value)}
-                placeholder="e.g. indie pop"
-                autoComplete="off"
-              />
-            </div>
 
             <div>
               <label htmlFor="event-name" className={labelClass}>
@@ -475,6 +481,22 @@ export function SponsorFinder() {
                   {loading ? "Searching…" : "Search again"}
                 </button>
               </div>
+            )}
+
+            {result.genreMatch && (
+              <p className="mt-4 rounded-md border border-zinc-200 bg-white px-4 py-3 text-sm text-zinc-700">
+                {result.genreMatch.tag ? (
+                  <>
+                    We matched &ldquo;{result.genreMatch.query}&rdquo; to Qloo&rsquo;s &ldquo;
+                    {result.genreMatch.tag.name}&rdquo; genre.
+                  </>
+                ) : (
+                  <>
+                    We could not find &ldquo;{result.genreMatch.query}&rdquo; in Qloo&rsquo;s genres, so it
+                    was left out. Try one from the list.
+                  </>
+                )}
+              </p>
             )}
 
             {result.input.cityDropped && (

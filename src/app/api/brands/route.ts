@@ -2,14 +2,16 @@
 // Body (JSON):
 //   artistNames?: string[]                       typed names, resolved here
 //   artists?: { entityId: string; name: string }[]   already confirmed in the UI
-//   genre?: string                               e.g. "indie pop", used with or instead of artists
+//   genreTagId?: string                          a tagId from src/data/music-genres.json (no Qloo search needed)
+//   genre?: string                               free text, e.g. "shoegaze"; looked up in Qloo when genreTagId is not given
 //   city?: string                                e.g. "Austin, TX"
 //   age?: an id from AUDIENCE_AGES, e.g. "24_and_younger"   (who mostly comes)
 //   admission?: "all_ages" | "18_plus" | "21_plus"            (who is allowed in; default all_ages)
 //   includeAlcohol?: boolean                     default false; only honored for 21_plus
 //
 // Returns brands grouped by category with a Sponsor Fit Score and reasons,
-// plus `unresolved` names the UI should ask the user about.
+// plus `unresolved` names the UI should ask the user about, and `genreMatch`
+// (which Qloo genre a typed genre became, or null when none was found).
 
 import { NextResponse } from "next/server";
 import {
@@ -21,6 +23,7 @@ import {
   type Admission,
   type AudienceAge,
 } from "@/lib/audience";
+import { findGenreByTagId } from "@/lib/genres";
 import {
   QlooError,
   getSponsorBrands,
@@ -92,7 +95,9 @@ export async function POST(request: Request) {
     return bad(`Use at most ${MAX_ARTISTS} artists`);
   }
 
-  const genre = body.genre === undefined ? null : cleanText(body.genre, 60);
+  const curated = body.genreTagId === undefined ? null : findGenreByTagId(body.genreTagId);
+  if (body.genreTagId !== undefined && !curated) return bad("genreTagId is not one of our genres");
+  const genre = curated ? curated.label : body.genre === undefined ? null : cleanText(body.genre, 60);
   const city = body.city === undefined ? null : cleanText(body.city, 100);
 
   let audience: AudienceAge | null = null;
@@ -127,7 +132,11 @@ export async function POST(request: Request) {
   try {
     const [searches, genreTags] = await Promise.all([
       Promise.all(artistNames.map((name) => searchArtists(name, 3))),
-      genre ? searchGenreTags(genre, 5) : Promise.resolve<GenreTag[]>([]),
+      curated
+        ? Promise.resolve<GenreTag[]>([{ id: curated.tagId, name: curated.label }])
+        : genre
+          ? searchGenreTags(genre, 5)
+          : Promise.resolve<GenreTag[]>([]),
     ]);
 
     // A typed name only counts when Qloo returns the same name. Anything else
@@ -178,6 +187,8 @@ export async function POST(request: Request) {
       },
       artists,
       genreTags: usedTags,
+      genreMatch:
+        genre && !curated ? { query: genre, tag: usedTags[0] ?? null } : null,
       unresolved,
       categories,
       calls,

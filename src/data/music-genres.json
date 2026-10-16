@@ -1,0 +1,178 @@
+[
+  {
+    "label": "Indie pop",
+    "tagId": "urn:tag:genre:music:indie_pop",
+    "also": []
+  },
+  {
+    "label": "Indie rock",
+    "tagId": "urn:tag:genre:music:indie_rock",
+    "also": [
+      "indie"
+    ]
+  },
+  {
+    "label": "Pop",
+    "tagId": "urn:tag:genre:music:pop",
+    "also": []
+  },
+  {
+    "label": "Hip hop",
+    "tagId": "urn:tag:genre:music:hip_hop",
+    "also": [
+      "rap",
+      "hiphop"
+    ]
+  },
+  {
+    "label": "R&B / Soul",
+    "tagId": "urn:tag:genre:music:r_b_soul",
+    "also": [
+      "rnb",
+      "r and b",
+      "soul"
+    ]
+  },
+  {
+    "label": "Country",
+    "tagId": null,
+    "also": [
+      "country music"
+    ]
+  },
+  {
+    "label": "Rock",
+    "tagId": "urn:tag:genre:music:rock",
+    "also": [
+      "rock and roll"
+    ]
+  },
+  {
+    "label": "Alternative rock",
+    "tagId": "urn:tag:genre:music:alternative_rock",
+    "also": [
+      "alt rock",
+      "alternative"
+    ]
+  },
+  {
+    "label": "Punk",
+    "tagId": "urn:tag:genre:music:punk",
+    "also": [
+      "punk rock"
+    ]
+  },
+  {
+    "label": "Emo",
+    "tagId": "urn:tag:genre:music:emo",
+    "also": []
+  },
+  {
+    "label": "Metal",
+    "tagId": "urn:tag:genre:music:metal",
+    "also": [
+      "heavy metal"
+    ]
+  },
+  {
+    "label": "Electronic",
+    "tagId": "urn:tag:genre:music:electronic",
+    "also": [
+      "electronica",
+      "dance"
+    ]
+  },
+  {
+    "label": "House",
+    "tagId": "urn:tag:genre:music:house",
+    "also": []
+  },
+  {
+    "label": "Techno",
+    "tagId": "urn:tag:genre:music:techno",
+    "also": []
+  },
+  {
+    "label": "EDM",
+    "tagId": "urn:tag:genre:music:edm",
+    "also": [
+      "electronic dance"
+    ]
+  },
+  {
+    "label": "Drum and bass",
+    "tagId": "urn:tag:genre:music:drumandbass",
+    "also": [
+      "dnb",
+      "drum n bass"
+    ]
+  },
+  {
+    "label": "Folk",
+    "tagId": "urn:tag:genre:music:folk",
+    "also": []
+  },
+  {
+    "label": "Americana",
+    "tagId": "urn:tag:genre:music:americana",
+    "also": []
+  },
+  {
+    "label": "Bluegrass",
+    "tagId": "urn:tag:genre:music:bluegrass",
+    "also": []
+  },
+  {
+    "label": "Singer-songwriter",
+    "tagId": "urn:tag:genre:music:singersongwriter",
+    "also": [
+      "acoustic",
+      "singer songwriter"
+    ]
+  },
+  {
+    "label": "Jazz",
+    "tagId": "urn:tag:genre:music:jazz",
+    "also": []
+  },
+  {
+    "label": "Blues",
+    "tagId": "urn:tag:genre:music:blues",
+    "also": []
+  },
+  {
+    "label": "Latin",
+    "tagId": "urn:tag:genre:music:latin",
+    "also": [
+      "latino"
+    ]
+  },
+  {
+    "label": "Reggaeton",
+    "tagId": "urn:tag:genre:music:reggaeton",
+    "also": []
+  },
+  {
+    "label": "Reggae",
+    "tagId": "urn:tag:genre:music:reggae",
+    "also": []
+  },
+  {
+    "label": "K-pop",
+    "tagId": "urn:tag:genre:music:k_pop",
+    "also": [
+      "kpop",
+      "korean pop"
+    ]
+  },
+  {
+    "label": "Gospel",
+    "tagId": "urn:tag:genre:music:gospel",
+    "also": []
+  },
+  {
+    "label": "Classical",
+    "tagId": "urn:tag:genre:music:classical",
+    "also": []
+  }
+]
