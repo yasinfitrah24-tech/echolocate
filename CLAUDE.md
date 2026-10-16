@@ -48,7 +48,7 @@ Built for the Qloo Agentic Hackathon (Devpost). Rule from the organizers: if the
 - The pitch only uses facts it was given; unknowns go in [square brackets].
 - Sponsor Fit Score, our own score (say so in the UI), capped at 95; never show raw affinity numbers.
   - Brands: relative to the other brands of the same search. score = 40 + 55 x (0.8 x affinity percentile among all brands of the search + 0.2 x rank in its list). A fixed affinity scale failed: genre signals push affinity to 0.97-1.00 and every genre search got 95s (stage 7, 18 Oct). A category's #1 brand under 80 gets a note that the category is a smaller fit.
-  - Local places: 80% affinity on a fixed scale (0.65-0.96) + 20% rank. Places at Qloo's default affinity (exactly 0.7649962877984056) or below get no score: "Nearby · little taste data", listed after scored places by distance, no pitch.
+  - Local places: same relative formula, over only the places with taste data; with fewer than 5 of those, a fixed scale instead (80% affinity 0.65-0.96 + 20% rank). Places at Qloo's default affinity (exactly 0.7649962877984056) or below get no score: "Nearby · little taste data", listed after scored places by distance, no pitch.
 - Not sponsors, dropped in the server: NGO "brands", and brands tagged sports_organization, academic, cultural_arts or entertainment:media:news_and_politics.
 
 ## Rules for working in this repo

@@ -453,9 +453,10 @@ export async function searchGenreTags(
  * artist line-up gives top brands 0.94-0.97, a genre gives 0.97-1.00 (stage 7
  * test, 18 Oct), so a fixed scale gave every genre search a wall of 95s.
  *
- * Local places (this function): Qloo's affinity on a fixed scale (80%) plus
- * rank in its list (20%). Places at Qloo's default affinity get no score at
- * all; see PLACE_DEFAULT_AFFINITY.
+ * Local places: scored against each other the same way when at least
+ * MIN_PLACES_TO_COMPARE have taste data; otherwise this function's fixed
+ * scale, Qloo's affinity (80%) plus rank in its list (20%). Places at Qloo's
+ * default affinity get no score at all; see PLACE_DEFAULT_AFFINITY.
  *
  * Both are capped at 95: nothing is a sure thing. Without an affinity the
  * affinity part sits mid-scale.
@@ -492,8 +493,19 @@ function fitScore(
  * at most one brand at 95).
  */
 function scoreBrandsAgainstEachOther(brands: Brand[]): void {
-  const affinities = brands
-    .map((brand) => brand.affinity)
+  scoreAgainstEachOther(brands, (brand) => (brand.source === "general" ? GENERAL_TAKE : CATEGORY_TAKE));
+}
+
+/**
+ * Shared by brands and local places: 40 + 55 x (0.8 x affinity percentile
+ * within the group + 0.2 x rank in its own list), capped at 95.
+ */
+function scoreAgainstEachOther<T extends { affinity: number | null; rank: number; listSize: number; fitScore: number | null }>(
+  items: T[],
+  capacityOf: (item: T) => number,
+): void {
+  const affinities = items
+    .map((item) => item.affinity)
     .filter((value): value is number => value !== null)
     .sort((a, b) => a - b);
   const percentile = (value: number | null): number => {
@@ -502,13 +514,15 @@ function scoreBrandsAgainstEachOther(brands: Brand[]): void {
     const same = affinities.filter((other) => other === value).length;
     return (below + (same - 1) / 2) / (affinities.length - 1);
   };
-  for (const brand of brands) {
-    const capacity = brand.source === "general" ? GENERAL_TAKE : CATEGORY_TAKE;
-    const rankPart = 1 - (brand.rank - 1) / Math.max(brand.listSize, capacity);
-    const mix = 0.8 * percentile(brand.affinity) + 0.2 * rankPart;
-    brand.fitScore = Math.min(MAX_FIT_SCORE, Math.round(40 + 55 * mix));
+  for (const item of items) {
+    const rankPart = 1 - (item.rank - 1) / Math.max(item.listSize, capacityOf(item));
+    const mix = 0.8 * percentile(item.affinity) + 0.2 * rankPart;
+    item.fitScore = Math.min(MAX_FIT_SCORE, Math.round(40 + 55 * mix));
   }
 }
+
+/** Below this many places with taste data, places keep the fixed scale. */
+const MIN_PLACES_TO_COMPARE = 5;
 
 function readReasons(
   entity: Json,
@@ -1099,16 +1113,22 @@ export async function getLocalSponsors(
     ...place,
     distanceKm: Math.round(distanceKm(middle.lat, middle.lon, place.lat, place.lon) * 10) / 10,
   }));
+  const kept = withDistance.filter((place) => place.distanceKm <= limitKm);
+
+  // With enough places that have taste data, score them against each other,
+  // like brands; the fixed place scale gave big cities a row of 95s (stage 7,
+  // 18 Oct). Places with little taste data never take part.
+  const withData = kept.filter((place) => !place.littleData);
+  if (withData.length >= MIN_PLACES_TO_COMPARE) scoreAgainstEachOther(withData, () => PLACE_TAKE);
+
   // Scored places first, best first; then places with little taste data, nearest first.
-  const places = withDistance
-    .filter((place) => place.distanceKm <= limitKm)
-    .sort((a, b) =>
-      a.littleData !== b.littleData
-        ? Number(a.littleData) - Number(b.littleData)
-        : a.littleData
-          ? a.distanceKm - b.distanceKm
-          : 0,
-    );
+  const places = kept.sort((a, b) =>
+    a.littleData !== b.littleData
+      ? Number(a.littleData) - Number(b.littleData)
+      : a.littleData
+        ? a.distanceKm - b.distanceKm
+        : (b.fitScore ?? 0) - (a.fitScore ?? 0) || a.rank - b.rank,
+  );
 
   const center =
     places.length > 0

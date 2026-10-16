@@ -42,7 +42,7 @@ Every Qloo call is listed in the app under "How the agent got this", with its re
    - Qloo's audience segments (`urn:audience`) are never used or shown.
 5. **Score and reason.** The Sponsor Fit Score is our own score, not a Qloo number. It is never above 95.
    - **Brands** are compared with the other brands for the same crowd. Score = 40 + 55 × (0.8 × the brand's affinity percentile among all brands of the search + 0.2 × its rank in its list). Every category is in one pool, so a weak category's #1 does not look perfect, and it gets a note saying the category is a smaller fit.
-   - **Local places** use Qloo's affinity on a fixed scale (80%) plus rank (20%). When Qloo has little taste data for a place (its affinity sits at Qloo's default value), the place gets no score. It is listed after the scored places, nearest first, as "Nearby · little taste data".
+   - **Local places** are scored the same way, against the other places of the search, but only places Qloo has taste data for take part. With fewer than 5 such places, they use a fixed scale instead (80% affinity, 20% rank). When Qloo has little taste data for a place (its affinity sits at Qloo's default value), the place gets no score. It is listed after the scored places, nearest first, as "Nearby · little taste data".
 
    The reason starts from the rank. It names an artist only when that artist's share of Qloo's explainability is clearly higher than the others'.
 6. **Local places.** `GET /v2/insights` with:
@@ -73,7 +73,7 @@ We have not yet compared Qloo with a language model picking brands on its own, s
 - **Places.** `filter.location=POINT(lon lat)` with a radius worked in our tests: with a 3 km radius, every cafe came back within 2.7 km. With a city name, the radius was ignored.
 - **Brands.** A location given as a point barely changed the results in our tests. The top five were almost the same as with no location at all. So brands use the city name.
 - **Cities without data.** Some cities return no brands at all, with no error. Indio, CA returned 0. The app then matches on the line-up alone and says so.
-- **Scores.** A fixed affinity scale worked for artist line-ups but not for genres. Genre searches put top brands at an affinity of 0.97 to 1.00, so every genre search showed a wall of 95s. So brands are now scored against each other within a search. On six test searches (Austin, Atlanta, Las Vegas, Ithaca, Los Angeles, Toronto), the median brand score was 65 to 68, with at most one brand at 95.
+- **Scores.** A fixed affinity scale worked for artist line-ups but not for genres. Genre searches put top brands at an affinity of 0.97 to 1.00, so every genre search showed a wall of 95s. So brands are now scored against each other within a search. On six test searches (Austin, Atlanta, Las Vegas, Ithaca, Los Angeles, Toronto), the median brand score was 65 to 68, with at most one brand at 95. Places, scored the same way, had medians of 66 to 70 and one place at 95.
 - **Places with little data.** In those tests, 89 of 154 places came back with the same affinity, 0.765, Qloo's default. In Ithaca, NY that was every place.
 
 ## Limitations
