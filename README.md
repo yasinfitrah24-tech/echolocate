@@ -2,7 +2,7 @@
 
 Echolocate finds sponsors for small events (campus shows, community gigs) by asking Qloo which brands and local businesses the event's crowd already likes, then drafts the pitch email and a one-page sponsor sheet.
 
-**Live demo:** [add the Vercel link here]. Click **Try an example** for an instant result from saved real Qloo data.
+**Live demo:** https://echolocate-topaz.vercel.app/ Click **Try an example** for an instant result from saved real Qloo data.
 
 ![Results for the example event: brands ranked by category, each with a Sponsor Fit Score and the reason from Qloo's data](docs/screenshot-results.png)
 
