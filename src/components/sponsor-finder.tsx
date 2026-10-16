@@ -7,6 +7,7 @@ import { useState, type FormEvent } from "react";
 import { ADMISSIONS, AUDIENCE_AGES, DEFAULT_ADMISSION, findAdmission } from "@/lib/audience";
 import { EMPTY_DETAILS, onePagerAllowed, type OnePagerDetails, type SearchFacts } from "@/lib/one-pager";
 import type { ArtistMatch, Brand, BrandCategory, QlooCall } from "@/lib/qloo";
+import { CityCombobox } from "./city-combobox";
 import { LocalSponsors } from "./local-sponsors";
 import { OnePagerPanel } from "./one-pager-panel";
 
@@ -361,14 +362,7 @@ export function SponsorFinder() {
               <label htmlFor="city" className={labelClass}>
                 City
               </label>
-              <input
-                id="city"
-                className={inputClass}
-                value={city}
-                onChange={(event) => setCity(event.target.value)}
-                placeholder="e.g. Austin, TX"
-                autoComplete="off"
-              />
+              <CityCombobox id="city" className={inputClass} value={city} onChange={setCity} />
             </div>
 
             <div>
