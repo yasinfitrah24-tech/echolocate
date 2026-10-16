@@ -79,6 +79,8 @@ export interface Brand {
   reasons: BrandReason[];
   /** Short English explanation: where the brand ranks, and which part of the line-up it leans to. */
   reasonText: string;
+  /** Beer, wine or spirits (any wine_and_spirits tag). Only allowed for 21+ events. */
+  alcohol: boolean;
 }
 
 export interface BrandCategory {
@@ -515,6 +517,9 @@ function toBrand(
     description: asString(properties.short_description),
     reasons,
     reasonText: reasonSentence(reasons, rank, listSize, source, category.label),
+    alcohol:
+      brandTagIds(entity).some((id) => id.startsWith(ALCOHOL_TAG_PREFIX)) ||
+      SPONSOR_CATEGORIES.some((sponsor) => sponsor.id === category.id && sponsor.alcohol),
   };
 }
 

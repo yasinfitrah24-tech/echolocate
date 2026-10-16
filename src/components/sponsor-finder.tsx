@@ -5,8 +5,10 @@
 
 import { useState, type FormEvent } from "react";
 import { ADMISSIONS, AUDIENCE_AGES, DEFAULT_ADMISSION, findAdmission } from "@/lib/audience";
-import type { ArtistMatch, BrandCategory, QlooCall } from "@/lib/qloo";
+import { EMPTY_DETAILS, onePagerAllowed, type OnePagerDetails, type SearchFacts } from "@/lib/one-pager";
+import type { ArtistMatch, Brand, BrandCategory, QlooCall } from "@/lib/qloo";
 import { LocalSponsors } from "./local-sponsors";
+import { OnePagerPanel } from "./one-pager-panel";
 
 interface ConfirmedArtist {
   entityId: string;
@@ -17,6 +19,7 @@ interface BrandsResponse {
   input: {
     city: string | null;
     cityDropped: boolean;
+    genre: string | null;
     age: string | null;
     admission: string;
     includeAlcohol: boolean;
@@ -90,6 +93,10 @@ export function SponsorFinder() {
   const [pitchError, setPitchError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
 
+  const [onePagerFor, setOnePagerFor] = useState<string | null>(null);
+  // Kept across brands, so the organizer types their details once.
+  const [onePagerDetails, setOnePagerDetails] = useState<OnePagerDetails>(EMPTY_DETAILS);
+
   const alcoholBlocked = !(findAdmission(admission) ?? DEFAULT_ADMISSION).alcoholAllowed;
   const includeAlcohol = !alcoholBlocked && wantsAlcohol;
 
@@ -98,6 +105,7 @@ export function SponsorFinder() {
     setError(null);
     setPitchFor(null);
     setPitch(null);
+    setOnePagerFor(null);
     try {
       const response = await fetch("/api/brands", {
         method: "POST",
@@ -178,13 +186,15 @@ export function SponsorFinder() {
         body: JSON.stringify({
           brand: { name: brand.name, categoryLabel, reasonText: brand.reasonText },
           artists: result?.artists.map((artist) => artist.name) ?? [],
+          // City, age, admission and genre come from the search the brands were
+          // found with (checked by the server), not from the form as it is now.
           event: {
             name: eventName.trim() || undefined,
-            city: city.trim() || undefined,
+            city: result?.input.city ?? undefined,
             crowdSize: crowdSize.trim() || undefined,
-            age: age || undefined,
-            admission,
-            genre: genre.trim() || undefined,
+            age: result?.input.age ?? undefined,
+            admission: result?.input.admission,
+            genre: result?.input.genre ?? undefined,
           },
         }),
       });
@@ -209,6 +219,28 @@ export function SponsorFinder() {
     } catch {
       setCopied(false);
     }
+  }
+
+  /** Facts shared by the pitch and the one-pager. */
+  const searchFacts: SearchFacts | null = result
+    ? {
+        eventName: eventName.trim() || null,
+        crowdSize: crowdSize.trim() ? Number(crowdSize) : null,
+        city: result.input.city,
+        cityDropped: result.input.cityDropped,
+        age: result.input.age,
+        admission: result.input.admission,
+        genre: result.input.genre,
+        artists: result.artists.map((artist) => artist.name),
+        genreTags: result.genreTags.map((tag) => tag.name),
+      }
+    : null;
+
+  /** Alcohol brands need a 21+ event, both in the search and in the form as it is now. */
+  function brandAllowed(brand: Brand): boolean {
+    return (
+      result !== null && onePagerAllowed(brand, result.input.admission) && onePagerAllowed(brand, admission)
+    );
   }
 
   const brandCount = result?.categories.reduce((sum, category) => sum + category.brands.length, 0) ?? 0;
@@ -459,6 +491,8 @@ export function SponsorFinder() {
                       {brands.map((brand) => {
                         const key = `${category.id}:${brand.entityId}`;
                         const open = pitchFor === key;
+                        const sheetOpen = onePagerFor === key;
+                        const allowed = brandAllowed(brand);
                         return (
                           <li key={brand.entityId} className="px-5 py-3">
                             <div className="flex items-start gap-3">
@@ -471,16 +505,43 @@ export function SponsorFinder() {
                               <div className="min-w-0 flex-1">
                                 <p className="text-sm font-medium">{brand.name}</p>
                                 <p className="mt-0.5 text-sm text-zinc-600">{brand.reasonText}</p>
+                                {!allowed && (
+                                  <p className="mt-1 text-xs text-zinc-500">
+                                    Alcohol brands need a 21+ event. Search again as 21+.
+                                  </p>
+                                )}
                               </div>
-                              <button
-                                type="button"
-                                onClick={() => draftPitch(key, brand, category.label)}
-                                disabled={pitchLoading && open}
-                                className="shrink-0 rounded-md border border-zinc-300 px-3 py-1.5 text-xs font-medium text-zinc-800 hover:bg-zinc-100 disabled:opacity-50"
-                              >
-                                {pitchLoading && open ? "Writing…" : "Draft pitch"}
-                              </button>
+                              <div className="flex shrink-0 flex-col gap-1.5 sm:flex-row">
+                                <button
+                                  type="button"
+                                  onClick={() => draftPitch(key, brand, category.label)}
+                                  disabled={!allowed || (pitchLoading && open)}
+                                  className="rounded-md border border-zinc-300 px-3 py-1.5 text-xs font-medium text-zinc-800 hover:bg-zinc-100 disabled:opacity-50"
+                                >
+                                  {pitchLoading && open ? "Writing…" : "Draft pitch"}
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => setOnePagerFor(sheetOpen ? null : key)}
+                                  disabled={!allowed}
+                                  aria-expanded={sheetOpen}
+                                  className="rounded-md border border-zinc-300 px-3 py-1.5 text-xs font-medium text-zinc-800 hover:bg-zinc-100 disabled:opacity-50"
+                                >
+                                  Download one-pager
+                                </button>
+                              </div>
                             </div>
+
+                            {sheetOpen && allowed && searchFacts && (
+                              <OnePagerPanel
+                                brand={brand}
+                                category={category}
+                                categories={result.categories}
+                                search={searchFacts}
+                                details={onePagerDetails}
+                                onDetailsChange={setOnePagerDetails}
+                              />
+                            )}
 
                             {open && pitchError && (
                               <p role="alert" className="mt-3 rounded-md bg-red-50 px-3 py-2 text-sm text-red-800">
