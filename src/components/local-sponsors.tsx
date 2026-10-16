@@ -7,6 +7,7 @@
 import dynamic from "next/dynamic";
 import { useEffect, useState } from "react";
 import type { LocalPlace, QlooCall } from "@/lib/qloo";
+import { PitchBox, usePitch, type PitchContext } from "./pitch-draft";
 
 const PlacesMap = dynamic(() => import("./places-map"), {
   ssr: false,
@@ -45,11 +46,25 @@ interface LocalSponsorsProps {
   admission: string;
   /** Hands the call log to the parent, for "How the agent got this". */
   onLoaded?: (info: PlacesSearchInfo) => void;
+  /** Event facts for "Draft pitch"; null hides the button. */
+  pitchContext?: PitchContext | null;
+  /** False when the form is no longer 21+: no pitch to bars then. */
+  barsAllowed?: boolean;
 }
 
 const LIST_SIZE = 8;
 
-export function LocalSponsors({ artists, genreTags, city, age, admission, onLoaded }: LocalSponsorsProps) {
+export function LocalSponsors({
+  artists,
+  genreTags,
+  city,
+  age,
+  admission,
+  onLoaded,
+  pitchContext = null,
+  barsAllowed = false,
+}: LocalSponsorsProps) {
+  const pitch = usePitch();
   const [data, setData] = useState<PlacesResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -159,48 +174,74 @@ export function LocalSponsors({ artists, genreTags, city, age, admission, onLoad
           <ul className="divide-y divide-zinc-100 border-t border-zinc-200">
             {listed.map((place) => {
               const selected = place.entityId === selectedId;
+              const open = pitch.pitchFor === place.entityId;
+              const pitchAllowed = place.categoryId !== "bars" || barsAllowed;
               return (
-                <li
-                  key={place.entityId}
-                  className={`flex items-start gap-3 px-5 py-3 hover:bg-zinc-50 ${selected ? "bg-zinc-50" : ""}`}
-                >
-                  <button
-                    type="button"
-                    onClick={() => setSelectedId(place.entityId)}
-                    className="flex min-w-0 flex-1 items-start gap-3 text-left"
-                  >
-                    <span
-                      className="mt-0.5 w-10 shrink-0 rounded-md py-1 text-center text-sm font-semibold tabular-nums text-white"
-                      style={{ backgroundColor: COLORS[place.categoryId] ?? "#3f3f46" }}
-                      title="Sponsor Fit Score, 0 to 100"
+                <li key={place.entityId} className={`px-5 py-3 hover:bg-zinc-50 ${selected ? "bg-zinc-50" : ""}`}>
+                  <div className="flex items-start gap-3">
+                    <button
+                      type="button"
+                      onClick={() => setSelectedId(place.entityId)}
+                      className="flex min-w-0 flex-1 items-start gap-3 text-left"
                     >
-                      {place.fitScore}
-                    </span>
-                    <span className="min-w-0 flex-1">
-                      <span className="block text-sm font-medium">{place.name}</span>
-                      <span className="mt-0.5 block text-xs text-zinc-500">
-                        {[
-                          place.categoryLabel,
-                          place.neighborhood,
-                          place.rating ? `${place.rating}★` : null,
-                          `${place.distanceKm} km from city center`,
-                        ]
-                          .filter(Boolean)
-                          .join(" · ")}
+                      <span
+                        className="mt-0.5 w-10 shrink-0 rounded-md py-1 text-center text-sm font-semibold tabular-nums text-white"
+                        style={{ backgroundColor: COLORS[place.categoryId] ?? "#3f3f46" }}
+                        title="Sponsor Fit Score, 0 to 100"
+                      >
+                        {place.fitScore}
                       </span>
-                      <span className="mt-0.5 block text-sm text-zinc-600">{place.reasonText}</span>
-                    </span>
-                  </button>
-                  {place.website && (
-                    <a
-                      href={place.website}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="shrink-0 rounded-md border border-zinc-300 bg-white px-3 py-1.5 text-xs font-medium text-zinc-800 hover:bg-zinc-100"
-                    >
-                      Website
-                    </a>
-                  )}
+                      <span className="min-w-0 flex-1">
+                        <span className="block text-sm font-medium">{place.name}</span>
+                        <span className="mt-0.5 block text-xs text-zinc-500">
+                          {[
+                            place.categoryLabel,
+                            place.neighborhood,
+                            place.rating ? `${place.rating}★` : null,
+                            `${place.distanceKm} km from city center`,
+                          ]
+                            .filter(Boolean)
+                            .join(" · ")}
+                        </span>
+                        <span className="mt-0.5 block text-sm text-zinc-600">{place.reasonText}</span>
+                      </span>
+                    </button>
+                    <div className="flex shrink-0 flex-col gap-1.5 sm:flex-row">
+                      {pitchContext && (
+                        <button
+                          type="button"
+                          onClick={() =>
+                            pitch.draft(
+                              place.entityId,
+                              {
+                                name: place.name,
+                                categoryLabel: place.categoryLabel,
+                                reasonText: place.reasonText,
+                                kind: "place",
+                              },
+                              pitchContext,
+                            )
+                          }
+                          disabled={!pitchAllowed || (pitch.loading && open)}
+                          title={pitchAllowed ? undefined : "Bars need a 21+ event. Search again as 21+."}
+                          className="rounded-md border border-zinc-300 bg-white px-3 py-1.5 text-xs font-medium text-zinc-800 hover:bg-zinc-100 disabled:opacity-50"
+                        >
+                          {pitch.loading && open ? "Writing…" : "Draft pitch"}
+                        </button>
+                      )}
+                      {place.website && (
+                        <a
+                          href={place.website}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="rounded-md border border-zinc-300 bg-white px-3 py-1.5 text-center text-xs font-medium text-zinc-800 hover:bg-zinc-100"
+                        >
+                          Website
+                        </a>
+                      )}
+                    </div>
+                  </div>
+                  {open && <PitchBox pitch={pitch.pitch} error={pitch.error} copied={pitch.copied} onCopy={pitch.copy} />}
                 </li>
               );
             })}

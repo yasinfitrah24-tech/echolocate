@@ -1,6 +1,7 @@
 // POST /api/pitch
 // Body (JSON):
-//   brand: { name: string; categoryLabel: string; reasonText: string }   one brand from /api/brands
+//   brand: { name, categoryLabel, reasonText, kind?: "brand" | "place" }
+//          one brand from /api/brands, or one place from /api/places (kind "place")
 //   artists?: string[]            line-up names
 //   event?: { name?, city?, crowdSize?, age?, admission?, genre?, organizer? }
 //
@@ -51,6 +52,8 @@ export async function POST(request: Request) {
   if (!name || !categoryLabel || !reasonText) {
     return bad("brand needs name, categoryLabel and reasonText");
   }
+  const kind = body.brand.kind ?? "brand";
+  if (kind !== "brand" && kind !== "place") return bad('brand.kind must be "brand" or "place"');
 
   const artists: string[] = [];
   if (body.artists !== undefined) {
@@ -89,7 +92,7 @@ export async function POST(request: Request) {
   }
 
   const draft = await writePitch({
-    brand: { name, categoryLabel, reasonText },
+    brand: { name, categoryLabel, reasonText, kind },
     artists,
     genre: cleanText(event.genre, 60),
     eventName: cleanText(event.name, 100),

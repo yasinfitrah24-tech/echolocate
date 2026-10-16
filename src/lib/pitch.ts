@@ -14,8 +14,10 @@ export interface PitchInput {
   brand: {
     name: string;
     categoryLabel: string;
-    /** From /api/brands, e.g. "#2 of 15 beer brands for this crowd. ..." */
+    /** From /api/brands or /api/places, e.g. "#2 of 15 beer brands for this crowd. ..." */
     reasonText: string;
+    /** A national brand, or a local business near the event (cafe, shop, bar). */
+    kind: "brand" | "place";
   };
   artists: string[];
   genre: string | null;
@@ -37,6 +39,11 @@ export interface PitchDraft {
   ms: number;
 }
 
+/** "Cafes" -> "cafe", "Clothing stores" -> "clothing store". */
+function placeNoun(categoryLabel: string): string {
+  return categoryLabel.toLowerCase().replace(/s$/, "");
+}
+
 function joinNames(names: string[]): string {
   if (names.length <= 1) return names[0] ?? "";
   return `${names.slice(0, -1).join(", ")} and ${names[names.length - 1]}`;
@@ -45,7 +52,9 @@ function joinNames(names: string[]): string {
 /** The facts both the model and the template work from. Nothing else may be claimed. */
 function facts(input: PitchInput): string[] {
   const lines = [
-    `Brand: ${input.brand.name} (${input.brand.categoryLabel})`,
+    input.brand.kind === "place"
+      ? `Sponsor: ${input.brand.name}, a local ${placeNoun(input.brand.categoryLabel)} near the event`
+      : `Brand: ${input.brand.name} (${input.brand.categoryLabel})`,
     `Why it fits, from Qloo taste data: ${input.brand.reasonText}`,
   ];
   if (input.eventName) lines.push(`Event name: ${input.eventName}`);
@@ -66,6 +75,7 @@ Rules:
 - When a detail you need is missing, leave a placeholder in square brackets, such as [date], [your name] or [contact name].
 - Lead with why this brand fits this crowd, using the ranking given, and say it comes from Qloo taste data. Describe the "this crowd" as fans of the line-up.
 - Offer one or two concrete ways to take part, written as options in square brackets for the organizer to edit.
+- If the sponsor is a local business, say it is near the event and lead with in-kind options, such as [a discount for our attendees] or [your products at our table].
 - End with one clear ask: a 15-minute call.
 - Under 170 words. Plain, friendly and specific. No hype, no emojis, no exclamation marks.
 
@@ -87,15 +97,20 @@ function templateDraft(input: PitchInput): { subject: string; body: string } {
         : "";
 
   const crowd = input.artists.length > 0 ? "fans of this line-up" : "fans of this kind of music";
+  const local = input.brand.kind === "place";
+  const yours = local ? `your ${placeNoun(input.brand.categoryLabel)}` : "your brand";
+  const offer = local
+    ? `We'd like to offer ${brand} [a table at the event] in return for [a discount for our attendees] or [your products for our crew]. Details are flexible.`
+    : `We'd like to offer ${brand} [a booth or sampling spot] and [logo placement on our posters and social posts]. Details are flexible.`;
 
   const body = [
     "Hi [contact name],",
     "",
     `I'm organizing ${event}, ${input.admission?.phrase ?? "a show"} ${about.join(" ") || "[where and how big]"}${audience}.${lineUp}`,
     "",
-    `I'm writing to ${brand} specifically. Qloo's taste data shows that ${crowd} already like your brand: ${brand} ${rankClause(input.brand.reasonText)}`,
+    `I'm writing to ${brand} specifically. Qloo's taste data shows that ${crowd} already like ${yours}: ${brand} ${rankClause(input.brand.reasonText)}`,
     "",
-    `We'd like to offer ${brand} [a booth or sampling spot] and [logo placement on our posters and social posts]. Details are flexible.`,
+    offer,
     "",
     "Could we set up a 15-minute call this week?",
     "",

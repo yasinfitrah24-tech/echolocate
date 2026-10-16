@@ -11,6 +11,7 @@ import { findGenreByLabel } from "@/lib/genres";
 import { CityCombobox } from "./city-combobox";
 import { GenreCombobox } from "./genre-combobox";
 import { LocalSponsors, type PlacesSearchInfo } from "./local-sponsors";
+import { PitchBox, usePitch, type PitchContext } from "./pitch-draft";
 import { OnePagerPanel } from "./one-pager-panel";
 
 interface ConfirmedArtist {
@@ -42,14 +43,6 @@ interface BrandsResponse {
 /** "Oct 17" from an ISO date. */
 function shortDate(iso: string): string {
   return new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric" });
-}
-
-interface PitchResponse {
-  subject: string;
-  body: string;
-  source: "deepseek" | "template";
-  model: string | null;
-  note: string | null;
 }
 
 const AGE_OPTIONS = [
@@ -123,11 +116,7 @@ export function SponsorFinder() {
   // The form as it was for the last successful search.
   const [searchedKey, setSearchedKey] = useState<string | null>(null);
 
-  const [pitchFor, setPitchFor] = useState<string | null>(null);
-  const [pitchLoading, setPitchLoading] = useState(false);
-  const [pitch, setPitch] = useState<PitchResponse | null>(null);
-  const [pitchError, setPitchError] = useState<string | null>(null);
-  const [copied, setCopied] = useState(false);
+  const pitch = usePitch();
 
   const [onePagerFor, setOnePagerFor] = useState<string | null>(null);
   // Kept across brands, so the organizer types their details once.
@@ -141,8 +130,7 @@ export function SponsorFinder() {
     const pickedGenre = findGenreByLabel(genre);
     setLoading(true);
     setError(null);
-    setPitchFor(null);
-    setPitch(null);
+    pitch.reset();
     setOnePagerFor(null);
     try {
       const response = await fetch("/api/brands", {
@@ -216,58 +204,6 @@ export function SponsorFinder() {
     setPicked(picked.filter((artist) => artist.entityId !== entityId));
   }
 
-  async function draftPitch(
-    key: string,
-    brand: { name: string; reasonText: string },
-    categoryLabel: string,
-  ) {
-    setPitchFor(key);
-    setPitch(null);
-    setPitchError(null);
-    setPitchLoading(true);
-    setCopied(false);
-    try {
-      const response = await fetch("/api/pitch", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          brand: { name: brand.name, categoryLabel, reasonText: brand.reasonText },
-          artists: result?.artists.map((artist) => artist.name) ?? [],
-          // City, age, admission and genre come from the search the brands were
-          // found with (checked by the server), not from the form as it is now.
-          event: {
-            name: eventName.trim() || undefined,
-            city: result?.input.city ?? undefined,
-            crowdSize: crowdSize.trim() || undefined,
-            age: result?.input.age ?? undefined,
-            admission: result?.input.admission,
-            genre: result?.input.genre ?? undefined,
-          },
-        }),
-      });
-      const data = await response.json();
-      if (!response.ok) {
-        setPitchError(data.error ?? "Could not write the pitch");
-        return;
-      }
-      setPitch(data as PitchResponse);
-    } catch {
-      setPitchError("Could not reach the server. Try again.");
-    } finally {
-      setPitchLoading(false);
-    }
-  }
-
-  async function copyPitch() {
-    if (!pitch) return;
-    try {
-      await navigator.clipboard.writeText(`Subject: ${pitch.subject}\n\n${pitch.body}`);
-      setCopied(true);
-    } catch {
-      setCopied(false);
-    }
-  }
-
   /** Facts shared by the pitch and the one-pager. */
   const searchFacts: SearchFacts | null = result
     ? {
@@ -280,6 +216,22 @@ export function SponsorFinder() {
         genre: result.input.genre,
         artists: result.artists.map((artist) => artist.name),
         genreTags: result.genreTags.map((tag) => tag.name),
+      }
+    : null;
+
+  // City, age, admission and genre come from the search the list was found
+  // with (checked by the server), not from the form as it is now.
+  const pitchContext: PitchContext | null = result
+    ? {
+        artists: result.artists.map((artist) => artist.name),
+        event: {
+          name: eventName.trim() || undefined,
+          city: result.input.city ?? undefined,
+          crowdSize: crowdSize.trim() || undefined,
+          age: result.input.age ?? undefined,
+          admission: result.input.admission,
+          genre: result.input.genre ?? undefined,
+        },
       }
     : null;
 
@@ -569,7 +521,7 @@ export function SponsorFinder() {
                     <ul className="divide-y divide-zinc-100">
                       {brands.map((brand) => {
                         const key = `${category.id}:${brand.entityId}`;
-                        const open = pitchFor === key;
+                        const open = pitch.pitchFor === key;
                         const sheetOpen = onePagerFor === key;
                         const allowed = brandAllowed(brand);
                         return (
@@ -593,11 +545,18 @@ export function SponsorFinder() {
                               <div className="flex shrink-0 flex-col gap-1.5 sm:flex-row">
                                 <button
                                   type="button"
-                                  onClick={() => draftPitch(key, brand, category.label)}
-                                  disabled={!allowed || (pitchLoading && open)}
+                                  onClick={() =>
+                                    pitchContext &&
+                                    pitch.draft(
+                                      key,
+                                      { name: brand.name, categoryLabel: category.label, reasonText: brand.reasonText, kind: "brand" },
+                                      pitchContext,
+                                    )
+                                  }
+                                  disabled={!allowed || (pitch.loading && open)}
                                   className="rounded-md border border-zinc-300 px-3 py-1.5 text-xs font-medium text-zinc-800 hover:bg-zinc-100 disabled:opacity-50"
                                 >
-                                  {pitchLoading && open ? "Writing…" : "Draft pitch"}
+                                  {pitch.loading && open ? "Writing…" : "Draft pitch"}
                                 </button>
                                 <button
                                   type="button"
@@ -622,31 +581,8 @@ export function SponsorFinder() {
                               />
                             )}
 
-                            {open && pitchError && (
-                              <p role="alert" className="mt-3 rounded-md bg-red-50 px-3 py-2 text-sm text-red-800">
-                                {pitchError}
-                              </p>
-                            )}
-
-                            {open && pitch && (
-                              <div className="mt-3 rounded-lg border border-zinc-200 bg-zinc-50 p-4">
-                                <div className="flex flex-wrap items-center justify-between gap-2">
-                                  <p className="text-xs text-zinc-500">
-                                    {pitch.source === "deepseek" ? "Written by DeepSeek" : "Template draft"}
-                                    {" · edit the parts in [brackets] before sending"}
-                                  </p>
-                                  <button
-                                    type="button"
-                                    onClick={copyPitch}
-                                    className="rounded-md border border-zinc-300 bg-white px-2.5 py-1 text-xs font-medium hover:bg-zinc-100"
-                                  >
-                                    {copied ? "Copied" : "Copy email"}
-                                  </button>
-                                </div>
-                                <p className="mt-3 text-sm font-semibold">{pitch.subject}</p>
-                                <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-zinc-800">{pitch.body}</p>
-                                {pitch.note && <p className="mt-3 text-xs text-zinc-500">{pitch.note}</p>}
-                              </div>
+                            {open && (
+                              <PitchBox pitch={pitch.pitch} error={pitch.error} copied={pitch.copied} onCopy={pitch.copy} />
                             )}
                           </li>
                         );
@@ -675,6 +611,8 @@ export function SponsorFinder() {
                 age={result.input.age}
                 admission={result.input.admission}
                 onLoaded={setPlacesInfo}
+                pitchContext={pitchContext}
+                barsAllowed={(findAdmission(admission) ?? DEFAULT_ADMISSION).alcoholAllowed}
               />
             ) : (
               <p className="mt-5 rounded-xl border border-zinc-200 bg-white px-5 py-3 text-sm text-zinc-600">
