@@ -70,17 +70,21 @@ function joinNames(names: string[]): string {
 function facts(input: PitchInput): string[] {
   const lines = [
     input.brand.kind === "place"
-      ? `Sponsor: ${input.brand.name}, a local ${placeNoun(input.brand.categoryLabel)} near the event`
+      ? `Sponsor: ${input.brand.name}, a ${placeNoun(input.brand.categoryLabel)} in ${input.city ?? "the city"}`
       : `Brand: ${input.brand.name} (${input.brand.categoryLabel})`,
     input.brand.nearbyKm !== null
-      ? `No taste match: Qloo has little taste data for this business. It is about ${formatKm(input.brand.nearbyKm)} from the center of ${input.city ?? "the city"}. Do not say or suggest that the crowd likes it.`
+      ? `No taste match: Qloo has little taste data for this business. Distance: about ${formatKm(input.brand.nearbyKm)} from the center of ${input.city ?? "the city"}. Do not say or suggest that the crowd likes it.`
       : `Why it fits, from Qloo taste data: ${input.brand.reasonText}`,
   ];
+  if (input.brand.kind === "place" && input.brand.nearbyKm === null) {
+    // A place with taste data: still no venue claim, the venue is unknown.
+    lines.push("The venue address is not known.");
+  }
   if (input.eventName) lines.push(`Event name: ${input.eventName}`);
   if (input.city) lines.push(`City: ${input.city}`);
   if (input.crowdSize) lines.push(`Expected crowd: about ${input.crowdSize.toLocaleString("en-US")} people`);
-  if (input.age) lines.push(`Audience age: mostly ${input.age.label}`);
-  if (input.admission) lines.push(`Admission: ${input.admission.label} (${input.admission.phrase})`);
+  if (input.age) lines.push(`Audience age (who mostly comes): mostly ${input.age.label}`);
+  if (input.admission) lines.push(`Admission (who is allowed in): ${input.admission.label}, ${input.admission.phrase}`);
   if (input.artists.length > 0) lines.push(`Line-up: ${joinNames(input.artists)}`);
   if (input.genre) lines.push(`Genre: ${input.genre}`);
   if (input.organizer) lines.push(`Organizer (sender): ${input.organizer}`);
@@ -91,11 +95,15 @@ const SYSTEM_PROMPT = `You write short sponsorship outreach emails for organizer
 
 Rules:
 - Use only the facts in the user message. Never invent numbers, past events, demographics, prices, dates or sponsorship tiers.
-- When a detail you need is missing, leave a placeholder in square brackets, such as [date], [your name] or [contact name].
+- Describe the audience only with the facts given: the expected crowd, the audience age and the admission. Do not add words like "local", "loyal", "engaged", "passionate" or "diverse".
+- Admission (who is allowed in, e.g. all ages, 18+, 21+) and audience age (who mostly comes) are different facts. Name them separately and exactly as given; never use one for the other.
+- Write only the body: no greeting line ("Hi ...") and no sign-off or name at the end. Those are added for you.
+- When a detail you need is missing, leave a placeholder in square brackets, such as [date].
 - Lead with why this brand fits this crowd, using the ranking given, and say it comes from Qloo taste data. Describe the "this crowd" as fans of the line-up.
 - Offer one or two concrete ways to take part, written as options in square brackets for the organizer to edit.
-- If the sponsor is a local business, say it is near the event and lead with in-kind options, such as [a discount for our attendees] or [your products at our table].
-- If the facts say "No taste match", do not mention Qloo or taste data and do not say or suggest that the crowd likes the business. Lead with how close it is, the crowd size and age, and what the sponsor gets.
+- If the sponsor is a local business, lead with in-kind options, such as [a discount for our attendees] or [your products at our table].
+- For a local business, write its distance only as "about X km from the center of [city]", with the number and city from the facts. Never write "near the venue", "proximity to the venue", "down the road" or anything about the venue; the venue location is not known.
+- If the facts say "No taste match", do not mention Qloo or taste data and do not say or suggest that the crowd likes the business. Lead with its distance, the crowd size and age, and what the sponsor gets.
 - End with one clear ask: a 15-minute call.
 - Under 170 words. Plain, friendly and specific. No hype, no emojis, no exclamation marks.
 
@@ -126,12 +134,10 @@ function templateDraft(input: PitchInput): { subject: string; body: string } {
   // No taste data: pitch being close by, never a taste match.
   const why =
     input.brand.nearbyKm !== null
-      ? `I'm writing to ${brand} because you're close by: about ${formatKm(input.brand.nearbyKm)} from the center of ${input.city ?? "[city]"}. Our venue is [venue].`
+      ? `I'm writing to ${brand} because you're about ${formatKm(input.brand.nearbyKm)} from the center of ${input.city ?? "[city]"}.`
       : `I'm writing to ${brand} specifically. Qloo's taste data shows that ${crowd} already like ${yours}: ${brand} ${rankClause(input.brand.reasonText)}`;
 
   const body = [
-    "Hi [contact name],",
-    "",
     `I'm organizing ${event}, ${input.admission?.phrase ?? "a show"} ${about.join(" ") || "[where and how big]"}${audience}.${lineUp}`,
     "",
     why,
@@ -139,17 +145,49 @@ function templateDraft(input: PitchInput): { subject: string; body: string } {
     offer,
     "",
     "Could we set up a 15-minute call this week?",
-    "",
-    "Thanks,",
-    input.organizer ?? "[your name]",
-    "[phone or email]",
   ].join("\n");
 
   const subject =
     input.brand.nearbyKm !== null
-      ? `${brand} x ${event}: a sponsor spot just down the road`
+      ? `${brand} x ${event}: a sponsor spot in ${input.city ?? "[city]"}`
       : `${brand} x ${event}: a crowd that already likes you`;
   return { subject, body };
+}
+
+/** Greeting and sign-off come from code, for AI and template drafts alike. */
+function wrapBody(body: string, input: PitchInput): string {
+  return ["Hi [contact name],", "", body.trim(), "", "Best,", input.organizer ?? "[Your name]", "[Event name / contact]"].join("\n");
+}
+
+/** Drops a greeting line or sign-off the model added anyway. */
+function stripGreetingAndSignOff(body: string): string {
+  const lines = body.trim().split("\n");
+  if (/^\s*(hi|hello|hey|dear)\b.*,\s*$/i.test(lines[0] ?? "")) lines.shift();
+  const signOff = lines.findIndex((line, index) =>
+    index > 0 && /^\s*(best|thanks|thank you|cheers|regards|best regards|kind regards|sincerely|warmly)[,!.]?\s*$/i.test(line),
+  );
+  return (signOff >= 0 ? lines.slice(0, signOff) : lines).join("\n").trim();
+}
+
+/** Numbers in text outside [square brackets], as plain strings ("1,000" -> "1000"). */
+function numbersIn(text: string): string[] {
+  return [...text.replace(/\[[^\]]*\]/g, " ").matchAll(/\d+(?:[.,]\d+)*/g)].map((match) =>
+    match[0].replace(/,(?=\d{3}\b)/g, ""),
+  );
+}
+
+/**
+ * Null when the AI draft keeps to the facts, else why not. Checked: every
+ * number must appear in the facts (15, for the 15-minute call, is allowed),
+ * and a local place's pitch must not mention the venue at all.
+ */
+function factProblem(draft: { subject: string; body: string }, input: PitchInput): string | null {
+  const allowed = new Set([...numbersIn(facts(input).join("\n")), "15"]);
+  const text = `${draft.subject}\n${draft.body}`;
+  const extra = numbersIn(text).filter((number) => !allowed.has(number));
+  if (extra.length > 0) return `numbers not in the facts: ${extra.join(", ")}`;
+  if (input.brand.kind === "place" && /venue/i.test(text)) return "a local place pitch mentions the venue";
+  return null;
 }
 
 /** Turns the first sentence of reasonText into "ranks #2 of 15 beer brands for this crowd." */
@@ -299,9 +337,14 @@ export async function writePitch(input: PitchInput): Promise<PitchDraft> {
   const started = Date.now();
   const provider = chooseProvider();
 
+  const template = () => {
+    const draft = templateDraft(input);
+    return { subject: draft.subject, body: wrapBody(draft.body, input) };
+  };
+
   if ("missing" in provider) {
     return {
-      ...templateDraft(input),
+      ...template(),
       source: "template",
       model: null,
       note: `This draft comes from the built-in template because ${provider.missing}.`,
@@ -310,13 +353,32 @@ export async function writePitch(input: PitchInput): Promise<PitchDraft> {
   }
 
   try {
-    const draft = await llmDraft(input, provider);
-    return { ...draft, source: "ai", model: provider.model, note: null, ms: Date.now() - started };
+    const raw = await llmDraft(input, provider);
+    const draft = { subject: raw.subject, body: stripGreetingAndSignOff(raw.body) };
+    const problem = factProblem(draft, input);
+    if (problem) {
+      console.error(`Pitch AI draft rejected (${problem}); using the template.`);
+      return {
+        ...template(),
+        source: "template",
+        model: null,
+        note: "This draft comes from the built-in template because the AI draft did not pass our fact check.",
+        ms: Date.now() - started,
+      };
+    }
+    return {
+      subject: draft.subject,
+      body: wrapBody(draft.body, input),
+      source: "ai",
+      model: provider.model,
+      note: null,
+      ms: Date.now() - started,
+    };
   } catch (error) {
     // The upstream message can echo part of the API key, so it stays in the server log.
     console.error(`Pitch fell back to the template: ${error instanceof Error ? error.message : String(error)}`);
     return {
-      ...templateDraft(input),
+      ...template(),
       source: "template",
       model: null,
       note: `This draft comes from the built-in template because ${publicReason(error, provider)}.`,
