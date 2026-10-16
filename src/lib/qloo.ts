@@ -521,7 +521,9 @@ function reasonSentence(
   if (top.share - 1 / strong.length >= LEAN_MARGIN) {
     return `${rankPart} Leans toward ${top.name} fans (${Math.round(top.share * 100)}% of the match).`;
   }
-  return `${rankPart} Liked evenly across the line-up.`;
+  // No artist stands out: the rank says enough. Repeating "liked evenly" on
+  // every row only added noise.
+  return rankPart;
 }
 
 function brandTagIds(entity: Json): string[] {
