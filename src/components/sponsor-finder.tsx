@@ -526,7 +526,7 @@ export function SponsorFinder() {
                         const allowed = brandAllowed(brand);
                         return (
                           <li key={brand.entityId} className="px-5 py-3">
-                            <div className="flex items-start gap-3">
+                            <div className="flex flex-wrap items-start gap-x-3 gap-y-2 sm:flex-nowrap">
                               <span
                                 className="mt-0.5 w-10 shrink-0 rounded-md bg-zinc-900 py-1 text-center text-sm font-semibold tabular-nums text-white"
                                 title="Sponsor Fit Score, 0 to 100"
@@ -542,7 +542,7 @@ export function SponsorFinder() {
                                   </p>
                                 )}
                               </div>
-                              <div className="flex shrink-0 flex-col gap-1.5 sm:flex-row">
+                              <div className="flex w-full gap-1.5 pl-13 sm:w-auto sm:shrink-0 sm:pl-0">
                                 <button
                                   type="button"
                                   onClick={() =>

@@ -178,7 +178,7 @@ export function LocalSponsors({
               const pitchAllowed = place.categoryId !== "bars" || barsAllowed;
               return (
                 <li key={place.entityId} className={`px-5 py-3 hover:bg-zinc-50 ${selected ? "bg-zinc-50" : ""}`}>
-                  <div className="flex items-start gap-3">
+                  <div className="flex flex-wrap items-start gap-x-3 gap-y-2 sm:flex-nowrap">
                     <button
                       type="button"
                       onClick={() => setSelectedId(place.entityId)}
@@ -206,7 +206,7 @@ export function LocalSponsors({
                         <span className="mt-0.5 block text-sm text-zinc-600">{place.reasonText}</span>
                       </span>
                     </button>
-                    <div className="flex shrink-0 flex-col gap-1.5 sm:flex-row">
+                    <div className="flex w-full gap-1.5 pl-13 sm:w-auto sm:shrink-0 sm:pl-0">
                       {pitchContext && (
                         <button
                           type="button"
