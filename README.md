@@ -34,3 +34,19 @@ You can check out [the Next.js GitHub repository](https://github.com/vercel/next
 The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
 
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+
+## Re-recording the saved example
+
+"Try an example" is answered from saved real Qloo responses in
+`src/data/demo/qloo-recording.json`, so it is instant and makes no Qloo calls.
+To record it again (about 8 Qloo calls), on Windows PowerShell:
+
+1. Stop the dev server, then start it in record mode:
+   `$env:QLOO_RECORD="1"; npm run dev`
+2. In a second terminal, from the project root:
+   `node scripts/record-demo.mjs`
+3. Stop the dev server. **Then close that terminal, or run
+   `Remove-Item Env:QLOO_RECORD`.** The variable stays set in that terminal,
+   and while it is set every search runs live and is recorded.
+4. Start the dev server normally (`npm run dev`) and check that
+   "Try an example" shows "Saved example".
