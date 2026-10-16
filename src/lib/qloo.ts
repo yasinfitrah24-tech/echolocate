@@ -22,6 +22,26 @@ const RETRY_BASE_MS = 500;
 const BRAND_TAG_PREFIX = "urn:tag:genre:brand:";
 const MUSIC_TAG_PREFIX = "urn:tag:genre:music:";
 const NGO_TAG_PREFIX = "urn:tag:genre:brand:ngo";
+// Big institutions Qloo files as "brands" that will not sponsor a small show:
+// sports teams, universities, museums, news outlets (stage 7 test, 18 Oct:
+// Atlanta Hawks, Cornell, MoMA, The New York Times, NPR...). Matched with any
+// subcategory. Banks like Goldman Sachs share one financial_services tag with
+// Chime and Venmo, so they cannot be told apart by tag and stay.
+const NOT_SPONSOR_TAGS = [
+  "urn:tag:genre:brand:sports_organization",
+  "urn:tag:genre:brand:academic",
+  "urn:tag:genre:brand:cultural_arts",
+  "urn:tag:genre:brand:entertainment:media:news_and_politics",
+];
+
+/** Advocacy groups and big institutions come back as "brands". Not sponsors. */
+function notASponsor(tagIds: string[]): boolean {
+  return tagIds.some(
+    (id) =>
+      id.startsWith(NGO_TAG_PREFIX) ||
+      NOT_SPONSOR_TAGS.some((tag) => id === tag || id.startsWith(`${tag}:`)),
+  );
+}
 const ALCOHOL_TAG_PREFIX = "urn:tag:genre:brand:wine_and_spirits";
 
 // Only "24_and_younger" has been tested against the API. The other values come
@@ -428,16 +448,17 @@ export async function searchGenreTags(
 /**
  * Sponsor Fit Score, 0-95. This is our formula, not a Qloo number.
  *
- * - Affinity (80%): Qloo's affinity of this crowd for the entity, on a fixed
- *   scale. One scale for all brands, so a drinks brand and a fashion brand
- *   can be compared; a separate scale for local places, whose affinity runs
- *   lower. Fixed, not stretched per search, so the #1 of a weak list does not
- *   look perfect. Ranges seen 16 Oct: top-50 brands 0.94-0.97, category lists
- *   0.85-0.94, places 0.72-0.94 (indie Austin and country Nashville).
- * - Rank (20%): position in the list it came from.
- * - Capped at 95: nothing is a sure thing.
- * Calibrated on the demo example and a country line-up
- * (scripts/probe-score.mjs). Without an affinity the score sits mid-scale.
+ * Brands (see scoreBrandsAgainstEachOther): compared with the other brands
+ * for the same crowd. Affinity alone could not be put on one fixed scale: an
+ * artist line-up gives top brands 0.94-0.97, a genre gives 0.97-1.00 (stage 7
+ * test, 18 Oct), so a fixed scale gave every genre search a wall of 95s.
+ *
+ * Local places (this function): Qloo's affinity on a fixed scale (80%) plus
+ * rank in its list (20%). Places at Qloo's default affinity get no score at
+ * all; see PLACE_DEFAULT_AFFINITY.
+ *
+ * Both are capped at 95: nothing is a sure thing. Without an affinity the
+ * affinity part sits mid-scale.
  */
 const AFFINITY_SCALE = {
   brand: { low: 0.8, high: 0.975 },
@@ -459,6 +480,34 @@ function fitScore(
   const { low, high } = AFFINITY_SCALE[kind];
   const affinityPart = affinity === null ? 0.5 : Math.min(1, Math.max(0, (affinity - low) / (high - low)));
   return Math.min(MAX_FIT_SCORE, Math.round(100 * (0.8 * affinityPart + 0.2 * rankPart)));
+}
+
+/**
+ * Rescores all brands of one search against each other:
+ * score = 40 + 55 x (0.8 x affinity percentile + 0.2 x rank in its list), max 95.
+ * The percentile is taken over every brand in the search (top 50 and all
+ * category lists together), so categories can be compared and a weak
+ * category's #1 does not look perfect. Percentile, not min-max: one outlier
+ * does not squeeze everyone else (medians 65-68 on the six stage 7 tests,
+ * at most one brand at 95).
+ */
+function scoreBrandsAgainstEachOther(brands: Brand[]): void {
+  const affinities = brands
+    .map((brand) => brand.affinity)
+    .filter((value): value is number => value !== null)
+    .sort((a, b) => a - b);
+  const percentile = (value: number | null): number => {
+    if (value === null || affinities.length < 2) return 0.5;
+    const below = affinities.filter((other) => other < value).length;
+    const same = affinities.filter((other) => other === value).length;
+    return (below + (same - 1) / 2) / (affinities.length - 1);
+  };
+  for (const brand of brands) {
+    const capacity = brand.source === "general" ? GENERAL_TAKE : CATEGORY_TAKE;
+    const rankPart = 1 - (brand.rank - 1) / Math.max(brand.listSize, capacity);
+    const mix = 0.8 * percentile(brand.affinity) + 0.2 * rankPart;
+    brand.fitScore = Math.min(MAX_FIT_SCORE, Math.round(40 + 55 * mix));
+  }
 }
 
 function readReasons(
@@ -695,8 +744,7 @@ export async function getSponsorBrands(
 
   general.forEach((entity, index) => {
     const tagIds = brandTagIds(entity);
-    // Advocacy groups come back as "brands" (e.g. Black Lives Matter). Not sponsors.
-    if (tagIds.some((id) => id.startsWith(NGO_TAG_PREFIX))) return;
+    if (notASponsor(tagIds)) return;
     if (!includeAlcohol && tagIds.some((id) => id.startsWith(ALCOHOL_TAG_PREFIX))) return;
     const category = categoryFromTags(tagIds);
     keep(
@@ -709,7 +757,7 @@ export async function getSponsorBrands(
     const category = categories[categoryIndex];
     entities.forEach((entity, index) => {
       const tagIds = brandTagIds(entity);
-      if (tagIds.some((id) => id.startsWith(NGO_TAG_PREFIX))) return;
+      if (notASponsor(tagIds)) return;
       if (!includeAlcohol && tagIds.some((id) => id.startsWith(ALCOHOL_TAG_PREFIX))) return;
       keep(
         toBrand(entity, category, index + 1, entities.length, "category", signalNames),
@@ -717,6 +765,10 @@ export async function getSponsorBrands(
       );
     });
   });
+
+  // The copy kept above was picked with the fixed-scale score; the score
+  // shown is relative to every other brand in this search.
+  scoreBrandsAgainstEachOther([...best.values()]);
 
   const grouped = new Map<string, Brand[]>();
   for (const brand of best.values()) {
@@ -764,6 +816,12 @@ export async function getSponsorBrands(
 // - Chains show up more than once (Urban Outfitters x2, REI x2): keep one.
 
 const PLACE_TAKE = 15;
+/**
+ * Qloo's affinity for a place when it has little taste data for it: exactly
+ * 0.7649962877984056 on 89 of 154 places in the stage 7 test (18 Oct; every
+ * place in Ithaca, NY). Places at or below it get no score.
+ */
+const PLACE_DEFAULT_AFFINITY = 0.7649962877984056;
 /** City-name searches: places farther than this from the middle of the results are dropped. */
 const MAX_PLACE_DISTANCE_KM = 20;
 
@@ -799,7 +857,10 @@ export interface LocalPlace {
   priceLevel: number | null;
   imageUrl: string | null;
   description: string | null;
-  fitScore: number;
+  /** Null when Qloo has little taste data for the place (see littleData). */
+  fitScore: number | null;
+  /** Qloo's affinity sits at its default value: listed by distance, no score. */
+  littleData: boolean;
   rank: number;
   listSize: number;
   affinity: number | null;
@@ -872,6 +933,8 @@ function toPlace(
 
   const reasons = readReasons(entity, signalNames);
   const firstImage = asObject(asArray(props.images)[0]);
+  const affinity = asNumber(asObject(entity.query).affinity);
+  const littleData = affinity !== null && affinity <= PLACE_DEFAULT_AFFINITY + 1e-9;
   return {
     entityId,
     name,
@@ -887,7 +950,8 @@ function toPlace(
     priceLevel: asNumber(props.price_level),
     imageUrl: asString(firstImage.url),
     description: asString(props.short_description) ?? asString(props.description),
-    fitScore: fitScore(rank, listSize, "category", asNumber(asObject(entity.query).affinity), "place"),
+    fitScore: littleData ? null : fitScore(rank, listSize, "category", affinity, "place"),
+    littleData,
     rank,
     listSize,
     affinity: asNumber(asObject(entity.query).affinity),
@@ -985,11 +1049,11 @@ export async function getLocalSponsors(
         const place = toPlace(entity, category, position + 1, entities.length, signalNames);
         if (!place) return;
         const existing = byId.get(place.entityId);
-        if (!existing || place.fitScore > existing.fitScore) byId.set(place.entityId, place);
+        if (!existing || (place.fitScore ?? -1) > (existing.fitScore ?? -1)) byId.set(place.entityId, place);
       });
     });
 
-    const sorted = [...byId.values()].sort((a, b) => b.fitScore - a.fitScore || a.rank - b.rank);
+    const sorted = [...byId.values()].sort((a, b) => (b.fitScore ?? -1) - (a.fitScore ?? -1) || a.rank - b.rank);
     const seenNames = new Set<string>();
     const unique = sorted.filter((place) => {
       const key = normalizeName(place.name);
@@ -1035,7 +1099,16 @@ export async function getLocalSponsors(
     ...place,
     distanceKm: Math.round(distanceKm(middle.lat, middle.lon, place.lat, place.lon) * 10) / 10,
   }));
-  const places = withDistance.filter((place) => place.distanceKm <= limitKm);
+  // Scored places first, best first; then places with little taste data, nearest first.
+  const places = withDistance
+    .filter((place) => place.distanceKm <= limitKm)
+    .sort((a, b) =>
+      a.littleData !== b.littleData
+        ? Number(a.littleData) - Number(b.littleData)
+        : a.littleData
+          ? a.distanceKm - b.distanceKm
+          : 0,
+    );
 
   const center =
     places.length > 0

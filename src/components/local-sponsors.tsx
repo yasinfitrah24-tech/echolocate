@@ -138,6 +138,11 @@ export function LocalSponsors({
 
       {data && data.center && data.places.length > 0 && (
         <>
+          {data.places.every((place) => place.littleData) && (
+            <p className="border-b border-zinc-200 px-5 py-2.5 text-sm text-zinc-600">
+              Qloo has little taste data for places here, so these are sorted by distance.
+            </p>
+          )}
           <PlacesMap
             places={shown}
             center={data.center}
@@ -175,7 +180,8 @@ export function LocalSponsors({
             {listed.map((place) => {
               const selected = place.entityId === selectedId;
               const open = pitch.pitchFor === place.entityId;
-              const pitchAllowed = place.categoryId !== "bars" || barsAllowed;
+              // No pitch without taste data: it would claim a match Qloo does not show.
+              const pitchAllowed = !place.littleData && (place.categoryId !== "bars" || barsAllowed);
               return (
                 <li key={place.entityId} className={`px-5 py-3 hover:bg-zinc-50 ${selected ? "bg-zinc-50" : ""}`}>
                   <div className="flex flex-wrap items-start gap-x-3 gap-y-2 sm:flex-nowrap">
@@ -186,10 +192,10 @@ export function LocalSponsors({
                     >
                       <span
                         className="mt-0.5 w-10 shrink-0 rounded-md py-1 text-center text-sm font-semibold tabular-nums text-white"
-                        style={{ backgroundColor: COLORS[place.categoryId] ?? "#3f3f46" }}
-                        title="Sponsor Fit Score, 0 to 100"
+                        style={{ backgroundColor: place.littleData ? "#a1a1aa" : (COLORS[place.categoryId] ?? "#3f3f46") }}
+                        title={place.littleData ? "No score: Qloo has little taste data for this place" : "Sponsor Fit Score, 0 to 100"}
                       >
-                        {place.fitScore}
+                        {place.fitScore ?? "–"}
                       </span>
                       <span className="min-w-0 flex-1">
                         <span className="block text-sm font-medium">{place.name}</span>
@@ -198,12 +204,14 @@ export function LocalSponsors({
                             place.categoryLabel,
                             place.neighborhood,
                             place.rating ? `${place.rating}★` : null,
-                            `${place.distanceKm} km from city center`,
+                            `${place.distanceKm} km from the search center`,
                           ]
                             .filter(Boolean)
                             .join(" · ")}
                         </span>
-                        <span className="mt-0.5 block text-sm text-zinc-600">{place.reasonText}</span>
+                        <span className="mt-0.5 block text-sm text-zinc-600">
+                          {place.littleData ? "Nearby · little taste data" : place.reasonText}
+                        </span>
                       </span>
                     </button>
                     <div className="flex w-full gap-1.5 pl-13 sm:w-auto sm:shrink-0 sm:pl-0">
@@ -223,7 +231,13 @@ export function LocalSponsors({
                             )
                           }
                           disabled={!pitchAllowed || (pitch.loading && open)}
-                          title={pitchAllowed ? undefined : "Bars need a 21+ event. Search again as 21+."}
+                          title={
+                            pitchAllowed
+                              ? undefined
+                              : place.littleData
+                                ? "Qloo has little taste data for this place, so there is no match to pitch."
+                                : "Bars need a 21+ event. Search again as 21+."
+                          }
                           className="rounded-md border border-zinc-300 bg-white px-3 py-1.5 text-xs font-medium text-zinc-800 hover:bg-zinc-100 disabled:opacity-50"
                         >
                           {pitch.loading && open ? "Writing…" : "Draft pitch"}

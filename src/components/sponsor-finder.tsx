@@ -658,9 +658,10 @@ export function SponsorFinder() {
                 </p>
               )}
               <p className="mt-3 text-xs text-zinc-500">
-                The Sponsor Fit Score is our own score out of 100, and it never goes above 95. It is
-                mostly how strongly this crowd likes the brand in Qloo&rsquo;s taste data, plus where the
-                brand ranks in its list. Brands and local places are scored on separate scales.
+                The Sponsor Fit Score is our own score out of 100, and it never goes above 95. Each brand
+                is compared with the other brands for this crowd: mostly how strongly the crowd likes it in
+                Qloo&rsquo;s taste data, plus where it ranks in its list. Local places have their own
+                scale, and places Qloo has little taste data for get no score.
               </p>
               {result.input.alcoholBlocked && (
                 <p className="mt-2 text-xs text-zinc-500">

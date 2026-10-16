@@ -82,14 +82,16 @@ export default function PlacesMap({ places, center, selectedId, onSelect }: Plac
             eventHandlers={{ click: () => onSelect(place.entityId) }}
           >
             <Tooltip direction="top" offset={[0, -6]}>
-              {place.name} · {place.fitScore}
+              {place.name} · {place.fitScore ?? "little taste data"}
             </Tooltip>
             <Popup>
               <div className="text-sm">
                 <p className="font-semibold">{place.name}</p>
                 <p className="text-zinc-600">{details}</p>
                 {place.address && <p className="mt-1">{place.address}</p>}
-                <p className="mt-1">Fit score {place.fitScore}</p>
+                <p className="mt-1">
+                  {place.fitScore === null ? "Little taste data, no score" : `Fit score ${place.fitScore}`}
+                </p>
                 {place.website && (
                   <a href={place.website} target="_blank" rel="noopener noreferrer">
                     Website

@@ -38,14 +38,13 @@ Every Qloo call is listed in the app under "How the agent got this", with its re
    One call returns the top 50 brands across all categories. One call per sponsor category adds `filter.tags`: drinks and financial services, plus beer and spirits for 21+ events only. If a city returns nothing at all, the calls run again without the city, and the app says so.
 4. **Rules, applied on the server.**
    - Alcohol brands (any `wine_and_spirits` tag) and bars only for 21+ events.
-   - Advocacy groups that come back as "brands" are dropped.
+   - Advocacy groups that come back as "brands" are dropped, and so are big institutions that will not sponsor a small show: sports teams, universities, museums and news outlets (by their Qloo tags).
    - Qloo's audience segments (`urn:audience`) are never used or shown.
-5. **Score and reason.** The Sponsor Fit Score is our own score, not a Qloo number:
-   - 80% Qloo's affinity for the brand, on a fixed scale,
-   - 20% the brand's rank in its list,
-   - capped at 95.
+5. **Score and reason.** The Sponsor Fit Score is our own score, not a Qloo number. It is never above 95.
+   - **Brands** are compared with the other brands for the same crowd. Score = 40 + 55 × (0.8 × the brand's affinity percentile among all brands of the search + 0.2 × its rank in its list). Every category is in one pool, so a weak category's #1 does not look perfect, and it gets a note saying the category is a smaller fit.
+   - **Local places** use Qloo's affinity on a fixed scale (80%) plus rank (20%). When Qloo has little taste data for a place (its affinity sits at Qloo's default value), the place gets no score. It is listed after the scored places, nearest first, as "Nearby · little taste data".
 
-   Brands share one scale, so different categories can be compared. Local places have their own scale, because their affinity runs lower. The reason starts from the rank. It names an artist only when that artist's share of Qloo's explainability is clearly higher than the others'.
+   The reason starts from the rank. It names an artist only when that artist's share of Qloo's explainability is clearly higher than the others'.
 6. **Local places.** `GET /v2/insights` with:
    - `filter.type=urn:entity:place`
    - `filter.tags` (cafe, clothing store, bar)
@@ -74,14 +73,17 @@ We have not yet compared Qloo with a language model picking brands on its own, s
 - **Places.** `filter.location=POINT(lon lat)` with a radius worked in our tests: with a 3 km radius, every cafe came back within 2.7 km. With a city name, the radius was ignored.
 - **Brands.** A location given as a point barely changed the results in our tests. The top five were almost the same as with no location at all. So brands use the city name.
 - **Cities without data.** Some cities return no brands at all, with no error. Indio, CA returned 0. The app then matches on the line-up alone and says so.
-- **Score scales.** We set the scales from the saved example (indie, Austin) and a live country search (Nashville). Brand scores had a median of 70 in both.
+- **Scores.** A fixed affinity scale worked for artist line-ups but not for genres. Genre searches put top brands at an affinity of 0.97 to 1.00, so every genre search showed a wall of 95s. So brands are now scored against each other within a search. On six test searches (Austin, Atlanta, Las Vegas, Ithaca, Los Angeles, Toronto), the median brand score was 65 to 68, with at most one brand at 95.
+- **Places with little data.** In those tests, 89 of 154 places came back with the same affinity, 0.765, Qloo's default. In Ithaca, NY that was every place.
 
 ## Limitations
 
 - **Cities without Qloo data** get brands matched to the line-up alone.
 - **Small local artists** are often not in Qloo. The genre field covers them, and artist names are optional.
 - **City suggestions** cover US places from Census data (5,000+ people, plus small campus towns). Other cities can be typed, but brands then use the plain city name and places use the old city-name search.
-- **The Sponsor Fit Score is ours.** It was calibrated on two searches, so other music or cities may sit higher or lower on the scale.
+- **The Sponsor Fit Score is ours.** A brand's score says how it compares with the other brands for the same crowd, not how good a match it is in absolute terms. Scores from two different searches should not be compared.
+- **Small towns often have little place data.** Places there may have no score and are sorted by distance.
+- **Big banks stay in the list.** Qloo tags them like any other financial service (Chime, Venmo), so they cannot be filtered by tag.
 - **The PDF uses the built-in Helvetica font.** Accents outside Western European letters are dropped ("Allē" prints as "Alle"), and non-Latin scripts are not supported.
 - **The demo's limits are kept in memory**, per server instance. They are not exact across a whole deployment.
 - **The saved example is a snapshot** from 16 Oct 2026. Live searches use current data.

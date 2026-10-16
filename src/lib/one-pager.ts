@@ -216,7 +216,7 @@ export function buildOnePager(
     fitScore: brand.fitScore,
     reasonText: brand.reasonText,
     scoreNote:
-      "Our own score, never above 95: mostly how strongly this crowd likes the brand in Qloo's taste data, plus its rank in its list.",
+      "Our own score, never above 95: how strongly this crowd likes the brand in Qloo's taste data compared with other brands, plus its rank in its list.",
     event: [
       { label: "Event", value: eventName },
       { label: "City", value: search.city ?? "[city]" },
