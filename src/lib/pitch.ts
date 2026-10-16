@@ -100,6 +100,7 @@ Rules:
 - Write only the body: no greeting line ("Hi ...") and no sign-off or name at the end. Those are added for you.
 - When a detail you need is missing, leave a placeholder in square brackets, such as [date].
 - Lead with why this brand fits this crowd, using the ranking given, and say it comes from Qloo taste data. Describe the "this crowd" as fans of the line-up.
+- Do not judge the fit yourself: no "strong fit", "perfect fit", "great match", "ideal partner" or similar. State the rank and its source (Qloo) and let the reader judge.
 - Offer one or two concrete ways to take part, written as options in square brackets for the organizer to edit.
 - If the sponsor is a local business, lead with in-kind options, such as [a discount for our attendees] or [your products at our table].
 - For a local business, write its distance only as "about X km from the center of [city]", with the number and city from the facts. Never write "near the venue", "proximity to the venue", "down the road" or anything about the venue; the venue location is not known.
@@ -197,7 +198,8 @@ function factProblem(body: string, input: PitchInput): string | null {
 /** Turns the first sentence of reasonText into "ranks #2 of 15 beer brands for this crowd." */
 function rankClause(reasonText: string): string {
   const first = reasonText.split(/(?<=\.)\s+/)[0] ?? reasonText;
-  return first.startsWith("#") ? `ranks ${first}` : `is a strong match. ${first}`;
+  // State the rank, never a verdict like "a strong match".
+  return first.startsWith("#") ? `ranks ${first}` : `is on the list. ${first}`;
 }
 
 interface Provider {
