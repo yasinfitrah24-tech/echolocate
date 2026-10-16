@@ -21,14 +21,18 @@ const COLORS: Record<string, string> = {
   bars: "#be123c",
 };
 
-interface PlacesResponse {
+export interface PlacesSearchInfo {
+  calls: QlooCall[];
+  search: { by: "point" | "city"; radiusKm: number | null; widened: boolean };
+  tookMs: number;
+}
+
+interface PlacesResponse extends PlacesSearchInfo {
   input: { city: string; barsIncluded: boolean };
   places: LocalPlace[];
   center: { lat: number; lon: number } | null;
   droppedFar: number;
   droppedDuplicates: number;
-  calls: QlooCall[];
-  tookMs: number;
 }
 
 interface LocalSponsorsProps {
@@ -37,11 +41,13 @@ interface LocalSponsorsProps {
   city: string;
   age: string | null;
   admission: string;
+  /** Hands the call log to the parent, for "How the agent got this". */
+  onLoaded?: (info: PlacesSearchInfo) => void;
 }
 
 const LIST_SIZE = 8;
 
-export function LocalSponsors({ artists, genreTags, city, age, admission }: LocalSponsorsProps) {
+export function LocalSponsors({ artists, genreTags, city, age, admission, onLoaded }: LocalSponsorsProps) {
   const [data, setData] = useState<PlacesResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -58,8 +64,12 @@ export function LocalSponsors({ artists, genreTags, city, age, admission }: Loca
     })
       .then(async (response) => {
         const body = await response.json();
-        if (!response.ok) setError(body.error ?? "Could not load local sponsors");
-        else setData(body as PlacesResponse);
+        if (!response.ok) {
+          setError(body.error ?? "Could not load local sponsors");
+        } else {
+          setData(body as PlacesResponse);
+          onLoaded?.(body as PlacesResponse);
+        }
       })
       .catch((reason: unknown) => {
         if (reason instanceof DOMException && reason.name === "AbortError") return;
@@ -205,6 +215,9 @@ export function LocalSponsors({ artists, genreTags, city, age, admission }: Loca
           )}
 
           <p className="border-t border-zinc-200 px-5 py-2.5 text-xs text-zinc-500">
+            {data.search.by === "point"
+              ? `Within ${data.search.radiusKm} km of ${city}${data.search.widened ? " (widened, few places closer)" : ""}. `
+              : ""}
             {data.calls.length} Qloo place searches in {(data.tookMs / 1000).toFixed(1)} s.
             {data.droppedDuplicates > 0 &&
               ` ${data.droppedDuplicates} repeat chain ${data.droppedDuplicates === 1 ? "branch" : "branches"} hidden.`}

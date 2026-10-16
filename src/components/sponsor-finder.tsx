@@ -10,7 +10,7 @@ import type { ArtistMatch, Brand, BrandCategory, QlooCall } from "@/lib/qloo";
 import { findGenreByLabel } from "@/lib/genres";
 import { CityCombobox } from "./city-combobox";
 import { GenreCombobox } from "./genre-combobox";
-import { LocalSponsors } from "./local-sponsors";
+import { LocalSponsors, type PlacesSearchInfo } from "./local-sponsors";
 import { OnePagerPanel } from "./one-pager-panel";
 
 interface ConfirmedArtist {
@@ -111,6 +111,8 @@ export function SponsorFinder() {
   // Changes with every successful search, so the local sponsors map reloads.
   const [searchId, setSearchId] = useState(0);
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
+  // Place searches for the current result, shown under "How the agent got this".
+  const [placesInfo, setPlacesInfo] = useState<PlacesSearchInfo | null>(null);
   // The form as it was for the last successful search.
   const [searchedKey, setSearchedKey] = useState<string | null>(null);
 
@@ -158,6 +160,7 @@ export function SponsorFinder() {
         return;
       }
       setResult(data as BrandsResponse);
+      setPlacesInfo(null);
       setSearchedKey(key);
       setSearchId((id) => id + 1);
       setExpanded({});
@@ -657,6 +660,7 @@ export function SponsorFinder() {
                 city={result.input.city}
                 age={result.input.age}
                 admission={result.input.admission}
+                onLoaded={setPlacesInfo}
               />
             ) : (
               <p className="mt-5 rounded-xl border border-zinc-200 bg-white px-5 py-3 text-sm text-zinc-600">
@@ -678,7 +682,27 @@ export function SponsorFinder() {
                     </span>
                   </li>
                 ))}
+                {placesInfo?.calls.map((call, index) => (
+                  <li key={`place-${index}`} className="flex flex-wrap justify-between gap-x-4">
+                    <span>
+                      Qloo <code className="text-xs">{call.endpoint}</code> · {call.label}
+                    </span>
+                    <span className="tabular-nums">
+                      {call.error ? "failed" : `${call.resultCount} places`} · {(call.ms / 1000).toFixed(1)} s
+                      {call.retries > 0 ? ` · retried ${call.retries}x` : ""}
+                    </span>
+                  </li>
+                ))}
               </ul>
+              {placesInfo && (
+                <p className="mt-3 text-xs text-zinc-500">
+                  {placesInfo.search.by === "point"
+                    ? placesInfo.search.widened
+                      ? `Local places: fewer than 6 close by, so the search was widened once to ${placesInfo.search.radiusKm} km around the city.`
+                      : `Local places: searched within ${placesInfo.search.radiusKm} km of the city, based on its size.`
+                    : "Local places: searched by city name, because this city is not in our US city list."}
+                </p>
+              )}
               <p className="mt-3 text-xs text-zinc-500">
                 The Sponsor Fit Score is our own 0 to 100 score. It comes from where a brand ranks in
                 Qloo&rsquo;s taste data for this crowd and how evenly the line-up supports it.

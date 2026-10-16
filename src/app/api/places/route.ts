@@ -6,13 +6,16 @@
 // Body (JSON):
 //   artists?: { entityId: string; name: string }[]
 //   genreTags?: { id: string; name: string }[]
-//   city: string                       e.g. "Austin, TX" (required)
+//   city: string                       e.g. "Austin, TX" (required). A city from the US
+//                                      list is searched by its point and a radius from its
+//                                      population; any other text by name, as before.
 //   age?: an id from AUDIENCE_AGES
 //   admission?: "all_ages" | "18_plus" | "21_plus"   bars only for 21_plus
 
 import { NextResponse } from "next/server";
 import { DEFAULT_ADMISSION, findAdmission, findAudienceAge } from "@/lib/audience";
 import { QlooError, getLocalSponsors, type GenreTag } from "@/lib/qloo";
+import { findUsCity, placeRadiusKm } from "@/lib/us-cities";
 
 const MAX_SIGNALS = 8;
 
@@ -78,6 +81,8 @@ export async function POST(request: Request) {
       : findAdmission(body.admission);
   if (!admission) return bad("Unknown admission");
 
+  const usCity = findUsCity(city);
+
   try {
     const result = await getLocalSponsors({
       artists: artists.map((artist) => ({ entityId: artist.id, name: artist.name })),
@@ -85,6 +90,9 @@ export async function POST(request: Request) {
       city,
       age: audience?.id,
       includeBars: admission.alcoholAllowed,
+      point: usCity
+        ? { lat: usCity.lat, lon: usCity.lon, radiusKm: placeRadiusKm(usCity.population) }
+        : undefined,
     });
     return NextResponse.json({
       input: { city, age: audience?.id ?? null, admission: admission.id, barsIncluded: admission.alcoholAllowed },

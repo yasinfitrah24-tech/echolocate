@@ -696,7 +696,7 @@ export async function getSponsorBrands(
 // - Chains show up more than once (Urban Outfitters x2, REI x2): keep one.
 
 const PLACE_TAKE = 15;
-/** Places farther than this from the middle of the results are dropped. */
+/** City-name searches: places farther than this from the middle of the results are dropped. */
 const MAX_PLACE_DISTANCE_KM = 20;
 
 export interface PlaceCategoryDef {
@@ -747,6 +747,8 @@ export interface LocalSponsorsInput {
   age?: AgeGroup;
   /** True only for 21+ events. Adds bars. */
   includeBars?: boolean;
+  /** The city's coordinates and search radius, when it was picked from the US list. */
+  point?: { lat: number; lon: number; radiusKm: number };
 }
 
 export interface LocalSponsorsResult {
@@ -758,6 +760,8 @@ export interface LocalSponsorsResult {
   /** Duplicate chain branches dropped. */
   droppedDuplicates: number;
   calls: QlooCall[];
+  /** How the places were searched: by the city's point and radius, or by its name. */
+  search: { by: "point" | "city"; radiusKm: number | null; widened: boolean };
 }
 
 function median(values: number[]): number {
@@ -824,9 +828,20 @@ function toPlace(
   };
 }
 
+/** Below this many places, a POINT search is tried once more with twice the radius. */
+const MIN_PLACES = 6;
+const MAX_PLACE_RADIUS_KM = 30;
+
 /**
  * Local businesses near the event that this crowd likes: one Qloo call per
  * place category, in parallel. A failed category is logged and skipped.
+ *
+ * With `point` (a city picked from the US list), places are searched by
+ * POINT + radius, which Qloo honors (scripts/probe-form.mjs, 16 Oct: 3 km
+ * radius -> every place within 2.7 km). With fewer than MIN_PLACES results the
+ * search runs once more with twice the radius, up to MAX_PLACE_RADIUS_KM.
+ * Without `point` (a typed city), the city name is used and far results are
+ * cut around the median, as before.
  */
 export async function getLocalSponsors(
   input: LocalSponsorsInput,
@@ -848,81 +863,111 @@ export async function getLocalSponsors(
   );
   const calls: QlooCall[] = [];
 
-  const lists = await Promise.all(
-    categories.map(async (category) => {
-      const label = `${category.label} near ${city}`;
-      const started = Date.now();
-      try {
-        const { data, ms, sent, retries } = await qlooGet("/v2/insights", {
-          "filter.type": "urn:entity:place",
-          "filter.location.query": city,
-          "filter.tags": category.tag,
-          "signal.interests.entities":
-            artists.map((artist) => artist.entityId).join(",") || undefined,
-          "signal.interests.tags": genreTags.map((tag) => tag.id).join(",") || undefined,
-          "signal.demographics.age": input.age,
-          "feature.explainability": "true",
-          take: PLACE_TAKE,
-        });
-        const entities = asArray(asObject(data.results).entities).map(asObject);
-        calls.push({ label, endpoint: "/v2/insights", params: sent, ms, resultCount: entities.length, retries });
-        return entities;
-      } catch (error) {
-        calls.push({
-          label,
-          endpoint: "/v2/insights",
-          params: {},
-          ms: Date.now() - started,
-          resultCount: 0,
-          retries: error instanceof QlooError ? error.retries : 0,
-          error: error instanceof Error ? error.message : String(error),
-        });
-        return [];
-      }
-    }),
-  );
+  async function runRound(radiusKm: number | null) {
+    const where =
+      input.point && radiusKm !== null
+        ? {
+            "filter.location": `POINT(${input.point.lon} ${input.point.lat})`,
+            "filter.location.radius": radiusKm * 1000,
+          }
+        : { "filter.location.query": city };
+    const lists = await Promise.all(
+      categories.map(async (category) => {
+        const label =
+          radiusKm !== null
+            ? `${category.label} within ${radiusKm} km of ${city}`
+            : `${category.label} near ${city}`;
+        const started = Date.now();
+        try {
+          const { data, ms, sent, retries } = await qlooGet("/v2/insights", {
+            "filter.type": "urn:entity:place",
+            ...where,
+            "filter.tags": category.tag,
+            "signal.interests.entities":
+              artists.map((artist) => artist.entityId).join(",") || undefined,
+            "signal.interests.tags": genreTags.map((tag) => tag.id).join(",") || undefined,
+            "signal.demographics.age": input.age,
+            "feature.explainability": "true",
+            take: PLACE_TAKE,
+          });
+          const entities = asArray(asObject(data.results).entities).map(asObject);
+          calls.push({ label, endpoint: "/v2/insights", params: sent, ms, resultCount: entities.length, retries });
+          return entities;
+        } catch (error) {
+          calls.push({
+            label,
+            endpoint: "/v2/insights",
+            params: {},
+            ms: Date.now() - started,
+            resultCount: 0,
+            retries: error instanceof QlooError ? error.retries : 0,
+            error: error instanceof Error ? error.message : String(error),
+          });
+          return [];
+        }
+      }),
+    );
 
-  if (lists.every((list) => list.length === 0) && calls.every((call) => call.error)) {
+    // Same place in two categories -> keep the better score. Same chain name ->
+    // keep the first (higher-ranked) branch.
+    const byId = new Map<string, Omit<LocalPlace, "distanceKm">>();
+    lists.forEach((entities, index) => {
+      const category = categories[index];
+      entities.forEach((entity, position) => {
+        const place = toPlace(entity, category, position + 1, entities.length, signalNames);
+        if (!place) return;
+        const existing = byId.get(place.entityId);
+        if (!existing || place.fitScore > existing.fitScore) byId.set(place.entityId, place);
+      });
+    });
+
+    const sorted = [...byId.values()].sort((a, b) => b.fitScore - a.fitScore || a.rank - b.rank);
+    const seenNames = new Set<string>();
+    const unique = sorted.filter((place) => {
+      const key = normalizeName(place.name);
+      if (seenNames.has(key)) return false;
+      seenNames.add(key);
+      return true;
+    });
+    return { lists, unique, droppedDuplicates: sorted.length - unique.length };
+  }
+
+  let radiusKm = input.point ? input.point.radiusKm : null;
+  let round = await runRound(radiusKm);
+  let widened = false;
+  if (input.point && radiusKm !== null && round.unique.length < MIN_PLACES) {
+    const wider = Math.min(radiusKm * 2, MAX_PLACE_RADIUS_KM);
+    if (wider > radiusKm) {
+      radiusKm = wider;
+      round = await runRound(radiusKm);
+      widened = true;
+    }
+  }
+
+  const failed = calls.filter((call) => call.error).length;
+  if (round.lists.every((list) => list.length === 0) && failed === calls.length) {
     throw new QlooError(calls[0]?.error ?? "Qloo place search failed");
   }
 
-  // Same place in two categories -> keep the better score. Same chain name ->
-  // keep the first (higher-ranked) branch.
-  const byId = new Map<string, Omit<LocalPlace, "distanceKm">>();
-  lists.forEach((entities, index) => {
-    const category = categories[index];
-    entities.forEach((entity, position) => {
-      const place = toPlace(entity, category, position + 1, entities.length, signalNames);
-      if (!place) return;
-      const existing = byId.get(place.entityId);
-      if (!existing || place.fitScore > existing.fitScore) byId.set(place.entityId, place);
-    });
-  });
-
-  const sorted = [...byId.values()].sort((a, b) => b.fitScore - a.fitScore || a.rank - b.rank);
-  const seenNames = new Set<string>();
-  const unique = sorted.filter((place) => {
-    const key = normalizeName(place.name);
-    if (seenNames.has(key)) return false;
-    seenNames.add(key);
-    return true;
-  });
-  const droppedDuplicates = sorted.length - unique.length;
-
+  const search = { by: input.point ? ("point" as const) : ("city" as const), radiusKm, widened };
+  const { unique, droppedDuplicates } = round;
   if (unique.length === 0) {
-    return { places: [], center: null, droppedFar: 0, droppedDuplicates, calls };
+    return { places: [], center: null, droppedFar: 0, droppedDuplicates, calls, search };
   }
 
-  // The median point is not pulled away by a few far-off results.
-  const middle = {
+  // A POINT search is measured from the city's own point and Qloo already kept
+  // to the radius. A city-name search is measured from the median, which a few
+  // far-off results cannot pull away.
+  const middle = input.point ?? {
     lat: median(unique.map((place) => place.lat)),
     lon: median(unique.map((place) => place.lon)),
   };
+  const limitKm = radiusKm ?? MAX_PLACE_DISTANCE_KM;
   const withDistance: LocalPlace[] = unique.map((place) => ({
     ...place,
     distanceKm: Math.round(distanceKm(middle.lat, middle.lon, place.lat, place.lon) * 10) / 10,
   }));
-  const places = withDistance.filter((place) => place.distanceKm <= MAX_PLACE_DISTANCE_KM);
+  const places = withDistance.filter((place) => place.distanceKm <= limitKm);
 
   const center =
     places.length > 0
@@ -938,5 +983,6 @@ export async function getLocalSponsors(
     droppedFar: withDistance.length - places.length,
     droppedDuplicates,
     calls,
+    search,
   };
 }
