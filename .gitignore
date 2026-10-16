@@ -44,3 +44,4 @@ next-env.d.ts
 # probe output
 scripts/places-sample.json
 scripts/probe-form-results.json
+scripts/probe-score-results.json
