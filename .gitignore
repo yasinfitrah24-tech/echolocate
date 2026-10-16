@@ -45,3 +45,7 @@ next-env.d.ts
 scripts/places-sample.json
 scripts/probe-form-results.json
 scripts/probe-score-results.json
+scripts/stage7-raw.json
+
+# private team notes
+CLAUDE.local.md
