@@ -72,15 +72,20 @@ export function OnePagerDocument({ sheet }: { sheet: OnePager }) {
         <View style={styles.row}>
           <View style={{ flex: 1.4, gap: 8 }}>
             <View style={styles.box}>
-            <T style={styles.heading}>{`Why ${sheet.brandName} fits this crowd`}</T>
-            <View style={styles.scoreRow}>
-              <T style={styles.score}>{String(sheet.fitScore)}</T>
-              <View style={{ flex: 1 }}>
-                <T style={styles.bold}>Sponsor Fit Score (out of 100)</T>
-                <T>{sheet.reasonText}</T>
+            <T style={styles.heading}>{sheet.whyHeading}</T>
+            {sheet.fitScore !== null ? (
+              <View style={styles.scoreRow}>
+                <T style={styles.score}>{String(sheet.fitScore)}</T>
+                <View style={{ flex: 1 }}>
+                  <T style={styles.bold}>Sponsor Fit Score (out of 100)</T>
+                  <T>{sheet.reasonText}</T>
+                </View>
               </View>
-            </View>
-            <T style={styles.small}>{sheet.scoreNote}</T>
+            ) : (
+              // A place with little taste data: no score, only the reason.
+              <T>{sheet.reasonText}</T>
+            )}
+            {sheet.scoreNote && <T style={styles.small}>{sheet.scoreNote}</T>}
             </View>
             {sheet.confirmed.length > 0 && (
               <View style={styles.box}>
@@ -103,7 +108,7 @@ export function OnePagerDocument({ sheet }: { sheet: OnePager }) {
         </View>
 
         <View style={[styles.softBox, styles.section]}>
-          <T style={styles.heading}>Taste profile</T>
+          <T style={styles.heading}>{sheet.profileHeading}</T>
           <View style={styles.kv}>
             <T style={[styles.kvLabel, { width: 132 }]}>{sheet.music.label}</T>
             <T style={styles.kvValue}>{sheet.music.value}</T>

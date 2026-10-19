@@ -1,11 +1,11 @@
 // Builds the text of the one-page sponsor sheet. Safe to import from client components.
 //
-// Uses only data we already have: the /api/brands result plus what the organizer
-// typed. No extra Qloo calls. Anything we do not know is left in [square brackets]
+// Uses only data we already have: the /api/brands or /api/places result plus
+// what the organizer typed. No extra Qloo calls. Anything we do not know is left in [square brackets]
 // for the organizer to fill in, like the pitch draft.
 
 import { findAdmission, findAudienceAge } from "./audience";
-import type { Brand, BrandCategory } from "./qloo";
+import type { Brand, BrandCategory, LocalPlace } from "./qloo";
 
 export const BENEFITS = [
   { id: "signage", label: "Logo on posters and signage" },
@@ -80,11 +80,16 @@ export interface OnePager {
   title: string;
   brandName: string;
   categoryLabel: string;
-  fitScore: number;
+  /** "Why <name> fits this crowd", or for a place with little taste data just "Why <name>". */
+  whyHeading: string;
+  /** Null for a place Qloo has little taste data for: no score at all. */
+  fitScore: number | null;
   reasonText: string;
-  scoreNote: string;
+  scoreNote: string | null;
   event: { label: string; value: string }[];
   cityNote: string | null;
+  /** "Taste profile" for brands; "The music" for local places. */
+  profileHeading: string;
   music: { label: string; value: string };
   alsoLikes: string[];
   similarBrands: string[];
@@ -147,6 +152,149 @@ export function onePagerAllowed(brand: Pick<Brand, "alcohol">, admission: string
   return !brand.alcohol || (findAdmission(admission)?.alcoholAllowed ?? false);
 }
 
+
+/** Bars only for 21+ events, the same rule as the places search. */
+export function placeOnePagerAllowed(place: Pick<LocalPlace, "categoryId">, admission: string): boolean {
+  return place.categoryId !== "bars" || (findAdmission(admission)?.alcoholAllowed ?? false);
+}
+
+/** "Cafes" -> "cafe", "Clothing stores" -> "clothing store". */
+export function placeNoun(categoryLabel: string): string {
+  return categoryLabel.toLowerCase().replace(/s$/, "");
+}
+
+/** 0.6 -> "0.6 km", 12.4 -> "12 km" (same as the pitch). */
+function formatKm(km: number): string {
+  return `${km < 10 ? km.toFixed(1) : Math.round(km)} km`;
+}
+
+/**
+ * The parts of the sheet that are the same for a brand and a local place:
+ * the event, the questions, the ways to take part, measuring and contact.
+ * A local place's sheet never says "venue": the event's location is "Where".
+ */
+function sharedParts(
+  search: SearchFacts,
+  details: OnePagerDetails,
+  options: {
+    kind: "brand" | "place";
+    /** Lines under "Who comes?" after age and admission. */
+    whoExtra: string[];
+    /** e.g. "drinks" for a brand, "cafe" for a place: "the only <noun> sponsor". */
+    sponsorNoun: string;
+    name: string;
+  },
+) {
+  const admission = findAdmission(search.admission);
+  const age = findAudienceAge(search.age);
+  const eventName = search.eventName ?? "[event name]";
+  const crowd = search.crowdSize
+    ? `About ${search.crowdSize.toLocaleString("en-US")} people`
+    : "[expected crowd]";
+  const place = options.kind === "place";
+
+  const music =
+    search.artists.length > 0
+      ? { label: "Line-up", value: joinNames(search.artists) }
+      : { label: "Genre", value: search.genre ?? (joinNames(search.genreTags) || "[line-up]") };
+
+  const benefits = BENEFITS.filter((benefit) => details.benefits[benefit.id]).map((b) => b.label);
+  const preRegistered = details.preRegistered.trim();
+  const otherSponsors = details.otherSponsors.trim();
+
+  // Only what the organizer ticked as confirmed (and filled in). Sponsors want
+  // to see they would not be the first money in, but a typed venue is not a
+  // booked venue. Short on purpose: the values already show above.
+  const isConfirmed = (id: ConfirmId, value: string) => details.confirmed[id] && value.trim() !== "";
+  const confirmed: string[] = [];
+  if (isConfirmed("date", details.date)) confirmed.push("Date confirmed");
+  if (isConfirmed("venue", details.venue)) confirmed.push(place ? "Location confirmed" : "Venue confirmed");
+  if (isConfirmed("preRegistered", preRegistered)) confirmed.push(`Pre-registrations: ${preRegistered}`);
+  if (isConfirmed("otherSponsors", otherSponsors)) confirmed.push("Other sponsors confirmed");
+
+  const code = orBracket(details.discountCode, "CODE");
+  const link = orBracket(details.offerLink, "link to your offer");
+
+  const supporter = {
+    label: "Supporter",
+    amount: orBracket(details.tier1Amount, "amount"),
+    detail: orBracket(details.tier1Includes, "what this includes"),
+  };
+  const partner = {
+    label: "Partner",
+    amount: orBracket(details.tier2Amount, "amount"),
+    detail: orBracket(details.tier2Includes, "what this includes"),
+  };
+  // A local business usually gives products or a discount, so that comes first.
+  const inKind = place
+    ? { label: "In kind", amount: "No cash needed", detail: "Your products, a discount for our attendees, or vouchers." }
+    : { label: "In kind", amount: "No cash needed", detail: "Product, discounts, vouchers, or covering a venue cost." };
+
+  return {
+    eventName,
+    music,
+    confirmed,
+    event: [
+      { label: "Event", value: eventName },
+      { label: "City", value: search.city ?? "[city]" },
+      { label: "Date", value: orBracket(details.date, "date") },
+      place
+        ? { label: "Where", value: orBracket(details.venue, "location") }
+        : { label: "Venue", value: orBracket(details.venue, "venue") },
+      { label: "Crowd", value: crowd },
+      { label: "Audience", value: age ? `Mostly ${age.label}` : "[age range]" },
+      { label: "Admission", value: admission?.label ?? "[admission]" },
+    ],
+    questions: [
+      {
+        question: "How many people?",
+        answer: [
+          crowd,
+          ...(isConfirmed("preRegistered", preRegistered) ? [`${preRegistered} pre-registered so far`] : []),
+        ],
+      },
+      {
+        question: "Who comes?",
+        answer: [
+          age ? `Mostly ${age.label}` : "[age range]",
+          admission ? `${admission.label} event` : "[admission]",
+          ...options.whoExtra,
+        ],
+      },
+      {
+        question: "What do you get?",
+        answer:
+          benefits.length > 0
+            ? benefits
+            : [place ? "[signage, opt-in email sign-ups, a table, shoutouts]" : "[signage, opt-in email sign-ups, a booth, shoutouts]"],
+      },
+      {
+        question: "Who else is sponsoring?",
+        // Names only once the organizer ticks them as confirmed.
+        answer: [
+          !otherSponsors
+            ? "[other sponsors]"
+            : isConfirmed("otherSponsors", otherSponsors)
+              ? otherSponsors
+              : "Other sponsors: to be confirmed",
+        ],
+      },
+    ],
+    options: place ? [inKind, supporter, partner] : [supporter, partner, inKind],
+    exclusivity: details.exclusivity
+      ? `${options.name} can be the only ${options.sponsorNoun} sponsor at ${eventName}.`
+      : null,
+    measure: [
+      `A discount code just for this event: ${code}`,
+      `A QR code on our signage that links to ${link}`,
+      ...(details.benefits.emails ? ["The opt-in email sign-ups collected at your table"] : []),
+    ],
+    ask: "Could we set up a 15-minute call?",
+    contact: [orBracket(details.organizer, "your name"), orBracket(details.contact, "email or phone")],
+    paper: details.paper,
+  };
+}
+
 export function buildOnePager(
   brand: Brand,
   category: BrandCategory,
@@ -156,17 +304,6 @@ export function buildOnePager(
 ): OnePager | null {
   if (!onePagerAllowed(brand, search.admission)) return null;
 
-  const admission = findAdmission(search.admission);
-  const age = findAudienceAge(search.age);
-  const eventName = search.eventName ?? "[event name]";
-  const crowd = search.crowdSize
-    ? `About ${search.crowdSize.toLocaleString("en-US")} people`
-    : "[expected crowd]";
-
-  const music =
-    search.artists.length > 0
-      ? { label: "Line-up", value: joinNames(search.artists) }
-      : { label: "Genre", value: search.genre ?? (joinNames(search.genreTags) || "[line-up]") };
   const fans = search.artists.length > 0 ? "fans of this line-up" : "fans of this kind of music";
 
   // Brands from other categories, all already filtered by the server (alcohol, NGOs).
@@ -183,110 +320,87 @@ export function buildOnePager(
     .slice(0, SIMILAR)
     .map((item) => item.name);
 
-  const benefits = BENEFITS.filter((benefit) => details.benefits[benefit.id]).map((b) => b.label);
-  const preRegistered = details.preRegistered.trim();
-  const otherSponsors = details.otherSponsors.trim();
-
-  const who = [
-    age ? `Mostly ${age.label}` : "[age range]",
-    admission ? `${admission.label} event` : "[admission]",
+  const shared = sharedParts(search, details, {
+    kind: "brand",
     // Who they are, told through what they like (Qloo taste data), not identity.
-    alsoLikeTop.length > 0
-      ? `Fans who also like ${joinNames(alsoLikeTop.slice(0, 2).map(({ item }) => item.name))}`
-      : `${fans[0].toUpperCase()}${fans.slice(1)}`,
-  ];
-
-  // Only what the organizer ticked as confirmed (and filled in). Sponsors want
-  // to see they would not be the first money in, but a typed venue is not a
-  // booked venue. Short on purpose: the values already show above.
-  const isConfirmed = (id: ConfirmId, value: string) => details.confirmed[id] && value.trim() !== "";
-  const confirmed: string[] = [];
-  if (isConfirmed("date", details.date)) confirmed.push("Date confirmed");
-  if (isConfirmed("venue", details.venue)) confirmed.push("Venue confirmed");
-  if (isConfirmed("preRegistered", preRegistered)) confirmed.push(`Pre-registrations: ${preRegistered}`);
-  if (isConfirmed("otherSponsors", otherSponsors)) confirmed.push("Other sponsors confirmed");
-
-  const code = orBracket(details.discountCode, "CODE");
-  const link = orBracket(details.offerLink, "link to your offer");
+    whoExtra: [
+      alsoLikeTop.length > 0
+        ? `Fans who also like ${joinNames(alsoLikeTop.slice(0, 2).map(({ item }) => item.name))}`
+        : `${fans[0].toUpperCase()}${fans.slice(1)}`,
+    ],
+    sponsorNoun: category.label.toLowerCase(),
+    name: brand.name,
+  });
 
   return {
-    title: `${eventName} for ${brand.name}`,
+    ...shared,
+    title: `${shared.eventName} for ${brand.name}`,
     brandName: brand.name,
     categoryLabel: category.label,
+    whyHeading: `Why ${brand.name} fits this crowd`,
     fitScore: brand.fitScore,
     reasonText: brand.reasonText,
     scoreNote:
       "Our own score, never above 95: how strongly this crowd likes the brand in Qloo's taste data compared with other brands, plus its rank in its list.",
-    event: [
-      { label: "Event", value: eventName },
-      { label: "City", value: search.city ?? "[city]" },
-      { label: "Date", value: orBracket(details.date, "date") },
-      { label: "Venue", value: orBracket(details.venue, "venue") },
-      { label: "Crowd", value: crowd },
-      { label: "Audience", value: age ? `Mostly ${age.label}` : "[age range]" },
-      { label: "Admission", value: admission?.label ?? "[admission]" },
-    ],
     cityNote: search.cityDropped
       ? `Qloo has no taste data for ${search.city}, so these matches use the line-up alone.`
       : null,
-    music,
+    profileHeading: "Taste profile",
     alsoLikes,
     similarBrands,
     similarLabel: `Other ${category.label.toLowerCase()} brands fans like`,
-    questions: [
-      {
-        question: "How many people?",
-        answer: [
-          crowd,
-          ...(isConfirmed("preRegistered", preRegistered) ? [`${preRegistered} pre-registered so far`] : []),
-        ],
-      },
-      { question: "Who comes?", answer: who },
-      {
-        question: "What do you get?",
-        answer: benefits.length > 0 ? benefits : ["[signage, opt-in email sign-ups, a booth, shoutouts]"],
-      },
-      {
-        question: "Who else is sponsoring?",
-        // Names only once the organizer ticks them as confirmed.
-        answer: [
-          !otherSponsors
-            ? "[other sponsors]"
-            : isConfirmed("otherSponsors", otherSponsors)
-              ? otherSponsors
-              : "Other sponsors: to be confirmed",
-        ],
-      },
-    ],
-    options: [
-      {
-        label: "Supporter",
-        amount: orBracket(details.tier1Amount, "amount"),
-        detail: orBracket(details.tier1Includes, "what this includes"),
-      },
-      {
-        label: "Partner",
-        amount: orBracket(details.tier2Amount, "amount"),
-        detail: orBracket(details.tier2Includes, "what this includes"),
-      },
-      {
-        label: "In kind",
-        amount: "No cash needed",
-        detail: "Product, discounts, vouchers, or covering a venue cost.",
-      },
-    ],
-    exclusivity: details.exclusivity
-      ? `${brand.name} can be the only ${category.label.toLowerCase()} sponsor at ${eventName}.`
-      : null,
-    confirmed,
-    measure: [
-      `A discount code just for this event: ${code}`,
-      `A QR code on our signage that links to ${link}`,
-      ...(details.benefits.emails ? ["The opt-in email sign-ups collected at your table"] : []),
-    ],
-    ask: "Could we set up a 15-minute call?",
-    contact: [orBracket(details.organizer, "your name"), orBracket(details.contact, "email or phone")],
     footer: "Brand matches from Qloo taste data, prepared with Echolocate.",
-    paper: details.paper,
+  };
+}
+
+/**
+ * The same sheet for a local business. A place with taste data keeps its
+ * score and the reason from the list. A place Qloo has little taste data for
+ * gets no score and no taste claim at all: only how far it is from the center
+ * of the city, the crowd and the offer.
+ */
+export function buildPlaceOnePager(place: LocalPlace, search: SearchFacts, details: OnePagerDetails): OnePager | null {
+  if (!placeOnePagerAllowed(place, search.admission)) return null;
+
+  const city = search.city ?? "[city]";
+  const noun = placeNoun(place.categoryLabel);
+  const shared = sharedParts(search, details, {
+    kind: "place",
+    whoExtra: place.littleData ? [] : [search.artists.length > 0 ? "Fans of this line-up" : "Fans of this kind of music"],
+    sponsorNoun: noun,
+    name: place.name,
+  });
+
+  const common = {
+    ...shared,
+    title: `${shared.eventName} for ${place.name}`,
+    brandName: place.name,
+    categoryLabel: place.categoryLabel,
+    cityNote: null,
+    profileHeading: "The music",
+    alsoLikes: [],
+    similarBrands: [],
+    similarLabel: "",
+  };
+
+  if (place.littleData || place.fitScore === null) {
+    return {
+      ...common,
+      whyHeading: `Why ${place.name}`,
+      fitScore: null,
+      // Distance from the city center only: the event's own location is not known.
+      reasonText: `${place.name} is about ${formatKm(place.distanceKm)} from the center of ${city}.`,
+      scoreNote: null,
+      footer: "Prepared with Echolocate.",
+    };
+  }
+
+  return {
+    ...common,
+    whyHeading: `Why ${place.name} fits this crowd`,
+    fitScore: place.fitScore,
+    reasonText: place.reasonText,
+    scoreNote: `Our own score, never above 95: how strongly this crowd likes the ${noun} in Qloo's taste data compared with other local places, plus its rank in its list.`,
+    footer: "Local matches from Qloo taste data, prepared with Echolocate.",
   };
 }

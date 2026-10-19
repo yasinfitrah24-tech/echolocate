@@ -1,12 +1,14 @@
 "use client";
 
 // Local sponsors section: asks /api/places once per search, then shows a map
-// and a ranked list. Give it a `key` that changes with each search so it
+// and a ranked list, with a pitch draft and a one-pager per place. Give it a `key` that changes with each search so it
 // starts fresh.
 
 import dynamic from "next/dynamic";
 import { useEffect, useState } from "react";
+import { buildPlaceOnePager, placeNoun, type OnePagerDetails, type SearchFacts } from "@/lib/one-pager";
 import type { LocalPlace, QlooCall } from "@/lib/qloo";
+import { OnePagerPanel } from "./one-pager-panel";
 import { PitchBox, usePitch, type PitchContext } from "./pitch-draft";
 
 const PlacesMap = dynamic(() => import("./places-map"), {
@@ -48,8 +50,14 @@ interface LocalSponsorsProps {
   onLoaded?: (info: PlacesSearchInfo) => void;
   /** Event facts for "Draft pitch"; null hides the button. */
   pitchContext?: PitchContext | null;
-  /** False when the form is no longer 21+: no pitch to bars then. */
+  /** False when the form is no longer 21+: no pitch or one-pager for bars then. */
   barsAllowed?: boolean;
+  /** Facts and shared details for "Download one-pager"; null hides the button. */
+  onePager?: {
+    search: SearchFacts;
+    details: OnePagerDetails;
+    onDetailsChange: (details: OnePagerDetails) => void;
+  } | null;
 }
 
 const LIST_SIZE = 8;
@@ -66,8 +74,10 @@ export function LocalSponsors({
   onLoaded,
   pitchContext = null,
   barsAllowed = false,
+  onePager = null,
 }: LocalSponsorsProps) {
   const pitch = usePitch();
+  const [sheetFor, setSheetFor] = useState<string | null>(null);
   const [data, setData] = useState<PlacesResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -190,7 +200,8 @@ export function LocalSponsors({
             {listed.map((place) => {
               const selected = place.entityId === selectedId;
               const open = pitch.pitchFor === place.entityId;
-              // Places with little taste data still get a pitch, about being nearby.
+              const sheetOpen = sheetFor === place.entityId;
+              // Places with little taste data still get a pitch and a one-pager, about being nearby.
               const pitchAllowed = place.categoryId !== "bars" || barsAllowed;
               return (
                 <li key={place.entityId} className={`px-5 py-3 hover:bg-zinc-50 ${selected ? "bg-zinc-50" : ""}`}>
@@ -224,7 +235,7 @@ export function LocalSponsors({
                         </span>
                       </span>
                     </button>
-                    <div className="flex w-full gap-1.5 pl-13 sm:w-auto sm:shrink-0 sm:pl-0">
+                    <div className="flex w-full flex-wrap gap-1.5 pl-13 sm:w-auto sm:shrink-0 sm:pl-0">
                       {pitchContext && (
                         <button
                           type="button"
@@ -248,6 +259,18 @@ export function LocalSponsors({
                           {pitch.isWriting(place.entityId) ? "Writing…" : "Draft pitch"}
                         </button>
                       )}
+                      {onePager && (
+                        <button
+                          type="button"
+                          onClick={() => setSheetFor(sheetOpen ? null : place.entityId)}
+                          disabled={!pitchAllowed}
+                          aria-expanded={sheetOpen}
+                          title={pitchAllowed ? undefined : "Bars need a 21+ event. Search again as 21+."}
+                          className="rounded-md border border-zinc-300 bg-white px-3 py-1.5 text-xs font-medium text-zinc-800 hover:bg-zinc-100 disabled:opacity-50"
+                        >
+                          Download one-pager
+                        </button>
+                      )}
                       {place.website && (
                         <a
                           href={place.website}
@@ -260,6 +283,18 @@ export function LocalSponsors({
                       )}
                     </div>
                   </div>
+                  {sheetOpen && pitchAllowed && onePager && (
+                    <OnePagerPanel
+                      kind="place"
+                      name={place.name}
+                      sponsorNoun={placeNoun(place.categoryLabel)}
+                      eventName={onePager.search.eventName}
+                      build={(details) => buildPlaceOnePager(place, onePager.search, details)}
+                      blockedText="Bars need a 21+ event. Search again as 21+."
+                      details={onePager.details}
+                      onDetailsChange={onePager.onDetailsChange}
+                    />
+                  )}
                   {open && <PitchBox pitch={pitch.pitch} error={pitch.error} copied={pitch.copied} onCopy={pitch.copy} />}
                 </li>
               );

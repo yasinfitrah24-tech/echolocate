@@ -1,19 +1,17 @@
 "use client";
 
-// Small panel under a brand: optional details, then "Download PDF".
+// Small panel under a brand or a local place: optional details, then "Download PDF".
 // Everything here is optional; blanks show up as [brackets] in the PDF.
 
 import { useState } from "react";
 import {
   BENEFITS,
   DETAIL_MAX_LENGTH,
-  buildOnePager,
   type ConfirmId,
+  type OnePager,
   type OnePagerDetails,
   type Paper,
-  type SearchFacts,
 } from "@/lib/one-pager";
-import type { Brand, BrandCategory } from "@/lib/qloo";
 
 type TextField = {
   [K in keyof OnePagerDetails]: OnePagerDetails[K] extends string ? K : never;
@@ -58,17 +56,25 @@ function slug(text: string): string {
 }
 
 export function OnePagerPanel({
-  brand,
-  category,
-  categories,
-  search,
+  kind,
+  name,
+  sponsorNoun,
+  eventName,
+  build,
+  blockedText,
   details,
   onDetailsChange,
 }: {
-  brand: Brand;
-  category: BrandCategory;
-  categories: BrandCategory[];
-  search: SearchFacts;
+  kind: "brand" | "place";
+  /** The brand or place name. */
+  name: string;
+  /** "drinks" for a brand, "cafe" for a place: "the only <noun> sponsor". */
+  sponsorNoun: string;
+  eventName: string | null;
+  /** buildOnePager or buildPlaceOnePager with everything but the details filled in. */
+  build: (details: OnePagerDetails) => OnePager | null;
+  /** Shown when build refuses (alcohol brand or bar, event not 21+). */
+  blockedText: string;
   details: OnePagerDetails;
   onDetailsChange: (details: OnePagerDetails) => void;
 }) {
@@ -76,17 +82,17 @@ export function OnePagerPanel({
   const [error, setError] = useState<string | null>(null);
 
   async function download() {
-    const sheet = buildOnePager(brand, category, categories, search, details);
+    const sheet = build(details);
     if (!sheet) {
-      setError("Alcohol brands need a 21+ event. Search again as 21+.");
+      setError(blockedText);
       return;
     }
     setBusy(true);
     setError(null);
     try {
       const { downloadOnePager } = await import("./one-pager-pdf");
-      const name = [slug(search.eventName ?? "event"), slug(brand.name)].filter(Boolean).join("-");
-      await downloadOnePager(sheet, `${name || "sponsor"}-one-pager.pdf`);
+      const file = [slug(eventName ?? "event"), slug(name)].filter(Boolean).join("-");
+      await downloadOnePager(sheet, `${file || "sponsor"}-one-pager.pdf`);
     } catch (problem) {
       console.error(problem);
       setError("Could not make the PDF. Try again.");
@@ -105,12 +111,14 @@ export function OnePagerPanel({
       <div className="mt-3 grid gap-3 sm:grid-cols-2">
         {FIELDS.map((field) => {
           const confirm = field.confirm;
+          // A local place's sheet never says "venue".
+          const label = kind === "place" && field.key === "venue" ? "Location" : field.label;
           const empty = details[field.key].trim() === "";
           return (
             <div key={field.key}>
               <div className="flex items-center justify-between gap-2">
                 <label htmlFor={`one-pager-${field.key}`} className="text-xs font-medium text-zinc-700">
-                  {field.label}
+                  {label}
                 </label>
                 {confirm && (
                   <label
@@ -176,7 +184,7 @@ export function OnePagerPanel({
           checked={details.exclusivity}
           onChange={(event) => onDetailsChange({ ...details, exclusivity: event.target.checked })}
         />
-        Offer to make {brand.name} the only {category.label.toLowerCase()} sponsor
+        Offer to make {name} the only {sponsorNoun} sponsor
       </label>
 
       <div className="mt-4 flex flex-wrap items-center gap-3">

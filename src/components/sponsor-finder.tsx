@@ -5,7 +5,13 @@
 
 import { useState, type FormEvent } from "react";
 import { ADMISSIONS, AUDIENCE_AGES, DEFAULT_ADMISSION, findAdmission } from "@/lib/audience";
-import { EMPTY_DETAILS, onePagerAllowed, type OnePagerDetails, type SearchFacts } from "@/lib/one-pager";
+import {
+  EMPTY_DETAILS,
+  buildOnePager,
+  onePagerAllowed,
+  type OnePagerDetails,
+  type SearchFacts,
+} from "@/lib/one-pager";
 import type { ArtistMatch, Brand, BrandCategory, QlooCall } from "@/lib/qloo";
 import { findGenreByLabel } from "@/lib/genres";
 import { CityCombobox } from "./city-combobox";
@@ -281,6 +287,9 @@ export function SponsorFinder() {
       onLoaded={setPlacesInfo}
       pitchContext={pitchContext}
       barsAllowed={(findAdmission(admission) ?? DEFAULT_ADMISSION).alcoholAllowed}
+      onePager={
+        searchFacts ? { search: searchFacts, details: onePagerDetails, onDetailsChange: setOnePagerDetails } : null
+      }
     />
   ) : (
     <p className="mt-5 rounded-xl border border-zinc-200 bg-white px-5 py-3 text-sm text-zinc-600">
@@ -648,10 +657,14 @@ export function SponsorFinder() {
 
                             {sheetOpen && allowed && searchFacts && (
                               <OnePagerPanel
-                                brand={brand}
-                                category={category}
-                                categories={result.categories}
-                                search={searchFacts}
+                                kind="brand"
+                                name={brand.name}
+                                sponsorNoun={category.label.toLowerCase()}
+                                eventName={searchFacts.eventName}
+                                build={(details) =>
+                                  buildOnePager(brand, category, result.categories, searchFacts, details)
+                                }
+                                blockedText="Alcohol brands need a 21+ event. Search again as 21+."
                                 details={onePagerDetails}
                                 onDetailsChange={setOnePagerDetails}
                               />
