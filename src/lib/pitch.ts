@@ -83,7 +83,7 @@ function facts(input: PitchInput): string[] {
   if (input.eventName) lines.push(`Event name: ${input.eventName}`);
   if (input.city) lines.push(`City: ${input.city}`);
   if (input.crowdSize) lines.push(`Expected crowd: about ${input.crowdSize.toLocaleString("en-US")} people`);
-  if (input.age) lines.push(`Audience age (who mostly comes): mostly ${input.age.label}`);
+  if (input.age) lines.push(`Audience: mostly ${input.age.label}`);
   // One phrase, said once ("an all-ages show"); label + phrase made drafts repeat it.
   if (input.admission) lines.push(`Admission (who is allowed in): ${input.admission.phrase}`);
   if (input.artists.length > 0) lines.push(`Line-up: ${joinNames(input.artists)}`);

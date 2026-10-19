@@ -4,10 +4,10 @@
 
 import { QlooError } from "./qloo";
 
-export const LIVE_PAUSED = "Live search is paused right now. Try the saved example.";
-const QLOO_BUSY = "Qloo is busy right now. Try again in a minute, or try the saved example.";
-const QLOO_DOWN = "Qloo didn't answer in time. Try again in a minute, or try the saved example.";
-const UNKNOWN = "Something went wrong. Try again, or try the saved example.";
+export const LIVE_PAUSED = "Live search is paused right now. Use Try an example.";
+const QLOO_BUSY = "Qloo is busy right now. Try again in a minute, or use Try an example.";
+const QLOO_DOWN = "Qloo didn't answer in time. Try again in a minute, or use Try an example.";
+const UNKNOWN = "Something went wrong. Try again, or use Try an example.";
 
 /** Logs the real error and returns what the browser may see. */
 export function publicQlooFailure(error: unknown, where: string): { status: number; error: string } {

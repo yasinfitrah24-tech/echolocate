@@ -719,7 +719,7 @@ export function SponsorFinder() {
 
 type SearchOutcome = { ok: true; data: BrandsResponse } | { ok: false; error: string };
 
-const SEARCH_FAILED = "Something went wrong. Try again, or try the saved example.";
+const SEARCH_FAILED = "Something went wrong. Try again, or use Try an example.";
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
