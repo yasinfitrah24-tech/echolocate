@@ -70,7 +70,7 @@ function joinNames(names: string[]): string {
 function facts(input: PitchInput): string[] {
   const lines = [
     input.brand.kind === "place"
-      ? `Sponsor: ${input.brand.name}, a ${placeNoun(input.brand.categoryLabel)} in ${input.city ?? "the city"}`
+      ? `Sponsor: ${input.brand.name}, a local ${placeNoun(input.brand.categoryLabel)}`
       : `Brand: ${input.brand.name} (${input.brand.categoryLabel})`,
     input.brand.nearbyKm !== null
       ? `No taste match: Qloo has little taste data for this business. Distance: about ${formatKm(input.brand.nearbyKm)} from the center of ${input.city ?? "the city"}. Do not say or suggest that the crowd likes it.`
@@ -84,7 +84,8 @@ function facts(input: PitchInput): string[] {
   if (input.city) lines.push(`City: ${input.city}`);
   if (input.crowdSize) lines.push(`Expected crowd: about ${input.crowdSize.toLocaleString("en-US")} people`);
   if (input.age) lines.push(`Audience age (who mostly comes): mostly ${input.age.label}`);
-  if (input.admission) lines.push(`Admission (who is allowed in): ${input.admission.label}, ${input.admission.phrase}`);
+  // One phrase, said once ("an all-ages show"); label + phrase made drafts repeat it.
+  if (input.admission) lines.push(`Admission (who is allowed in): ${input.admission.phrase}`);
   if (input.artists.length > 0) lines.push(`Line-up: ${joinNames(input.artists)}`);
   if (input.genre) lines.push(`Genre: ${input.genre}`);
   if (input.organizer) lines.push(`Organizer (sender): ${input.organizer}`);
@@ -188,14 +189,16 @@ const FIT_VERDICTS =
 /**
  * Null when the AI draft keeps to the facts, else why not. Checked: every
  * number must appear in the facts (15, for the 15-minute call, is allowed),
- * a local place's pitch must not mention the venue at all, and no fit
- * verdict (FIT_VERDICTS).
+ * no percentage, a local place's pitch must not mention the venue at all,
+ * and no fit verdict (FIT_VERDICTS).
  */
 function factProblem(body: string, input: PitchInput): string | null {
   const allowed = new Set([...numbersIn(facts(input).join("\n")), "15"]);
   const text = body;
   const extra = numbersIn(text).filter((number) => !allowed.has(number));
   if (extra.length > 0) return `numbers not in the facts: ${extra.join(", ")}`;
+  // No percentages at all: the facts carry none, and Qloo's shares are never shown.
+  if (/%|\bper ?cent\b/i.test(text)) return "the draft has a percentage";
   if (input.brand.kind === "place" && /venue/i.test(text)) return "a local place pitch mentions the venue";
   const verdict = text.match(FIT_VERDICTS);
   if (verdict) return `the draft judges the fit ("${verdict[0]}")`;
