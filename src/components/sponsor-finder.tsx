@@ -439,14 +439,34 @@ export function SponsorFinder() {
 
         {result && (
           <section className="mt-8" aria-live="polite">
-            <p className="text-sm text-zinc-600">
-              {brandCount} brands in {result.categories.length} categories for fans of{" "}
-              <span className="font-medium text-zinc-900">
-                {[...result.artists.map((artist) => artist.name), ...result.genreTags.map((tag) => tag.name)].join(", ")}
-              </span>
-              .{" "}
-              {result.savedExample ? "Saved example · instant." : `Found in ${(result.tookMs / 1000).toFixed(1)} s.`}
-            </p>
+            {brandCount > 0 && (
+              <>
+                <p className="text-sm text-zinc-600">
+                  {brandCount} brands in {result.categories.length} categories for fans of{" "}
+                  <span className="font-medium text-zinc-900">
+                    {[...result.artists.map((artist) => artist.name), ...result.genreTags.map((tag) => tag.name)].join(", ")}
+                  </span>
+                  .{" "}
+                  {result.savedExample ? "Saved example · instant." : `Found in ${(result.tookMs / 1000).toFixed(1)} s.`}
+                </p>
+                <p className="mt-1 text-xs text-zinc-500">
+                  Scores are our own, out of 100 and never above 95: how each brand compares with the other
+                  brands for this crowd in Qloo&rsquo;s taste data.{" "}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const details = document.getElementById("agent-details") as HTMLDetailsElement | null;
+                      if (!details) return;
+                      details.open = true;
+                      details.scrollIntoView({ behavior: "smooth", block: "start" });
+                    }}
+                    className="underline hover:text-zinc-800"
+                  >
+                    How it works
+                  </button>
+                </p>
+              </>
+            )}
 
             {result.savedExample && (
               <p className="mt-2 inline-block rounded-full bg-zinc-100 px-3 py-1 text-xs text-zinc-600">
@@ -496,7 +516,9 @@ export function SponsorFinder() {
 
             {brandCount === 0 && (
               <p className="mt-4 rounded-md border border-zinc-200 bg-white px-4 py-3 text-sm text-zinc-700">
-                Qloo returned no brands for this line-up. Check the artist names, or add a genre.
+                {result.artists.length === 0
+                  ? `Qloo found no brands for this genre${result.input.city ? ` in ${result.input.city}` : ""}. Try a different genre or add artists.`
+                  : "Qloo returned no brands for this line-up. Check the artist names, or add a genre."}
               </p>
             )}
 
@@ -639,7 +661,7 @@ export function SponsorFinder() {
               </p>
             )}
 
-            <details className="mt-6 rounded-xl border border-zinc-200 bg-white px-5 py-3 text-sm">
+            <details id="agent-details" className="mt-6 rounded-xl border border-zinc-200 bg-white px-5 py-3 text-sm">
               <summary className="cursor-pointer font-medium">How the agent got this</summary>
               <ul className="mt-3 space-y-1.5 text-zinc-600">
                 {result.calls.map((call) => (

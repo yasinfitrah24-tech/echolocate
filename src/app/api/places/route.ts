@@ -111,7 +111,14 @@ export async function POST(request: Request) {
         : undefined,
     });
     return NextResponse.json({
-      input: { city, age: audience?.id ?? null, admission: admission.id, barsIncluded: admission.alcoholAllowed },
+      input: {
+        city,
+        age: audience?.id ?? null,
+        admission: admission.id,
+        barsIncluded: admission.alcoholAllowed,
+        // From the US city list; null for a typed city that is not in it.
+        cityPopulation: usCity?.population ?? null,
+      },
       ...result,
       savedExample: example && result.calls.every((call) => call.saved) ? savedAt : null,
       tookMs: Date.now() - started,

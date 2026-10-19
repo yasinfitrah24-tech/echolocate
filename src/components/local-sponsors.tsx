@@ -31,7 +31,7 @@ export interface PlacesSearchInfo {
 }
 
 interface PlacesResponse extends PlacesSearchInfo {
-  input: { city: string; barsIncluded: boolean };
+  input: { city: string; barsIncluded: boolean; cityPopulation: number | null };
   places: LocalPlace[];
   center: { lat: number; lon: number } | null;
   droppedFar: number;
@@ -53,6 +53,9 @@ interface LocalSponsorsProps {
 }
 
 const LIST_SIZE = 8;
+
+/** Below this population (US city list), "try a bigger city" is good advice. */
+const SMALL_CITY = 50_000;
 
 export function LocalSponsors({
   artists,
@@ -112,9 +115,10 @@ export function LocalSponsors({
           {data && <span className="font-normal text-zinc-500">({data.places.length})</span>}
         </h3>
         <p className="mt-0.5 text-xs text-zinc-500">
-          {data && data.places.length > 0 && data.places.every((place) => place.littleData)
-            ? "Local businesses near the event. Easier to sign than national brands, often for in-kind deals."
-            : "Local businesses this crowd already goes to. Easier to sign than national brands, often for in-kind deals."}
+          {/* A taste claim only when at least one place has taste data. */}
+          {data?.places.some((place) => !place.littleData)
+            ? "Local businesses this crowd already goes to. Easier to sign than national brands, often for in-kind deals."
+            : "Local businesses near the event. Easier to sign than national brands, often for in-kind deals."}
         </p>
       </div>
 
@@ -136,7 +140,9 @@ export function LocalSponsors({
 
       {data && data.places.length === 0 && (
         <p className="px-5 py-3 text-sm text-zinc-600">
-          No local places found for this crowd in {city}. Try a bigger nearby city.
+          {data.input.cityPopulation === null || data.input.cityPopulation < SMALL_CITY
+            ? `No local places found for this crowd in ${city}. Try a bigger nearby city.`
+            : "Qloo has few places for this crowd here. Try another genre."}
         </p>
       )}
 
