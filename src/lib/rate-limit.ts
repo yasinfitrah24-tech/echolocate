@@ -11,6 +11,7 @@
 // Good enough for a demo; a shared limit would need a store like Redis.
 
 import { NextResponse } from "next/server";
+import { LIVE_PAUSED } from "@/lib/public-errors";
 import { liveCallsToday } from "@/lib/qloo";
 
 const MINUTE = 60_000;
@@ -78,10 +79,7 @@ function refuse(message: string, status: number, waitMs?: number): NextResponse 
 /** Null when this live Qloo search may run; otherwise the response to send. */
 export function blockLiveSearch(request: Request, bucket: "search" | "places"): NextResponse | null {
   if (process.env.QLOO_LIVE === "off") {
-    return refuse(
-      "Live search is paused on this demo right now. Use Try an example, or run Echolocate locally with your own Qloo key.",
-      503,
-    );
+    return refuse(LIVE_PAUSED, 503);
   }
   if (liveCallsToday() >= DAILY_LIVE_CALLS) {
     return refuse(

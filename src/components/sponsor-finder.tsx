@@ -151,7 +151,7 @@ export function SponsorFinder() {
       const data = await response.json();
       if (!response.ok) {
         setResult(null);
-        setError(data.error ?? "Something went wrong");
+        setError(data.error ?? "Something went wrong. Try again, or try the saved example.");
         return;
       }
       setResult(data as BrandsResponse);
@@ -426,7 +426,7 @@ export function SponsorFinder() {
                 {[...result.artists.map((artist) => artist.name), ...result.genreTags.map((tag) => tag.name)].join(", ")}
               </span>
               .{" "}
-              {result.savedExample ? "" : `Found in ${(result.tookMs / 1000).toFixed(1)} s.`}
+              {result.savedExample ? "Saved example · instant." : `Found in ${(result.tookMs / 1000).toFixed(1)} s.`}
             </p>
 
             {result.savedExample && (

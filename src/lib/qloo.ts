@@ -119,10 +119,14 @@ export interface QlooCall {
   resultCount: number;
   /** How many times the call was repeated after a rate limit or server error. */
   retries: number;
+  /** Set when the call failed. Always CALL_FAILED: the log is sent to the browser. */
   error?: string;
   /** Answered from the saved demo recording, without calling Qloo. */
   saved?: boolean;
 }
+
+/** The only error text a call log entry carries; details go to the server log. */
+const CALL_FAILED = "failed";
 
 export interface SponsorBrandsInput {
   /** Confirmed artists from searchArtists(). */
@@ -154,12 +158,15 @@ export class QlooError extends Error {
   status: number | null;
   /** Retries already spent before giving up. */
   retries: number;
+  /** "no_key": the server has no QLOO_API_KEY; "failed": anything else. */
+  kind: "no_key" | "failed";
 
-  constructor(message: string, status: number | null = null, retries = 0) {
+  constructor(message: string, status: number | null = null, retries = 0, kind: "no_key" | "failed" = "failed") {
     super(message);
     this.name = "QlooError";
     this.status = status;
     this.retries = retries;
+    this.kind = kind;
   }
 }
 
@@ -346,7 +353,7 @@ async function qlooGet(
 
   const apiKey = process.env.QLOO_API_KEY;
   if (!apiKey) {
-    throw new QlooError("QLOO_API_KEY is not set. Add it to .env.local.");
+    throw new QlooError("QLOO_API_KEY is not set. Add it to .env.local.", null, 0, "no_key");
   }
 
   const started = Date.now();
@@ -717,7 +724,9 @@ export async function getSponsorBrands(
       return entities;
     } catch (error) {
       if (required) throw error;
-      // One failed category should not sink the whole result.
+      // One failed category should not sink the whole result. The call log
+      // goes to the browser, so the real error stays in the server log.
+      console.error(`${label}: ${error instanceof Error ? error.message : String(error)}`);
       calls.push({
         label,
         endpoint: "/v2/insights",
@@ -725,7 +734,7 @@ export async function getSponsorBrands(
         ms: Date.now() - started,
         resultCount: 0,
         retries: error instanceof QlooError ? error.retries : 0,
-        error: error instanceof Error ? error.message : String(error),
+        error: CALL_FAILED,
       });
       return [];
     }
@@ -1039,6 +1048,8 @@ export async function getLocalSponsors(
     (category) => input.includeBars || !category.alcohol,
   );
   const calls: QlooCall[] = [];
+  // Rethrown when every call fails, so the route still sees why (no key, 429...).
+  let firstError: unknown = null;
 
   async function runRound(radiusKm: number | null) {
     const where =
@@ -1071,6 +1082,9 @@ export async function getLocalSponsors(
           calls.push({ label, endpoint: "/v2/insights", params: sent, ms, resultCount: entities.length, retries, saved });
           return entities;
         } catch (error) {
+          // The call log goes to the browser, so the real error stays in the server log.
+          console.error(`${label}: ${error instanceof Error ? error.message : String(error)}`);
+          firstError ??= error;
           calls.push({
             label,
             endpoint: "/v2/insights",
@@ -1078,7 +1092,7 @@ export async function getLocalSponsors(
             ms: Date.now() - started,
             resultCount: 0,
             retries: error instanceof QlooError ? error.retries : 0,
-            error: error instanceof Error ? error.message : String(error),
+            error: CALL_FAILED,
           });
           return [];
         }
@@ -1123,7 +1137,7 @@ export async function getLocalSponsors(
 
   const failed = calls.filter((call) => call.error).length;
   if (round.lists.every((list) => list.length === 0) && failed === calls.length) {
-    throw new QlooError(calls[0]?.error ?? "Qloo place search failed");
+    throw firstError instanceof QlooError ? firstError : new QlooError("Qloo place search failed");
   }
 
   const search = { by: input.point ? ("point" as const) : ("city" as const), radiusKm, widened };

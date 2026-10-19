@@ -2,7 +2,8 @@
 // Candidates for one artist name, for the confirmation step in the UI.
 
 import { NextResponse, type NextRequest } from "next/server";
-import { QlooError, searchArtists } from "@/lib/qloo";
+import { publicQlooFailure } from "@/lib/public-errors";
+import { searchArtists } from "@/lib/qloo";
 
 export async function GET(request: NextRequest) {
   const query = request.nextUrl.searchParams.get("q")?.trim() ?? "";
@@ -22,18 +23,7 @@ export async function GET(request: NextRequest) {
 }
 
 function qlooFailure(error: unknown) {
-  if (error instanceof QlooError) {
-    if (error.status === 429) {
-      return NextResponse.json(
-        { error: "Qloo is busy right now. Try again in a few seconds." },
-        { status: 503 },
-      );
-    }
-    // Upstream error text stays in the server log; the browser gets a short message.
-    console.error(error.message);
-    const message = error.status ? `Qloo request failed (status ${error.status})` : error.message;
-    return NextResponse.json({ error: message }, { status: error.status ? 502 : 500 });
-  }
-  console.error(error);
-  return NextResponse.json({ error: "Something went wrong" }, { status: 500 });
+  // Upstream error text stays in the server log; the browser gets a short message.
+  const failure = publicQlooFailure(error, "/api/artists");
+  return NextResponse.json({ error: failure.error }, { status: failure.status });
 }

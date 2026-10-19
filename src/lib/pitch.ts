@@ -321,21 +321,20 @@ class LlmError extends Error {
   }
 }
 
-/** Short reason that is safe to show in the browser. Full details go to the server log only. */
-function publicReason(error: unknown, provider: Provider): string {
-  if (error instanceof LlmError) {
-    if (error.status === 401) return `the ${provider.name} key was rejected`;
-    if (error.status === 402) return `the ${provider.name} account has no credit`;
-    if (error.status === 404) return `the model ${provider.model} was not found`;
-    if (error.status === 429) {
-      return provider.model.endsWith(":free")
-        ? "the free AI model is busy (rate limit)"
-        : `${provider.name} is rate limiting us`;
-    }
-    return `${provider.name} returned status ${error.status}`;
-  }
-  if (error instanceof Error && error.name === "TimeoutError") return "the AI model took too long";
-  return "the AI model gave an unusable reply";
+/**
+ * The note shown above a template draft: plain words for the person writing
+ * the email, no env var names. The technical reason goes to the server log.
+ */
+const TEMPLATE_NOTES = {
+  off: "AI writing is off right now, so this is our built-in template.",
+  busy: "The AI model is busy right now, so this is our built-in template. Try again in a minute.",
+  factCheck: "The AI draft added facts we could not check, so this is our built-in template.",
+  failed: "The AI model did not answer properly, so this is our built-in template.",
+};
+
+function publicReason(error: unknown): string {
+  if (error instanceof LlmError && error.status === 429) return TEMPLATE_NOTES.busy;
+  return TEMPLATE_NOTES.failed;
 }
 
 function readContent(data: unknown): string | null {
@@ -356,11 +355,12 @@ export async function writePitch(input: PitchInput): Promise<PitchDraft> {
   };
 
   if ("missing" in provider) {
+    console.error(`Pitch used the template: ${provider.missing}.`);
     return {
       ...template(),
       source: "template",
       model: null,
-      note: `This draft comes from the built-in template because ${provider.missing}.`,
+      note: TEMPLATE_NOTES.off,
       ms: Date.now() - started,
     };
   }
@@ -374,7 +374,7 @@ export async function writePitch(input: PitchInput): Promise<PitchDraft> {
         ...template(),
         source: "template",
         model: null,
-        note: "This draft comes from the built-in template because the AI draft did not pass our fact check.",
+        note: TEMPLATE_NOTES.factCheck,
         ms: Date.now() - started,
       };
     }
@@ -393,7 +393,7 @@ export async function writePitch(input: PitchInput): Promise<PitchDraft> {
       ...template(),
       source: "template",
       model: null,
-      note: `This draft comes from the built-in template because ${publicReason(error, provider)}.`,
+      note: publicReason(error),
       ms: Date.now() - started,
     };
   }

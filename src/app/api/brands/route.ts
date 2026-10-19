@@ -26,8 +26,8 @@ import {
 import { isSavedExample, savedAt } from "@/lib/demo-recording";
 import { findGenreByTagId } from "@/lib/genres";
 import { blockLiveSearch } from "@/lib/rate-limit";
+import { publicQlooFailure } from "@/lib/public-errors";
 import {
-  QlooError,
   getSponsorBrands,
   searchArtists,
   searchGenreTags,
@@ -217,19 +217,8 @@ export async function POST(request: Request) {
       tookMs: Date.now() - started,
     });
   } catch (error) {
-    if (error instanceof QlooError) {
-      if (error.status === 429) {
-        return NextResponse.json(
-          { error: "Qloo is busy right now. Try again in a few seconds." },
-          { status: 503 },
-        );
-      }
-      // Upstream error text stays in the server log; the browser gets a short message.
-      console.error(error.message);
-      const message = error.status ? `Qloo request failed (status ${error.status})` : error.message;
-      return NextResponse.json({ error: message }, { status: error.status ? 502 : 500 });
-    }
-    console.error(error);
-    return NextResponse.json({ error: "Something went wrong" }, { status: 500 });
+    // Upstream error text stays in the server log; the browser gets a short message.
+    const failure = publicQlooFailure(error, "/api/brands");
+    return NextResponse.json({ error: failure.error }, { status: failure.status });
   }
 }

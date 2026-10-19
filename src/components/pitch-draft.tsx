@@ -121,9 +121,9 @@ export function PitchBox({
           {copied ? "Copied" : "Copy email"}
         </button>
       </div>
+      {pitch.note && <p className="mt-2 text-xs text-zinc-600">{pitch.note}</p>}
       <p className="mt-3 text-sm font-semibold">{pitch.subject}</p>
       <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-zinc-800">{pitch.body}</p>
-      {pitch.note && <p className="mt-3 text-xs text-zinc-500">{pitch.note}</p>}
     </div>
   );
 }
