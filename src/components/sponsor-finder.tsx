@@ -71,6 +71,9 @@ const EXAMPLE = {
 
 const TOP_PER_CATEGORY = 5;
 
+/** At or below this expected crowd, local sponsors are shown above the brands. */
+const SMALL_CROWD = 200;
+
 function splitNames(text: string): string[] {
   return text
     .split(/[,\n]/)
@@ -126,6 +129,8 @@ export function SponsorFinder() {
   const [placesInfo, setPlacesInfo] = useState<PlacesSearchInfo | null>(null);
   // The form as it was for the last successful search.
   const [searchedKey, setSearchedKey] = useState<string | null>(null);
+  // The crowd size when the search ran, so typing in the field does not move sections around.
+  const [searchedCrowd, setSearchedCrowd] = useState<number | null>(null);
 
   const pitch = usePitch();
 
@@ -170,6 +175,7 @@ export function SponsorFinder() {
       setResult(outcome.data);
       setPlacesInfo(null);
       setSearchedKey(key);
+      setSearchedCrowd(crowdSize.trim() ? Number(crowdSize) : null);
       setSearchId((id) => id + 1);
       setExpanded({});
     } catch {
@@ -261,6 +267,26 @@ export function SponsorFinder() {
     searchedKey !== searchKey({ names: splitNames(artistsText), confirmed: picked, genre, city, age, admission });
 
   const brandCount = result?.categories.reduce((sum, category) => sum + category.brands.length, 0) ?? 0;
+
+  // Small events: local businesses are the likelier sponsors, so they go first.
+  const localFirst = searchedCrowd !== null && searchedCrowd > 0 && searchedCrowd <= SMALL_CROWD;
+  const localSection = !result ? null : result.input.city ? (
+    <LocalSponsors
+      key={searchId}
+      artists={result.artists}
+      genreTags={result.genreTags}
+      city={result.input.city}
+      age={result.input.age}
+      admission={result.input.admission}
+      onLoaded={setPlacesInfo}
+      pitchContext={pitchContext}
+      barsAllowed={(findAdmission(admission) ?? DEFAULT_ADMISSION).alcoholAllowed}
+    />
+  ) : (
+    <p className="mt-5 rounded-xl border border-zinc-200 bg-white px-5 py-3 text-sm text-zinc-600">
+      Add a city to see local sponsors on a map.
+    </p>
+  );
 
   return (
     <div className="min-h-screen w-full bg-zinc-50 text-zinc-900">
@@ -549,6 +575,15 @@ export function SponsorFinder() {
               </div>
             ))}
 
+            {localFirst && (
+              <>
+                <p className="mt-5 text-sm text-zinc-700">
+                  For a crowd this size, local businesses are the likeliest yes. National brands are below.
+                </p>
+                {localSection}
+              </>
+            )}
+
             <div className="mt-5 space-y-5">
               {result.categories.map((category) => {
                 const showAll = expanded[category.id] ?? false;
@@ -643,23 +678,7 @@ export function SponsorFinder() {
               })}
             </div>
 
-            {result.input.city ? (
-              <LocalSponsors
-                key={searchId}
-                artists={result.artists}
-                genreTags={result.genreTags}
-                city={result.input.city}
-                age={result.input.age}
-                admission={result.input.admission}
-                onLoaded={setPlacesInfo}
-                pitchContext={pitchContext}
-                barsAllowed={(findAdmission(admission) ?? DEFAULT_ADMISSION).alcoholAllowed}
-              />
-            ) : (
-              <p className="mt-5 rounded-xl border border-zinc-200 bg-white px-5 py-3 text-sm text-zinc-600">
-                Add a city to see local sponsors on a map.
-              </p>
-            )}
+            {!localFirst && localSection}
 
             <details id="agent-details" className="mt-6 rounded-xl border border-zinc-200 bg-white px-5 py-3 text-sm">
               <summary className="cursor-pointer font-medium">How the agent got this</summary>
