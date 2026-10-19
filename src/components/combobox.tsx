@@ -100,6 +100,13 @@ export function Combobox({
     setOpen(false);
   }
 
+  /** Opens the list, unless the field already holds a picked option. */
+  function openUnlessPicked() {
+    if (options && isOption(options, value)) return;
+    setOpen(true);
+    setActive(0);
+  }
+
   function onKeyDown(event: KeyboardEvent<HTMLInputElement>) {
     if (event.key === "ArrowDown" || event.key === "ArrowUp") {
       event.preventDefault();
@@ -115,7 +122,8 @@ export function Combobox({
       // Pick the highlighted option instead of submitting the form.
       event.preventDefault();
       pick(suggestions[Math.min(active, suggestions.length - 1)]);
-    } else if (event.key === "Escape" && open) {
+    } else if (event.key === "Escape") {
+      if (open) event.preventDefault();
       setOpen(false);
     }
   }
@@ -133,10 +141,17 @@ export function Combobox({
         value={value}
         placeholder={placeholder}
         autoComplete="off"
+        // Focus alone (tabbing back, returning to the window) does not reopen
+        // the list after a pick; typing, a click or the arrow keys do.
         onFocus={() => {
           onFirstFocus?.();
-          setOpen(true);
-          setActive(0);
+          openUnlessPicked();
+        }}
+        onClick={() => {
+          if (!open) {
+            setOpen(true);
+            setActive(0);
+          }
         }}
         onBlur={() => setOpen(false)}
         onChange={(event) => {
