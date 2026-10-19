@@ -596,7 +596,8 @@ function reasonSentence(
 
   const top = strong[0];
   if (top.share - 1 / strong.length >= LEAN_MARGIN) {
-    return `${rankPart} Leans toward ${top.name} fans (${Math.round(top.share * 100)}% of the match).`;
+    // Name only; the share stays internal (no percentages anywhere in the UI or PDF).
+    return `${rankPart} Leans toward ${top.name} fans.`;
   }
   // No artist stands out: the rank says enough. Repeating "liked evenly" on
   // every row only added noise.
