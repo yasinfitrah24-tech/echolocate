@@ -121,7 +121,10 @@ export function LocalSponsors({
       {loading && (
         <div>
           <div className="h-80 w-full animate-pulse bg-zinc-100 sm:h-96" />
-          <p className="px-5 py-3 text-sm text-zinc-500">Finding local spots…</p>
+          {/* Shown exactly while /api/places runs; no timer. */}
+          <p role="status" className="px-5 py-3 text-sm text-zinc-600">
+            Finding local places…
+          </p>
         </div>
       )}
 

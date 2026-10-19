@@ -40,6 +40,16 @@ interface BrandsResponse {
   tookMs: number;
 }
 
+/** What the live search is doing right now, as the server reports it. */
+type SearchStep = "artists" | "genre" | "brands" | "brands-without-city";
+
+const STEP_TEXT: Record<SearchStep, string> = {
+  artists: "Matching artists in Qloo…",
+  genre: "Finding the genre in Qloo…",
+  brands: "Ranking brands for this crowd…",
+  "brands-without-city": "No taste data for this city. Ranking brands for the line-up alone…",
+};
+
 /** "Oct 17" from an ISO date. */
 function shortDate(iso: string): string {
   return new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric" });
@@ -106,6 +116,7 @@ export function SponsorFinder() {
   const [wantsAlcohol, setWantsAlcohol] = useState(true);
 
   const [loading, setLoading] = useState(false);
+  const [step, setStep] = useState<SearchStep | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<BrandsResponse | null>(null);
   // Changes with every successful search, so the local sponsors map reloads.
@@ -129,13 +140,15 @@ export function SponsorFinder() {
     const key = searchKey({ names, confirmed, genre, city, age, admission });
     const pickedGenre = findGenreByLabel(genre);
     setLoading(true);
+    setStep(null);
     setError(null);
     pitch.reset();
     setOnePagerFor(null);
     try {
       const response = await fetch("/api/brands", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        // Ask for a stream of steps, so the page shows which Qloo calls are running.
+        headers: { "Content-Type": "application/json", Accept: "application/x-ndjson" },
         body: JSON.stringify({
           artistNames: names,
           artists: confirmed,
@@ -148,13 +161,13 @@ export function SponsorFinder() {
           includeAlcohol,
         }),
       });
-      const data = await response.json();
-      if (!response.ok) {
+      const outcome = await readSearch(response, setStep);
+      if (!outcome.ok) {
         setResult(null);
-        setError(data.error ?? "Something went wrong. Try again, or try the saved example.");
+        setError(outcome.error);
         return;
       }
-      setResult(data as BrandsResponse);
+      setResult(outcome.data);
       setPlacesInfo(null);
       setSearchedKey(key);
       setSearchId((id) => id + 1);
@@ -164,6 +177,7 @@ export function SponsorFinder() {
       setError("Could not reach the server. Check your connection and try again.");
     } finally {
       setLoading(false);
+      setStep(null);
     }
   }
 
@@ -410,6 +424,11 @@ export function SponsorFinder() {
           >
             {loading ? "Finding sponsors…" : "Find sponsors"}
           </button>
+          {loading && (
+            <p role="status" className="mt-2 text-sm text-zinc-600">
+              {step ? STEP_TEXT[step] : "Starting the search…"}
+            </p>
+          )}
         </form>
 
         {error && (
@@ -629,7 +648,7 @@ export function SponsorFinder() {
                       Qloo <code className="text-xs">{call.endpoint}</code> · {call.label}
                     </span>
                     <span className="tabular-nums">
-                      {call.error ? "failed" : `${call.resultCount} brands`} ·{" "}
+                      {call.error ? "failed" : `${call.resultCount} ${call.endpoint === "/v2/insights" ? "brands" : "results"}`} ·{" "}
                       {call.saved ? "saved" : `${(call.ms / 1000).toFixed(1)} s`}
                       {call.retries > 0 ? ` · retried ${call.retries}x` : ""}
                     </span>
@@ -674,4 +693,68 @@ export function SponsorFinder() {
       </main>
     </div>
   );
+}
+
+type SearchOutcome = { ok: true; data: BrandsResponse } | { ok: false; error: string };
+
+const SEARCH_FAILED = "Something went wrong. Try again, or try the saved example.";
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+/** Checks the parts of the /api/brands answer the page reads before using it. */
+function isBrandsResponse(value: unknown): value is BrandsResponse {
+  return (
+    isRecord(value) &&
+    isRecord(value.input) &&
+    Array.isArray(value.artists) &&
+    Array.isArray(value.genreTags) &&
+    Array.isArray(value.unresolved) &&
+    Array.isArray(value.categories) &&
+    Array.isArray(value.calls)
+  );
+}
+
+function toOutcome(ok: boolean, body: unknown): SearchOutcome {
+  if (ok && isBrandsResponse(body)) return { ok: true, data: body };
+  const error = isRecord(body) && typeof body.error === "string" ? body.error : SEARCH_FAILED;
+  return { ok: false, error };
+}
+
+const STEPS = new Set<unknown>(Object.keys(STEP_TEXT));
+
+function isStep(value: unknown): value is SearchStep {
+  return STEPS.has(value);
+}
+
+/**
+ * Reads /api/brands: a stream of {"step"} lines then {"done", "status",
+ * "body"}, or plain JSON (limits and bad input are answered before any step).
+ */
+async function readSearch(response: Response, onStep: (step: SearchStep) => void): Promise<SearchOutcome> {
+  if (!response.headers.get("content-type")?.includes("application/x-ndjson") || !response.body) {
+    return toOutcome(response.ok, await response.json());
+  }
+  const reader = response.body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = "";
+  for (;;) {
+    const { value, done } = await reader.read();
+    buffer += decoder.decode(value, { stream: !done });
+    const lines = buffer.split("\n");
+    buffer = lines.pop() ?? "";
+    for (const line of lines) {
+      if (!line.trim()) continue;
+      const message: unknown = JSON.parse(line);
+      if (!isRecord(message)) continue;
+      if (isStep(message.step)) onStep(message.step);
+      if (message.done === true) {
+        const status = typeof message.status === "number" ? message.status : 500;
+        return toOutcome(status >= 200 && status < 300, message.body);
+      }
+    }
+    if (done) break;
+  }
+  return { ok: false, error: "The search stopped before it finished. Try again." };
 }

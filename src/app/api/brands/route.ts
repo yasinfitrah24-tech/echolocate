@@ -33,7 +33,11 @@ import {
   searchGenreTags,
   type ArtistMatch,
   type GenreTag,
+  type QlooCall,
 } from "@/lib/qloo";
+
+/** Progress steps sent to the page while a live search runs. */
+type SearchStep = "artists" | "genre" | "brands" | "brands-without-city";
 
 const MAX_ARTISTS = 5;
 
@@ -150,75 +154,101 @@ export async function POST(request: Request) {
   }
 
   // ----- talk to Qloo -----
-  try {
-    const [searches, genreTags] = await Promise.all([
-      Promise.all(artistNames.map((name) => searchArtists(name, 3))),
-      curated
-        ? Promise.resolve<GenreTag[]>([{ id: curated.tagId, name: curated.label }])
-        : genre
-          ? searchGenreTags(genre, 5)
-          : Promise.resolve<GenreTag[]>([]),
-    ]);
+  // Each step is reported when its Qloo calls start, so the UI shows what is
+  // really running (no timer).
+  const search = async (step: (name: SearchStep) => void): Promise<{ status: number; body: unknown }> => {
+    try {
+      const lookups: QlooCall[] = [];
+      if (artistNames.length > 0) step("artists");
+      if (!curated && genre) step("genre");
+      const [searches, genreTags] = await Promise.all([
+        Promise.all(artistNames.map((name) => searchArtists(name, 3, lookups))),
+        curated
+          ? Promise.resolve<GenreTag[]>([{ id: curated.tagId, name: curated.label }])
+          : genre
+            ? searchGenreTags(genre, 5, lookups)
+            : Promise.resolve<GenreTag[]>([]),
+      ]);
 
-    // A typed name only counts when Qloo returns the same name. Anything else
-    // (no result, or a different name such as "Wishy" -> "Wish You Were Here")
-    // goes back to the UI so the user can pick or switch to a genre.
-    const artists: ConfirmedArtist[] = [...confirmed];
-    const unresolved: { query: string; candidates: ArtistMatch[] }[] = [];
-    searches.forEach((matches, index) => {
-      const exact = matches.find((match) => match.exactName);
-      if (!exact) {
-        unresolved.push({ query: artistNames[index], candidates: matches });
-      } else if (!artists.some((artist) => artist.entityId === exact.entityId)) {
-        artists.push({ entityId: exact.entityId, name: exact.name });
+      // A typed name only counts when Qloo returns the same name. Anything else
+      // (no result, or a different name such as "Wishy" -> "Wish You Were Here")
+      // goes back to the UI so the user can pick or switch to a genre.
+      const artists: ConfirmedArtist[] = [...confirmed];
+      const unresolved: { query: string; candidates: ArtistMatch[] }[] = [];
+      searches.forEach((matches, index) => {
+        const exact = matches.find((match) => match.exactName);
+        if (!exact) {
+          unresolved.push({ query: artistNames[index], candidates: matches });
+        } else if (!artists.some((artist) => artist.entityId === exact.entityId)) {
+          artists.push({ entityId: exact.entityId, name: exact.name });
+        }
+      });
+
+      // Only the closest genre tag: extra tags widen the audience.
+      const usedTags = genreTags.slice(0, 1);
+
+      if (artists.length === 0 && usedTags.length === 0) {
+        return {
+          status: 404,
+          body: { error: "None of these artists or genres were found in Qloo", unresolved, genre },
+        };
       }
-    });
 
-    // Only the closest genre tag: extra tags widen the audience.
-    const usedTags = genreTags.slice(0, 1);
-
-    if (artists.length === 0 && usedTags.length === 0) {
-      return NextResponse.json(
-        {
-          error: "None of these artists or genres were found in Qloo",
-          unresolved,
-          genre,
-        },
-        { status: 404 },
-      );
-    }
-
-    const { categories, calls, cityDropped } = await getSponsorBrands({
-      artists,
-      genreTags: usedTags,
-      city: city ?? undefined,
-      age: audience?.id,
-      includeAlcohol,
-    });
-
-    return NextResponse.json({
-      input: {
-        city,
-        cityDropped,
-        genre,
-        age: audience?.id ?? null,
-        admission: admission.id,
+      const { categories, calls: brandCalls, cityDropped } = await getSponsorBrands({
+        artists,
+        genreTags: usedTags,
+        city: city ?? undefined,
+        age: audience?.id,
         includeAlcohol,
-        alcoholBlocked,
+        onStep: step,
+      });
+      const calls = [...lookups, ...brandCalls];
+
+      return {
+        status: 200,
+        body: {
+          input: {
+            city,
+            cityDropped,
+            genre,
+            age: audience?.id ?? null,
+            admission: admission.id,
+            includeAlcohol,
+            alcoholBlocked,
+          },
+          artists,
+          genreTags: usedTags,
+          genreMatch: genre && !curated ? { query: genre, tag: usedTags[0] ?? null } : null,
+          unresolved,
+          categories,
+          calls,
+          savedExample: example && calls.every((call) => call.saved) ? savedAt : null,
+          tookMs: Date.now() - started,
+        },
+      };
+    } catch (error) {
+      // Upstream error text stays in the server log; the browser gets a short message.
+      const failure = publicQlooFailure(error, "/api/brands");
+      return { status: failure.status, body: { error: failure.error } };
+    }
+  };
+
+  // The page asks for a stream: one JSON line per step, then the result.
+  if (request.headers.get("accept")?.includes("application/x-ndjson")) {
+    const encoder = new TextEncoder();
+    const stream = new ReadableStream({
+      async start(controller) {
+        const send = (line: unknown) => controller.enqueue(encoder.encode(`${JSON.stringify(line)}\n`));
+        const result = await search((name) => send({ step: name }));
+        send({ done: true, status: result.status, body: result.body });
+        controller.close();
       },
-      artists,
-      genreTags: usedTags,
-      genreMatch:
-        genre && !curated ? { query: genre, tag: usedTags[0] ?? null } : null,
-      unresolved,
-      categories,
-      calls,
-      savedExample: example && calls.every((call) => call.saved) ? savedAt : null,
-      tookMs: Date.now() - started,
     });
-  } catch (error) {
-    // Upstream error text stays in the server log; the browser gets a short message.
-    const failure = publicQlooFailure(error, "/api/brands");
-    return NextResponse.json({ error: failure.error }, { status: failure.status });
+    return new Response(stream, {
+      headers: { "Content-Type": "application/x-ndjson; charset=utf-8", "Cache-Control": "no-store" },
+    });
   }
+
+  const result = await search(() => {});
+  return NextResponse.json(result.body, { status: result.status });
 }

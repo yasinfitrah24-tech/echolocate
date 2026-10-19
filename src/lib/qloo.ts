@@ -142,6 +142,8 @@ export interface SponsorBrandsInput {
    * from every list. The filter is only as good as Qloo's tags.
    */
   includeAlcohol?: boolean;
+  /** Called as each round of brand calls starts, for the progress line in the UI. */
+  onStep?: (step: "brands" | "brands-without-city") => void;
 }
 
 export interface SponsorBrandsResult {
@@ -407,14 +409,25 @@ async function qlooGet(
 export async function searchArtists(
   query: string,
   take = 5,
+  /** When given, the call is logged here for "How the agent got this". */
+  calls?: QlooCall[],
 ): Promise<ArtistMatch[]> {
   const name = query.trim();
   if (!name) return [];
 
-  const { data } = await qlooGet("/search", {
+  const { data, ms, sent, retries, saved } = await qlooGet("/search", {
     query: name,
     types: "urn:entity:artist",
     take,
+  });
+  calls?.push({
+    label: `Artist search: ${name}`,
+    endpoint: "/search",
+    params: sent,
+    ms,
+    resultCount: asArray(data.results).length,
+    retries,
+    saved,
   });
 
   const wanted = normalizeName(name);
@@ -445,11 +458,22 @@ export async function searchArtists(
 export async function searchGenreTags(
   query: string,
   take = 10,
+  /** When given, the call is logged here for "How the agent got this". */
+  calls?: QlooCall[],
 ): Promise<GenreTag[]> {
   const text = query.trim();
   if (!text) return [];
 
-  const { data } = await qlooGet("/v2/tags", { "filter.query": text, take });
+  const { data, ms, sent, retries, saved } = await qlooGet("/v2/tags", { "filter.query": text, take });
+  calls?.push({
+    label: `Genre lookup: ${text}`,
+    endpoint: "/v2/tags",
+    params: sent,
+    ms,
+    resultCount: asArray(asObject(data.results).tags).length,
+    retries,
+    saved,
+  });
 
   const tags: GenreTag[] = [];
   for (const item of asArray(asObject(data.results).tags)) {
@@ -753,12 +777,14 @@ export async function getSponsorBrands(
       ),
     ]);
 
+  input.onStep?.("brands");
   let lists = await runRound(Boolean(city), "");
   let cityDropped = false;
   // Qloo returns no brands at all, and no error, for a place it has no taste
   // data for. "Indio, CA" gave zero in every category (11 Oct). Small towns are
   // exactly where our users are, so fall back to the line-up alone and say so.
   if (city && lists.every((list) => list.length === 0)) {
+    input.onStep?.("brands-without-city");
     const retry = await runRound(false, " (line-up only)");
     if (retry.some((list) => list.length > 0)) {
       lists = retry;
