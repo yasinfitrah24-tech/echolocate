@@ -241,11 +241,11 @@ export function LocalSponsors({
                               pitchContext,
                             )
                           }
-                          disabled={!pitchAllowed || (pitch.loading && open)}
+                          disabled={!pitchAllowed || pitch.isWriting(place.entityId)}
                           title={pitchAllowed ? undefined : "Bars need a 21+ event. Search again as 21+."}
                           className="rounded-md border border-zinc-300 bg-white px-3 py-1.5 text-xs font-medium text-zinc-800 hover:bg-zinc-100 disabled:opacity-50"
                         >
-                          {pitch.loading && open ? "Writing…" : "Draft pitch"}
+                          {pitch.isWriting(place.entityId) ? "Writing…" : "Draft pitch"}
                         </button>
                       )}
                       {place.website && (

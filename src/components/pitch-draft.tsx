@@ -3,7 +3,7 @@
 // Pitch email drafting, shared by the brand list and the local places list:
 // one open draft at a time per list, keyed by row.
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 export interface PitchResponse {
   subject: string;
@@ -35,35 +35,62 @@ export interface PitchTarget {
   nearbyKm?: number;
 }
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function isPitchResponse(value: unknown): value is PitchResponse {
+  return isRecord(value) && typeof value.subject === "string" && typeof value.body === "string";
+}
+
 export function usePitch() {
   const [pitchFor, setPitchFor] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
+  // The request in flight: the row it is for plus its number. Only this one may
+  // fill the box, so a slow answer for an earlier row is dropped.
+  const [writing, setWriting] = useState<{ key: string; id: number } | null>(null);
   const [pitch, setPitch] = useState<PitchResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const lastId = useRef(0);
+  const controller = useRef<AbortController | null>(null);
+
+  // A list that goes away (new search) cancels its request.
+  useEffect(() => () => controller.current?.abort(), []);
 
   async function draft(key: string, target: PitchTarget, context: PitchContext) {
+    controller.current?.abort();
+    const abort = new AbortController();
+    controller.current = abort;
+    const id = ++lastId.current;
+    const isCurrent = () => lastId.current === id;
+
     setPitchFor(key);
     setPitch(null);
     setError(null);
-    setLoading(true);
+    setWriting({ key, id });
     setCopied(false);
     try {
       const response = await fetch("/api/pitch", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ brand: target, artists: context.artists, event: context.event }),
+        signal: abort.signal,
       });
-      const data = await response.json();
-      if (!response.ok) {
-        setError(data.error ?? "Could not write the pitch");
+      const data: unknown = await response.json();
+      if (!isCurrent()) return;
+      if (!response.ok || !isPitchResponse(data)) {
+        setError(isRecord(data) && typeof data.error === "string" ? data.error : "Could not write the pitch. Try again.");
         return;
       }
-      setPitch(data as PitchResponse);
+      setPitch(data);
     } catch {
+      // Aborted because another row was clicked, or the answer is for an old row.
+      if (!isCurrent()) return;
       setError("Could not reach the server. Try again.");
     } finally {
-      setLoading(false);
+      // Always ends this request's "Writing…", never a newer one's.
+      setWriting((current) => (current?.id === id ? null : current));
+      if (controller.current === abort) controller.current = null;
     }
   }
 
@@ -78,12 +105,20 @@ export function usePitch() {
   }
 
   function reset() {
+    controller.current?.abort();
+    lastId.current += 1;
+    setWriting(null);
     setPitchFor(null);
     setPitch(null);
     setError(null);
   }
 
-  return { pitchFor, loading, pitch, error, copied, draft, copy, reset };
+  /** True while the pitch for this row is being written. */
+  function isWriting(key: string): boolean {
+    return writing?.key === key;
+  }
+
+  return { pitchFor, isWriting, pitch, error, copied, draft, copy, reset };
 }
 
 /** The error or the finished draft, shown under the row it belongs to. */
