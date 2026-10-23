@@ -53,6 +53,7 @@ Built for the Qloo Agentic Hackathon (Devpost). Rule from the organizers: if the
 - Not sponsors, dropped in the server: NGO "brands", and brands tagged sports_organization, academic, cultural_arts or entertainment:media:news_and_politics.
 
 ## Rules for working in this repo
+- Claims: never say or suggest that Qloo picks sponsors better than a language model. The 23 Oct test (`backtest-llm/results.md`) does not support it: the model scored higher (41% vs 25% in the top 10), mostly by remembering festival sponsors. No Qloo-vs-LLM comparison claim anywhere (METHOD.md section 9).
 - API keys live only in `.env.local` (and Vercel). Never commit keys, never print them, never put them in this file or in chat. `.env.example` lists the names only.
 - Upstream error text stays in server logs; the browser gets a short message.
 - Keep changes small and runnable. After code changes run `npm run lint` and, if possible, `npx tsc --noEmit`.

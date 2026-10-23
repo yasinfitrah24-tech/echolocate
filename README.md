@@ -59,7 +59,7 @@ Every Qloo call is listed in the app under "How the agent got this", with its re
 
 Qloo picks the sponsors: which brands and local places, in what order, and why. The language model only writes the email from the facts it is given, and it may not add numbers, prices, dates or sponsors of its own. Without Qloo there is no list and nothing to pitch.
 
-We have not yet compared Qloo with a language model picking brands on its own, so we make no claim about which is better.
+We also asked an AI model, without Qloo, to name sponsors for the same 10 festivals. It scored higher (41% of real sponsors in its top 10, against 25% for Qloo). But it also named 9 of the 10 festivals from the line-up and city alone, so it was largely remembering past sponsors. A campus show or a community gig has no sponsor history to remember, and that is the case Echolocate is built for. Full results: [backtest-llm/results.md](backtest-llm/results.md).
 
 ## What we tested
 
