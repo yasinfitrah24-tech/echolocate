@@ -1,0 +1,98 @@
+{
+ "kind": "list",
+ "run": 1,
+ "festival": "Coachella Valley Music and Arts Festival",
+ "tag": "electronics:computer_components",
+ "messages": [
+  {
+   "role": "system",
+   "content": "You know which brands different music audiences like. You answer with JSON only, no other text."
+  },
+  {
+   "role": "user",
+   "content": "Line-up of a live music event: Lady Gaga, Green Day, Post Malone\nCategory: Electronics > computer components\n\nList the 10 brands in this category that people who come to see this line-up like most, best first. Only real brands. No explanations.\n\nReturn JSON in exactly this shape: {\"brands\": [\"first brand\", \"second brand\", \"third brand\", \"fourth brand\", \"fifth brand\", \"sixth brand\", \"seventh brand\", \"eighth brand\", \"ninth brand\", \"tenth brand\"]}"
+  }
+ ],
+ "settings": {
+  "model": "deepseek/deepseek-v4.1-flash",
+  "provider": {
+   "order": [
+    "digitalocean"
+   ],
+   "allow_fallbacks": false
+  },
+  "temperature": 0.7,
+  "max_tokens": 800,
+  "reasoning": "none"
+ },
+ "ok": true,
+ "parsed": {
+  "brands": [
+   "Intel",
+   "AMD",
+   "NVIDIA",
+   "ASUS",
+   "MSI",
+   "Gigabyte",
+   "Corsair",
+   "Samsung",
+   "Western Digital",
+   "Seagate"
+  ],
+  "given": 10
+ },
+ "attempts": [
+  {
+   "status": 200,
+   "ms": 2657,
+   "provider": "DigitalOcean",
+   "model": "deepseek/deepseek-v4.1-flash",
+   "id": "gen-1792716243-UesTy05E8GBKKF09MDuI",
+   "usage": {
+    "prompt_tokens": 138,
+    "completion_tokens": 47,
+    "total_tokens": 185,
+    "cost": 0.00005379,
+    "is_byok": false,
+    "prompt_tokens_details": {
+     "cached_tokens": 0,
+     "cache_write_tokens": 0,
+     "audio_tokens": 0,
+     "video_tokens": 0
+    },
+    "cost_details": {
+     "upstream_inference_cost": 0.00005379,
+     "upstream_inference_prompt_cost": 0.00002277,
+     "upstream_inference_completions_cost": 0.00003102
+    },
+    "completion_tokens_details": {
+     "reasoning_tokens": 0,
+     "image_tokens": 0,
+     "audio_tokens": 0
+    }
+   },
+   "cost": 0.00005379,
+   "costEstimated": false,
+   "retryAfter": null,
+   "finishReason": "stop",
+   "content": "{\"brands\": [\"Intel\", \"AMD\", \"NVIDIA\", \"ASUS\", \"MSI\", \"Gigabyte\", \"Corsair\", \"Samsung\", \"Western Digital\", \"Seagate\"]}",
+   "ok": true,
+   "parsed": {
+    "brands": [
+     "Intel",
+     "AMD",
+     "NVIDIA",
+     "ASUS",
+     "MSI",
+     "Gigabyte",
+     "Corsair",
+     "Samsung",
+     "Western Digital",
+     "Seagate"
+    ],
+    "given": 10
+   }
+  }
+ ],
+ "savedAt": "2026-10-23T00:44:05.876Z"
+}

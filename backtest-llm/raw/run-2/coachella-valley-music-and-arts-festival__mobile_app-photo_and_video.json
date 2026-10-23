@@ -1,0 +1,98 @@
+{
+ "kind": "list",
+ "run": 2,
+ "festival": "Coachella Valley Music and Arts Festival",
+ "tag": "mobile_app:photo_and_video",
+ "messages": [
+  {
+   "role": "system",
+   "content": "You know which brands different music audiences like. You answer with JSON only, no other text."
+  },
+  {
+   "role": "user",
+   "content": "Line-up of a live music event: Lady Gaga, Green Day, Post Malone\nCategory: Mobile app > photo and video\n\nList the 10 brands in this category that people who come to see this line-up like most, best first. Only real brands. No explanations.\n\nReturn JSON in exactly this shape: {\"brands\": [\"first brand\", \"second brand\", \"third brand\", \"fourth brand\", \"fifth brand\", \"sixth brand\", \"seventh brand\", \"eighth brand\", \"ninth brand\", \"tenth brand\"]}"
+  }
+ ],
+ "settings": {
+  "model": "deepseek/deepseek-v4.1-flash",
+  "provider": {
+   "order": [
+    "digitalocean"
+   ],
+   "allow_fallbacks": false
+  },
+  "temperature": 0.7,
+  "max_tokens": 800,
+  "reasoning": "none"
+ },
+ "ok": true,
+ "parsed": {
+  "brands": [
+   "Instagram",
+   "Snapchat",
+   "TikTok",
+   "VSCO",
+   "Picsart",
+   "Canva",
+   "Adobe Lightroom",
+   "CapCut",
+   "BeReal",
+   "Imgur"
+  ],
+  "given": 10
+ },
+ "attempts": [
+  {
+   "status": 200,
+   "ms": 1646,
+   "provider": "DigitalOcean",
+   "model": "deepseek/deepseek-v4.1-flash",
+   "id": "gen-1792716550-Xgi5FcVja2vjdWU8miP8",
+   "usage": {
+    "prompt_tokens": 140,
+    "completion_tokens": 49,
+    "total_tokens": 189,
+    "cost": 0.00005544,
+    "is_byok": false,
+    "prompt_tokens_details": {
+     "cached_tokens": 0,
+     "cache_write_tokens": 0,
+     "audio_tokens": 0,
+     "video_tokens": 0
+    },
+    "cost_details": {
+     "upstream_inference_cost": 0.00005544,
+     "upstream_inference_prompt_cost": 0.0000231,
+     "upstream_inference_completions_cost": 0.00003234
+    },
+    "completion_tokens_details": {
+     "reasoning_tokens": 0,
+     "image_tokens": 0,
+     "audio_tokens": 0
+    }
+   },
+   "cost": 0.00005544,
+   "costEstimated": false,
+   "retryAfter": null,
+   "finishReason": "stop",
+   "content": "{\"brands\": [\"Instagram\", \"Snapchat\", \"TikTok\", \"VSCO\", \"Picsart\", \"Canva\", \"Adobe Lightroom\", \"CapCut\", \"BeReal\", \"Imgur\"]}",
+   "ok": true,
+   "parsed": {
+    "brands": [
+     "Instagram",
+     "Snapchat",
+     "TikTok",
+     "VSCO",
+     "Picsart",
+     "Canva",
+     "Adobe Lightroom",
+     "CapCut",
+     "BeReal",
+     "Imgur"
+    ],
+    "given": 10
+   }
+  }
+ ],
+ "savedAt": "2026-10-23T00:49:12.636Z"
+}

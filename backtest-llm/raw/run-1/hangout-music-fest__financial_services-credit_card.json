@@ -1,0 +1,98 @@
+{
+ "kind": "list",
+ "run": 1,
+ "festival": "Hangout Music Fest",
+ "tag": "financial_services:credit_card",
+ "messages": [
+  {
+   "role": "system",
+   "content": "You know which brands different music audiences like. You answer with JSON only, no other text."
+  },
+  {
+   "role": "user",
+   "content": "Line-up of a live music event: Red Hot Chili Peppers, SZA, Calvin Harris\nCity: Gulf Shores, AL\nCategory: Financial services > credit card\n\nList the 10 brands in this category that people who come to see this line-up like most, best first. Only real brands. No explanations.\n\nReturn JSON in exactly this shape: {\"brands\": [\"first brand\", \"second brand\", \"third brand\", \"fourth brand\", \"fifth brand\", \"sixth brand\", \"seventh brand\", \"eighth brand\", \"ninth brand\", \"tenth brand\"]}"
+  }
+ ],
+ "settings": {
+  "model": "deepseek/deepseek-v4.1-flash",
+  "provider": {
+   "order": [
+    "digitalocean"
+   ],
+   "allow_fallbacks": false
+  },
+  "temperature": 0.7,
+  "max_tokens": 800,
+  "reasoning": "none"
+ },
+ "ok": true,
+ "parsed": {
+  "brands": [
+   "Visa",
+   "Mastercard",
+   "American Express",
+   "Discover",
+   "Capital One",
+   "Chase Sapphire",
+   "Citi",
+   "Bank of America",
+   "Wells Fargo",
+   "Barclays"
+  ],
+  "given": 10
+ },
+ "attempts": [
+  {
+   "status": 200,
+   "ms": 1751,
+   "provider": "DigitalOcean",
+   "model": "deepseek/deepseek-v4.1-flash",
+   "id": "gen-1792716340-rdONL5DZmfAHlaRzlc6I",
+   "usage": {
+    "prompt_tokens": 149,
+    "completion_tokens": 50,
+    "total_tokens": 199,
+    "cost": 0.000057585,
+    "is_byok": false,
+    "prompt_tokens_details": {
+     "cached_tokens": 0,
+     "cache_write_tokens": 0,
+     "audio_tokens": 0,
+     "video_tokens": 0
+    },
+    "cost_details": {
+     "upstream_inference_cost": 0.000057585,
+     "upstream_inference_prompt_cost": 0.000024585,
+     "upstream_inference_completions_cost": 0.000033
+    },
+    "completion_tokens_details": {
+     "reasoning_tokens": 0,
+     "image_tokens": 0,
+     "audio_tokens": 0
+    }
+   },
+   "cost": 0.000057585,
+   "costEstimated": false,
+   "retryAfter": null,
+   "finishReason": "stop",
+   "content": "{\"brands\": [\"Visa\", \"Mastercard\", \"American Express\", \"Discover\", \"Capital One\", \"Chase Sapphire\", \"Citi\", \"Bank of America\", \"Wells Fargo\", \"Barclays\"]}",
+   "ok": true,
+   "parsed": {
+    "brands": [
+     "Visa",
+     "Mastercard",
+     "American Express",
+     "Discover",
+     "Capital One",
+     "Chase Sapphire",
+     "Citi",
+     "Bank of America",
+     "Wells Fargo",
+     "Barclays"
+    ],
+    "given": 10
+   }
+  }
+ ],
+ "savedAt": "2026-10-23T00:45:42.309Z"
+}

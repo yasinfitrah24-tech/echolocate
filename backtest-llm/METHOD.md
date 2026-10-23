@@ -309,3 +309,7 @@ Each file holds the prompt, the settings, every attempt (status, full reply text
   - Lists longer than 10 are cut to the first 10, duplicates are removed, and shorter lists are used as they are. The average number of brands per list is reported.
   - Concurrency 2 → 3. Cost brake $1.50 counted from `usage.cost`.
   - The cost section is redone for DigitalOcean only.
+- **23 Oct 2026, after all 3 runs, report layout only (no change to calls, prompts, matching or scoring):**
+  - `results.md` gained a per-run data health table, a Limits section, a note on the subset without recognized festivals, and right/wrong marks on each memorization guess, as Yasin asked.
+  - A rate with nothing to count now shows "n/a", the same as `pct()`. Without the recognized festivals no control lists are left, and the table had shown 0%.
+  - Manual matches count only once `manual-check.md` has at least one yes/no answer.

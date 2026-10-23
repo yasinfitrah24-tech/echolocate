@@ -1,0 +1,211 @@
+{
+  "scoredAt": "2026-10-23T00:55:19.051Z",
+  "runs": 3,
+  "flagged": [
+    "Coachella Valley Music and Arts Festival",
+    "BottleRock Napa Valley",
+    "Sonic Temple Art + Music Festival",
+    "Boston Calling Music Festival",
+    "Bonnaroo Music & Arts Festival",
+    "Hangout Music Fest",
+    "Sueños Music Festival",
+    "Ultra Music Festival",
+    "Dreamville Festival"
+  ],
+  "tables": {
+    "auto|all 10 festivals|All tested": {
+      "llmPerRun": [
+        {
+          "n": 129,
+          "top5": 40,
+          "top10": 53,
+          "controlN": 1052,
+          "controlTop10": 337
+        },
+        {
+          "n": 129,
+          "top5": 42,
+          "top10": 53,
+          "controlN": 1052,
+          "controlTop10": 329
+        },
+        {
+          "n": 129,
+          "top5": 41,
+          "top10": 54,
+          "controlN": 1052,
+          "controlTop10": 317
+        }
+      ],
+      "qloo": {
+        "n": 129,
+        "top5": 19,
+        "top10": 32,
+        "controlN": 1052,
+        "controlTop10": 178
+      }
+    },
+    "auto|all 10 festivals|Full lists only (Qloo list had 50 brands)": {
+      "llmPerRun": [
+        {
+          "n": 103,
+          "top5": 27,
+          "top10": 38,
+          "controlN": 841,
+          "controlTop10": 223
+        },
+        {
+          "n": 103,
+          "top5": 29,
+          "top10": 38,
+          "controlN": 841,
+          "controlTop10": 216
+        },
+        {
+          "n": 103,
+          "top5": 27,
+          "top10": 39,
+          "controlN": 841,
+          "controlTop10": 212
+        }
+      ],
+      "qloo": {
+        "n": 103,
+        "top5": 13,
+        "top10": 22,
+        "controlN": 841,
+        "controlTop10": 120
+      }
+    },
+    "auto|all 10 festivals|Exact name matches only (backtest lookup)": {
+      "llmPerRun": [
+        {
+          "n": 92,
+          "top5": 33,
+          "top10": 42,
+          "controlN": 749,
+          "controlTop10": 272
+        },
+        {
+          "n": 92,
+          "top5": 36,
+          "top10": 42,
+          "controlN": 749,
+          "controlTop10": 264
+        },
+        {
+          "n": 92,
+          "top5": 36,
+          "top10": 42,
+          "controlN": 749,
+          "controlTop10": 251
+        }
+      ],
+      "qloo": {
+        "n": 92,
+        "top5": 15,
+        "top10": 25,
+        "controlN": 749,
+        "controlTop10": 143
+      }
+    },
+    "auto|without memorized festivals (9 left out)|All tested": {
+      "llmPerRun": [
+        {
+          "n": 17,
+          "top5": 7,
+          "top10": 9,
+          "controlN": 0,
+          "controlTop10": 0
+        },
+        {
+          "n": 17,
+          "top5": 7,
+          "top10": 9,
+          "controlN": 0,
+          "controlTop10": 0
+        },
+        {
+          "n": 17,
+          "top5": 6,
+          "top10": 8,
+          "controlN": 0,
+          "controlTop10": 0
+        }
+      ],
+      "qloo": {
+        "n": 17,
+        "top5": 3,
+        "top10": 6,
+        "controlN": 0,
+        "controlTop10": 0
+      }
+    },
+    "auto|without memorized festivals (9 left out)|Full lists only (Qloo list had 50 brands)": {
+      "llmPerRun": [
+        {
+          "n": 16,
+          "top5": 6,
+          "top10": 8,
+          "controlN": 0,
+          "controlTop10": 0
+        },
+        {
+          "n": 16,
+          "top5": 6,
+          "top10": 8,
+          "controlN": 0,
+          "controlTop10": 0
+        },
+        {
+          "n": 16,
+          "top5": 5,
+          "top10": 7,
+          "controlN": 0,
+          "controlTop10": 0
+        }
+      ],
+      "qloo": {
+        "n": 16,
+        "top5": 3,
+        "top10": 6,
+        "controlN": 0,
+        "controlTop10": 0
+      }
+    },
+    "auto|without memorized festivals (9 left out)|Exact name matches only (backtest lookup)": {
+      "llmPerRun": [
+        {
+          "n": 13,
+          "top5": 7,
+          "top10": 8,
+          "controlN": 0,
+          "controlTop10": 0
+        },
+        {
+          "n": 13,
+          "top5": 7,
+          "top10": 9,
+          "controlN": 0,
+          "controlTop10": 0
+        },
+        {
+          "n": 13,
+          "top5": 6,
+          "top10": 8,
+          "controlN": 0,
+          "controlTop10": 0
+        }
+      ],
+      "qloo": {
+        "n": 13,
+        "top5": 2,
+        "top10": 4,
+        "controlN": 0,
+        "controlTop10": 0
+      }
+    }
+  },
+  "emptyLists": [],
+  "manualPairs": 17
+}

@@ -1,0 +1,98 @@
+{
+ "kind": "list",
+ "run": 1,
+ "festival": "Boston Calling Music Festival",
+ "tag": "wine_and_spirits:spirits",
+ "messages": [
+  {
+   "role": "system",
+   "content": "You know which brands different music audiences like. You answer with JSON only, no other text."
+  },
+  {
+   "role": "user",
+   "content": "Line-up of a live music event: Foo Fighters, The Lumineers, Paramore\nCity: Boston, MA\nCategory: Wine and spirits > spirits\n\nList the 10 brands in this category that people who come to see this line-up like most, best first. Only real brands. No explanations.\n\nReturn JSON in exactly this shape: {\"brands\": [\"first brand\", \"second brand\", \"third brand\", \"fourth brand\", \"fifth brand\", \"sixth brand\", \"seventh brand\", \"eighth brand\", \"ninth brand\", \"tenth brand\"]}"
+  }
+ ],
+ "settings": {
+  "model": "deepseek/deepseek-v4.1-flash",
+  "provider": {
+   "order": [
+    "digitalocean"
+   ],
+   "allow_fallbacks": false
+  },
+  "temperature": 0.7,
+  "max_tokens": 800,
+  "reasoning": "none"
+ },
+ "ok": true,
+ "parsed": {
+  "brands": [
+   "Jack Daniel's",
+   "Jameson Irish Whiskey",
+   "Tito's Handmade Vodka",
+   "Captain Morgan",
+   "Crown Royal",
+   "Bacardi",
+   "Smirnoff",
+   "Jägermeister",
+   "Fireball Cinnamon Whisky",
+   "Patrón Tequila"
+  ],
+  "given": 10
+ },
+ "attempts": [
+  {
+   "status": 200,
+   "ms": 1636,
+   "provider": "DigitalOcean",
+   "model": "deepseek/deepseek-v4.1-flash",
+   "id": "gen-1792716318-EHvtSFlEwLsQy0fGYj7Q",
+   "usage": {
+    "prompt_tokens": 147,
+    "completion_tokens": 68,
+    "total_tokens": 215,
+    "cost": 0.000069135,
+    "is_byok": false,
+    "prompt_tokens_details": {
+     "cached_tokens": 0,
+     "cache_write_tokens": 0,
+     "audio_tokens": 0,
+     "video_tokens": 0
+    },
+    "cost_details": {
+     "upstream_inference_cost": 0.000069135,
+     "upstream_inference_prompt_cost": 0.000024255,
+     "upstream_inference_completions_cost": 0.00004488
+    },
+    "completion_tokens_details": {
+     "reasoning_tokens": 0,
+     "image_tokens": 0,
+     "audio_tokens": 0
+    }
+   },
+   "cost": 0.000069135,
+   "costEstimated": false,
+   "retryAfter": null,
+   "finishReason": "stop",
+   "content": "{\"brands\": [\"Jack Daniel's\", \"Jameson Irish Whiskey\", \"Tito's Handmade Vodka\", \"Captain Morgan\", \"Crown Royal\", \"Bacardi\", \"Smirnoff\", \"Jägermeister\", \"Fireball Cinnamon Whisky\", \"Patrón Tequila\"]}",
+   "ok": true,
+   "parsed": {
+    "brands": [
+     "Jack Daniel's",
+     "Jameson Irish Whiskey",
+     "Tito's Handmade Vodka",
+     "Captain Morgan",
+     "Crown Royal",
+     "Bacardi",
+     "Smirnoff",
+     "Jägermeister",
+     "Fireball Cinnamon Whisky",
+     "Patrón Tequila"
+    ],
+    "given": 10
+   }
+  }
+ ],
+ "savedAt": "2026-10-23T00:45:20.027Z"
+}

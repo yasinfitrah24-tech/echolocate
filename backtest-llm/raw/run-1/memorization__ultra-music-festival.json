@@ -1,0 +1,78 @@
+{
+ "kind": "memo",
+ "run": 1,
+ "festival": "Ultra Music Festival",
+ "tag": null,
+ "messages": [
+  {
+   "role": "system",
+   "content": "You answer with JSON only, no other text."
+  },
+  {
+   "role": "user",
+   "content": "These are the headliners of a music festival in the United States: John Summit, Carl Cox, Axwell\nCity: Miami, FL\n\nWhich festival is this, and which year? If you are not sure, give your best guess.\n\nReturn JSON in exactly this shape: {\"festival\": \"name of the festival\", \"year\": 2024, \"confidence\": \"high\"}\nUse \"high\", \"medium\" or \"low\" for confidence."
+  }
+ ],
+ "settings": {
+  "model": "deepseek/deepseek-v4.1-flash",
+  "provider": {
+   "order": [
+    "digitalocean"
+   ],
+   "allow_fallbacks": false
+  },
+  "temperature": 0.7,
+  "max_tokens": 800,
+  "reasoning": "none"
+ },
+ "ok": true,
+ "parsed": {
+  "festival": "Ultra Music Festival",
+  "year": 2024,
+  "confidence": "medium"
+ },
+ "attempts": [
+  {
+   "status": 200,
+   "ms": 2955,
+   "provider": "DigitalOcean",
+   "model": "deepseek/deepseek-v4.1-flash",
+   "id": "gen-1792716401-AMqV3JAyObcUVHGq9nly",
+   "usage": {
+    "prompt_tokens": 109,
+    "completion_tokens": 24,
+    "total_tokens": 133,
+    "cost": 0.000033825,
+    "is_byok": false,
+    "prompt_tokens_details": {
+     "cached_tokens": 0,
+     "cache_write_tokens": 0,
+     "audio_tokens": 0,
+     "video_tokens": 0
+    },
+    "cost_details": {
+     "upstream_inference_cost": 0.000033825,
+     "upstream_inference_prompt_cost": 0.000017985,
+     "upstream_inference_completions_cost": 0.00001584
+    },
+    "completion_tokens_details": {
+     "reasoning_tokens": 0,
+     "image_tokens": 0,
+     "audio_tokens": 0
+    }
+   },
+   "cost": 0.000033825,
+   "costEstimated": false,
+   "retryAfter": null,
+   "finishReason": "stop",
+   "content": "{\"festival\": \"Ultra Music Festival\", \"year\": 2024, \"confidence\": \"medium\"}",
+   "ok": true,
+   "parsed": {
+    "festival": "Ultra Music Festival",
+    "year": 2024,
+    "confidence": "medium"
+   }
+  }
+ ],
+ "savedAt": "2026-10-23T00:46:44.096Z"
+}

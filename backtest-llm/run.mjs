@@ -510,13 +510,16 @@ const pct = (part, whole) => (whole === 0 ? "n/a" : `${Math.round((100 * part) /
 function manualApprovals() {
   const file = join(here, "manual-check.md");
   const approved = new Set();
-  if (!existsSync(file)) return { approved, exists: false };
+  if (!existsSync(file)) return { approved, exists: false, decided: 0 };
+  let decided = 0;
   for (const line of readFileSync(file, "utf8").split("\n")) {
     const cells = line.split("|").map((c) => c.trim());
     if (cells.length < 7 || !/^\d+$/.test(cells[1])) continue;
-    if (cells[cells.length - 2].toLowerCase() === "yes") approved.add(`${key(cells[2])}|${key(cells[4])}`);
+    const answer = cells[cells.length - 2].toLowerCase();
+    if (answer === "yes" || answer === "no") decided += 1;
+    if (answer === "yes") approved.add(`${key(cells[2])}|${key(cells[4])}`);
   }
-  return { approved, exists: true };
+  return { approved, exists: true, decided };
 }
 
 function score() {
@@ -536,7 +539,25 @@ function score() {
   let tokensIn = 0;
   let tokensOut = 0;
   const providers = new Map();
+  const health = new Map(); // run -> counts
   for (const { call, record } of records) {
+    const h = health.get(call.run) ?? { calls: 0, ok: 0, failed: 0, retried: 0, cut: 0, lists: 0, brands: 0, short: [], cost: 0, providers: new Map() };
+    h.calls += 1;
+    if (record.ok) h.ok += 1;
+    else h.failed += 1;
+    if (record.attempts.length > 1) h.retried += 1;
+    h.cut += record.attempts.filter((a) => a.finishReason === "length").length;
+    h.cost += costOf(record);
+    for (const a of record.attempts) {
+      const p = a.provider ?? `none (status ${a.status})`;
+      h.providers.set(p, (h.providers.get(p) ?? 0) + 1);
+    }
+    if (call.kind === "list" && record.ok) {
+      h.lists += 1;
+      h.brands += record.parsed.brands.length;
+      if (record.parsed.brands.length < LIST_SIZE) h.short.push(`${record.festival} / ${call.tag}: ${record.parsed.brands.length} brands`);
+    }
+    health.set(call.run, h);
     totalCost += costOf(record);
     for (const a of record.attempts) {
       tokensIn += a.usage?.prompt_tokens ?? 0;
@@ -561,7 +582,9 @@ function score() {
     if ((memo.get(index) ?? []).some((g) => names.some((n) => key(g.festival).includes(n)))) flagged.add(index);
   });
 
-  const { approved, exists: manualExists } = manualApprovals();
+  const { approved, exists: manualExists, decided } = manualApprovals();
+  /** Manual matches count only once Yasin has answered at least one line. */
+  const manualReviewed = decided > 0;
   const manualHit = (answer, row) => approved.has(`${key(row.sponsor)}|${key(answer)}`);
 
   // Manual list: near misses in every list a row is scored on (own and control), one line per pair.
@@ -627,8 +650,10 @@ function score() {
   }
 
   const runs = [...lists.keys()].sort();
-  const rate = (part, whole) => (whole === 0 ? 0 : (100 * part) / whole);
+  // Null when there is nothing to count (e.g. no control lists left), shown as "n/a" like pct().
+  const rate = (part, whole) => (whole === 0 ? null : (100 * part) / whole);
   const spread = (values) => {
+    if (values.some((v) => v === null)) return "n/a";
     const mean = values.reduce((s, v) => s + v, 0) / values.length;
     return `${Math.round(mean)}% (${Math.round(Math.min(...values))}–${Math.round(Math.max(...values))}%)`;
   };
@@ -643,16 +668,22 @@ function score() {
 
   md.push("# Qloo vs a language model alone: results", "");
   md.push(`Scored ${json.scoredAt.slice(0, 10)}. Method: \`backtest-llm/METHOD.md\`. Model ${MODEL} via OpenRouter, provider DigitalOcean only, ${runs.length} runs. LLM numbers are the mean of the runs, with the range in brackets.`, "");
+  md.push("**No conclusion for the pitch, the video or Devpost is drawn here.** Which claims, if any, may be used is Yasin's decision (METHOD.md section 9). Every number below uses automatic name matching only; numbers with the manual check follow once `manual-check.md` is answered.", "");
   md.push(`Calls: ${calls.length}. Lists that failed twice and count as empty: ${emptyLists.length}. Brands per list: ${(sizes.reduce((s, v) => s + v, 0) / Math.max(sizes.length, 1)).toFixed(2)} on average. Tokens: ${tokensIn} in, ${tokensOut} out. Cost (usage.cost): $${totalCost.toFixed(4)}. Providers that answered: ${[...providers].map(([p, c]) => `${p} ${c}`).join(", ")}.`, "");
 
   for (const [withManual, title] of [[false, "Automatic name matching (headline)"], [true, "Automatic + manually approved matches"]]) {
-    if (withManual && !manualExists) {
-      md.push(`## ${title}`, "", "manual-check.md has not been reviewed yet.", "");
+    if (withManual && !manualReviewed) {
+      md.push(`## ${title}`, "", "Not computed yet: manual-check.md has no yes/no answers. These numbers follow after the manual check.", "");
       continue;
     }
     for (const [skip, scope] of [[new Set(), "all 10 festivals"], [flagged, `without memorized festivals (${flagged.size} left out)`]]) {
       if (scope.startsWith("without") && flagged.size === 0) continue;
       md.push(`## ${title}, ${scope}`, "");
+      if (skip.size > 0) {
+        const left = festivals.filter((_, i) => !skip.has(i));
+        const leftRows = tested.filter((r) => !skip.has(festivalIndex.get(r.festival))).length;
+        md.push(`**Only ${left.length} festival${left.length === 1 ? "" : "s"} left (${left.map((f) => f.festival).join(", ")}), with ${leftRows} sponsor rows. Too few to draw any conclusion.** Shown only because METHOD.md section 6 asks for it.`, "");
+      }
       md.push("| | Rows | LLM top 10 | LLM top 5 | LLM control top 10 | Qloo top 10 | Qloo top 5 | Qloo control top 10 |", "|---|---|---|---|---|---|---|---|");
       for (const [label, rows] of subsets) {
         const per = runs.map((run) => llmSummary(run, rows, skip, withManual));
@@ -672,16 +703,35 @@ function score() {
     md.push(`| ${tag} | ${rows.length} | ${spread(per.map((s) => rate(s.top10, s.n)))} | ${pct(q.top10, q.n)} |`);
   }
 
-  md.push("", "## Memorization check", "", "| Festival | Guesses (run: festival, year, confidence) | Flagged |", "|---|---|---|");
+  md.push("", "## Memorization check", "", `The model was given only the line-up and the city, and asked which festival it is. It named ${flagged.size} of ${festivals.length} festivals right in at least one run.`, "", "| Festival | Guesses (run: festival, year, confidence) | Flagged |", "|---|---|---|");
   festivals.forEach((festival, index) => {
-    const guesses = (memo.get(index) ?? []).sort((a, b) => a.run - b.run).map((g) => `${g.run}: ${g.festival}, ${g.year ?? "?"}, ${g.confidence ?? "?"}`).join("; ");
+    const right = (g) => CORE_NAMES[festival.festival].some((n) => key(g.festival).includes(n));
+    const guesses = (memo.get(index) ?? []).sort((a, b) => a.run - b.run).map((g) => `${g.run}: ${g.festival}, ${g.year ?? "?"}, ${g.confidence ?? "?"} (${right(g) ? "right" : "wrong"})`).join("; ");
     md.push(`| ${festival.festival} ${festival.year} | ${guesses} | ${flagged.has(index) ? "yes" : "no"} |`);
   });
+
+  md.push("", "## Data health", "", "| Run | Calls | OK | Failed twice | Retried | Attempts cut off | Brands per list | Lists under 10 | Providers | Cost (usage.cost) |", "|---|---|---|---|---|---|---|---|---|---|");
+  for (const [run, h] of [...health].sort((a, b) => a[0] - b[0])) {
+    md.push(`| ${run} | ${h.calls} | ${h.ok} | ${h.failed} | ${h.retried} | ${h.cut} | ${(h.brands / Math.max(h.lists, 1)).toFixed(2)} | ${h.short.length} | ${[...h.providers].map(([p, c]) => `${p} ${c}`).join(", ")} | $${h.cost.toFixed(4)} |`);
+  }
+  const shortAll = [...health].flatMap(([run, h]) => h.short.map((line) => `Run ${run}: ${line}`));
+  md.push("", shortAll.length ? `Lists with fewer than 10 brands (used as they are): ${shortAll.join("; ")}.` : "Every list had 10 brands.");
+
+  md.push("", "## Limits", "");
+  md.push(`- **The model recognized ${flagged.size} of ${festivals.length} festivals** from the line-up and city alone (memorization check above). It may also know their sponsor lists, so this test can favor the model. The subset without recognized festivals is too small to correct for it.`);
+  md.push("- Recall of sponsors can happen without naming the festival, so the memorization check does not catch every case.");
+  md.push("- The categories are Qloo's own tags (for example White Claw under spirits), which can favor Qloo. The by-category table shows where.");
+  md.push("- The sponsor lists in `backtest/festivals.json` are what the partner pages showed and may be incomplete; both sides are scored against the same list.");
+  md.push("- These are large festivals; Echolocate is for small events, where no public sponsor lists exist.");
+  md.push("- The model lists 10 brands; Qloo ranked up to 50. Only top 10 (and top 5) are compared. Qloo's short lists made some of its top-10 finishes easier; see the \"full lists only\" rows.");
+  md.push(`- ${runs.length} runs show the spread between runs; no significance test is done or claimed.`);
+  md.push("- One model with one prompt; this says nothing about language models in general.");
+  md.push("- Name matching is automatic only until the manual check is answered.");
 
   md.push("", "## Lists that failed twice (counted as empty)", "");
   if (emptyLists.length === 0) md.push("None.");
   for (const e of emptyLists) md.push(`- Run ${e.run}, ${e.festival}, ${e.tag}: ${e.error}`);
-  md.push("", `## Manual check`, "", `${manual.size} sponsor / answer pairs need a look (section 7). ${manualExists ? `${approved.size} approved as the same brand.` : "Not reviewed yet."}`);
+  md.push("", `## Manual check`, "", `${manual.size} sponsor / answer pairs need a look (section 7), listed in \`manual-check.md\`. ${manualReviewed ? `${decided} answered, ${approved.size} approved as the same brand.` : "Not reviewed yet; every number above uses automatic matching only."}`);
 
   writeFileSync(join(here, "results.md"), `${md.join("\n")}\n`);
   writeFileSync(join(here, "results.json"), `${JSON.stringify({ ...json, emptyLists, manualPairs: manual.size }, null, 2)}\n`);
