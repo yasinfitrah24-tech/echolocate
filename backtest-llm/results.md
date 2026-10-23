@@ -2,7 +2,13 @@
 
 Scored 2026-10-23. Method: `backtest-llm/METHOD.md`. Model deepseek/deepseek-v4.1-flash via OpenRouter, provider DigitalOcean only, 3 runs. LLM numbers are the mean of the runs, with the range in brackets.
 
-**No conclusion for the pitch, the video or Devpost is drawn here.** Which claims, if any, may be used is Yasin's decision (METHOD.md section 9). Every number below uses automatic name matching only; numbers with the manual check follow once `manual-check.md` is answered.
+## Decision (METHOD.md section 9)
+
+Rule check on the headline numbers (product level, all 10 festivals, automatic matching, mean of 3 runs): LLM top 10 = 41.3% (rule: 25% or more), LLM gap over its control = 10.2 points (rule: 8 or more). The rule is met.
+
+**Decided by Yasin, 23 Oct 2026: no Qloo-vs-LLM comparison claim is used** in the pitch, the video or Devpost. On top of the rule, the model named 9 of 10 festivals from the line-up and city alone (memorization check below), so its score is most likely recall of past sponsors, not a reading of the crowd.
+
+Every number below uses automatic name matching only, except the "automatic + manually approved" rows, which follow once `manual-check.md` is answered.
 
 Calls: 777. Lists that failed twice and count as empty: 0. Brands per list: 10.00 on average. Tokens: 110613 in, 38937 out. Cost (usage.cost): $0.0439. Providers that answered: DigitalOcean 777.
 

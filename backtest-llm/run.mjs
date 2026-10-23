@@ -668,7 +668,21 @@ function score() {
 
   md.push("# Qloo vs a language model alone: results", "");
   md.push(`Scored ${json.scoredAt.slice(0, 10)}. Method: \`backtest-llm/METHOD.md\`. Model ${MODEL} via OpenRouter, provider DigitalOcean only, ${runs.length} runs. LLM numbers are the mean of the runs, with the range in brackets.`, "");
-  md.push("**No conclusion for the pitch, the video or Devpost is drawn here.** Which claims, if any, may be used is Yasin's decision (METHOD.md section 9). Every number below uses automatic name matching only; numbers with the manual check follow once `manual-check.md` is answered.", "");
+  // Section 9 rule, checked on the headline numbers: product level, all 10
+  // festivals, automatic matching, mean of the runs.
+  const headline = runs.map((run) => llmSummary(run, tested, new Set(), false));
+  const mean = (values) => values.reduce((sum, value) => sum + value, 0) / Math.max(values.length, 1);
+  const llmTop10 = mean(headline.map((s) => rate(s.top10, s.n) ?? 0));
+  const llmGap = mean(headline.map((s) => (rate(s.top10, s.n) ?? 0) - (rate(s.controlTop10, s.controlN) ?? 0)));
+  const ruleMet = llmTop10 >= 25 || llmGap >= 8;
+  md.push("## Decision (METHOD.md section 9)", "");
+  md.push(`Rule check on the headline numbers (product level, all 10 festivals, automatic matching, mean of ${runs.length} runs): LLM top 10 = ${llmTop10.toFixed(1)}% (rule: 25% or more), LLM gap over its control = ${llmGap.toFixed(1)} points (rule: 8 or more). ${ruleMet ? "The rule is met." : "The rule is not met."}`, "");
+  if (ruleMet) {
+    md.push(`**Decided by Yasin, 23 Oct 2026: no Qloo-vs-LLM comparison claim is used** in the pitch, the video or Devpost. On top of the rule, the model named ${flagged.size} of ${festivals.length} festivals from the line-up and city alone (memorization check below), so its score is most likely recall of past sponsors, not a reading of the crowd.`, "");
+  } else {
+    md.push("The rule is not met. Any claim still needs Yasin's approval (section 9.3).", "");
+  }
+  md.push("Every number below uses automatic name matching only, except the \"automatic + manually approved\" rows, which follow once `manual-check.md` is answered.", "");
   md.push(`Calls: ${calls.length}. Lists that failed twice and count as empty: ${emptyLists.length}. Brands per list: ${(sizes.reduce((s, v) => s + v, 0) / Math.max(sizes.length, 1)).toFixed(2)} on average. Tokens: ${tokensIn} in, ${tokensOut} out. Cost (usage.cost): $${totalCost.toFixed(4)}. Providers that answered: ${[...providers].map(([p, c]) => `${p} ${c}`).join(", ")}.`, "");
 
   for (const [withManual, title] of [[false, "Automatic name matching (headline)"], [true, "Automatic + manually approved matches"]]) {
