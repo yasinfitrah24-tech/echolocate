@@ -1,5 +1,5 @@
 {
-  "scoredAt": "2026-10-23T01:09:08.891Z",
+  "scoredAt": "2026-10-23T01:13:46.166Z",
   "runs": 3,
   "flagged": [
     "Coachella Valley Music and Arts Festival",
@@ -174,6 +174,198 @@
       }
     },
     "auto|without memorized festivals (9 left out)|Exact name matches only (backtest lookup)": {
+      "llmPerRun": [
+        {
+          "n": 13,
+          "top5": 7,
+          "top10": 8,
+          "controlN": 0,
+          "controlTop10": 0
+        },
+        {
+          "n": 13,
+          "top5": 7,
+          "top10": 9,
+          "controlN": 0,
+          "controlTop10": 0
+        },
+        {
+          "n": 13,
+          "top5": 6,
+          "top10": 8,
+          "controlN": 0,
+          "controlTop10": 0
+        }
+      ],
+      "qloo": {
+        "n": 13,
+        "top5": 2,
+        "top10": 4,
+        "controlN": 0,
+        "controlTop10": 0
+      }
+    },
+    "manual|all 10 festivals|All tested": {
+      "llmPerRun": [
+        {
+          "n": 129,
+          "top5": 40,
+          "top10": 55,
+          "controlN": 1052,
+          "controlTop10": 342
+        },
+        {
+          "n": 129,
+          "top5": 42,
+          "top10": 55,
+          "controlN": 1052,
+          "controlTop10": 331
+        },
+        {
+          "n": 129,
+          "top5": 42,
+          "top10": 55,
+          "controlN": 1052,
+          "controlTop10": 321
+        }
+      ],
+      "qloo": {
+        "n": 129,
+        "top5": 19,
+        "top10": 32,
+        "controlN": 1052,
+        "controlTop10": 178
+      }
+    },
+    "manual|all 10 festivals|Full lists only (Qloo list had 50 brands)": {
+      "llmPerRun": [
+        {
+          "n": 103,
+          "top5": 27,
+          "top10": 40,
+          "controlN": 841,
+          "controlTop10": 228
+        },
+        {
+          "n": 103,
+          "top5": 29,
+          "top10": 40,
+          "controlN": 841,
+          "controlTop10": 218
+        },
+        {
+          "n": 103,
+          "top5": 28,
+          "top10": 40,
+          "controlN": 841,
+          "controlTop10": 216
+        }
+      ],
+      "qloo": {
+        "n": 103,
+        "top5": 13,
+        "top10": 22,
+        "controlN": 841,
+        "controlTop10": 120
+      }
+    },
+    "manual|all 10 festivals|Exact name matches only (backtest lookup)": {
+      "llmPerRun": [
+        {
+          "n": 92,
+          "top5": 33,
+          "top10": 43,
+          "controlN": 749,
+          "controlTop10": 273
+        },
+        {
+          "n": 92,
+          "top5": 36,
+          "top10": 44,
+          "controlN": 749,
+          "controlTop10": 266
+        },
+        {
+          "n": 92,
+          "top5": 36,
+          "top10": 42,
+          "controlN": 749,
+          "controlTop10": 254
+        }
+      ],
+      "qloo": {
+        "n": 92,
+        "top5": 15,
+        "top10": 25,
+        "controlN": 749,
+        "controlTop10": 143
+      }
+    },
+    "manual|without memorized festivals (9 left out)|All tested": {
+      "llmPerRun": [
+        {
+          "n": 17,
+          "top5": 7,
+          "top10": 9,
+          "controlN": 0,
+          "controlTop10": 0
+        },
+        {
+          "n": 17,
+          "top5": 7,
+          "top10": 9,
+          "controlN": 0,
+          "controlTop10": 0
+        },
+        {
+          "n": 17,
+          "top5": 6,
+          "top10": 8,
+          "controlN": 0,
+          "controlTop10": 0
+        }
+      ],
+      "qloo": {
+        "n": 17,
+        "top5": 3,
+        "top10": 6,
+        "controlN": 0,
+        "controlTop10": 0
+      }
+    },
+    "manual|without memorized festivals (9 left out)|Full lists only (Qloo list had 50 brands)": {
+      "llmPerRun": [
+        {
+          "n": 16,
+          "top5": 6,
+          "top10": 8,
+          "controlN": 0,
+          "controlTop10": 0
+        },
+        {
+          "n": 16,
+          "top5": 6,
+          "top10": 8,
+          "controlN": 0,
+          "controlTop10": 0
+        },
+        {
+          "n": 16,
+          "top5": 5,
+          "top10": 7,
+          "controlN": 0,
+          "controlTop10": 0
+        }
+      ],
+      "qloo": {
+        "n": 16,
+        "top5": 3,
+        "top10": 6,
+        "controlN": 0,
+        "controlTop10": 0
+      }
+    },
+    "manual|without memorized festivals (9 left out)|Exact name matches only (backtest lookup)": {
       "llmPerRun": [
         {
           "n": 13,

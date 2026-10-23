@@ -740,12 +740,21 @@ function score() {
   md.push("- The model lists 10 brands; Qloo ranked up to 50. Only top 10 (and top 5) are compared. Qloo's short lists made some of its top-10 finishes easier; see the \"full lists only\" rows.");
   md.push(`- ${runs.length} runs show the spread between runs; no significance test is done or claimed.`);
   md.push("- One model with one prompt; this says nothing about language models in general.");
-  md.push("- Name matching is automatic only until the manual check is answered.");
+  md.push(
+    manualReviewed
+      ? "- The headline numbers use automatic name matching; the manual check only adds the \"automatic + manually approved\" rows."
+      : "- Name matching is automatic only until the manual check is answered.",
+  );
 
   md.push("", "## Lists that failed twice (counted as empty)", "");
   if (emptyLists.length === 0) md.push("None.");
   for (const e of emptyLists) md.push(`- Run ${e.run}, ${e.festival}, ${e.tag}: ${e.error}`);
   md.push("", `## Manual check`, "", `${manual.size} sponsor / answer pairs need a look (section 7), listed in \`manual-check.md\`. ${manualReviewed ? `${decided} answered, ${approved.size} approved as the same brand.` : "Not reviewed yet; every number above uses automatic matching only."}`);
+
+  // Notes on the manual check (doubtful pairs and so on) live in their own
+  // file, so a rescore never drops them.
+  const notesFile = join(here, "manual-notes.md");
+  if (existsSync(notesFile)) md.push("", readFileSync(notesFile, "utf8").trim());
 
   writeFileSync(join(here, "results.md"), `${md.join("\n")}\n`);
   writeFileSync(join(here, "results.json"), `${JSON.stringify({ ...json, emptyLists, manualPairs: manual.size }, null, 2)}\n`);

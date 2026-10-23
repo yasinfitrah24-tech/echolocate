@@ -30,9 +30,23 @@ Calls: 777. Lists that failed twice and count as empty: 0. Brands per list: 10.0
 | Full lists only (Qloo list had 50 brands) | 16 | 48% (44–50%) | 35% (31–38%) | n/a | 38% | 19% | n/a |
 | Exact name matches only (backtest lookup) | 13 | 64% (62–69%) | 51% (46–54%) | n/a | 31% | 15% | n/a |
 
-## Automatic + manually approved matches
+## Automatic + manually approved matches, all 10 festivals
 
-Not computed yet: manual-check.md has no yes/no answers. These numbers follow after the manual check.
+| | Rows | LLM top 10 | LLM top 5 | LLM control top 10 | Qloo top 10 | Qloo top 5 | Qloo control top 10 |
+|---|---|---|---|---|---|---|---|
+| All tested | 129 | 43% (43–43%) | 32% (31–33%) | 31% (31–33%) | 25% | 15% | 17% |
+| Full lists only (Qloo list had 50 brands) | 103 | 39% (39–39%) | 27% (26–28%) | 26% (26–27%) | 21% | 13% | 14% |
+| Exact name matches only (backtest lookup) | 92 | 47% (46–48%) | 38% (36–39%) | 35% (34–36%) | 27% | 16% | 19% |
+
+## Automatic + manually approved matches, without memorized festivals (9 left out)
+
+**Only 1 festival left (Stagecoach), with 17 sponsor rows. Too few to draw any conclusion.** Shown only because METHOD.md section 6 asks for it.
+
+| | Rows | LLM top 10 | LLM top 5 | LLM control top 10 | Qloo top 10 | Qloo top 5 | Qloo control top 10 |
+|---|---|---|---|---|---|---|---|
+| All tested | 17 | 51% (47–53%) | 39% (35–41%) | n/a | 35% | 18% | n/a |
+| Full lists only (Qloo list had 50 brands) | 16 | 48% (44–50%) | 35% (31–38%) | n/a | 38% | 19% | n/a |
+| Exact name matches only (backtest lookup) | 13 | 64% (62–69%) | 51% (46–54%) | n/a | 31% | 15% | n/a |
 
 ## By category (automatic, all festivals, LLM mean of runs)
 
@@ -101,7 +115,7 @@ Lists with fewer than 10 brands (used as they are): Run 1: Sonic Temple Art + Mu
 - The model lists 10 brands; Qloo ranked up to 50. Only top 10 (and top 5) are compared. Qloo's short lists made some of its top-10 finishes easier; see the "full lists only" rows.
 - 3 runs show the spread between runs; no significance test is done or claimed.
 - One model with one prompt; this says nothing about language models in general.
-- Name matching is automatic only until the manual check is answered.
+- The headline numbers use automatic name matching; the manual check only adds the "automatic + manually approved" rows.
 
 ## Lists that failed twice (counted as empty)
 
@@ -109,4 +123,13 @@ None.
 
 ## Manual check
 
-17 sponsor / answer pairs need a look (section 7), listed in `manual-check.md`. Not reviewed yet; every number above uses automatic matching only.
+17 sponsor / answer pairs need a look (section 7), listed in `manual-check.md`. 17 answered, 5 approved as the same brand.
+
+Manual check answered by Yasin on 23 Oct 2026, by the METHOD.md section 7 rule: parent and child brands, and sibling brands, count as "no".
+
+Doubtful pairs, answered "no" by that rule:
+
+- #6: sponsor Modelo, model answer "Modelo Especial".
+- #11 and #12: sponsor Corona (and Corona Seltzer), model answer "Corona Extra".
+
+For the record only, not used anywhere: with those three answered "yes", the LLM's top-10 rate with the manual check (product level, all 10 festivals, mean of 3 runs) would be 44.2% instead of 42.6%, and its gap over control 11.8 points instead of 11.1. The headline (automatic) numbers and the section 9 decision do not change either way.
