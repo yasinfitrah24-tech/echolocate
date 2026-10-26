@@ -56,6 +56,12 @@ const STEP_TEXT: Record<SearchStep, string> = {
   "brands-without-city": "No taste data for this city. Ranking brands for the line-up alone…",
 };
 
+/** Scrolls a section into view; instant when the user prefers reduced motion. */
+function scrollToId(id: string) {
+  const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  document.getElementById(id)?.scrollIntoView({ behavior: reduceMotion ? "auto" : "smooth", block: "start" });
+}
+
 /** "Oct 17" from an ISO date. */
 function shortDate(iso: string): string {
   return new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric" });
@@ -545,6 +551,22 @@ export function SponsorFinder() {
               </>
             )}
 
+            {!localFirst && result.input.city && (
+              // Local sponsors sit below every brand category; this gets there in one click.
+              <p className="mt-2 text-sm">
+                <a
+                  href="#local-sponsors"
+                  onClick={(event) => {
+                    event.preventDefault();
+                    scrollToId("local-sponsors");
+                  }}
+                  className="font-medium text-zinc-900 underline hover:text-zinc-700"
+                >
+                  See local sponsors in {result.input.city}
+                </a>
+              </p>
+            )}
+
             {result.savedExample && (
               <p className="mt-2 inline-block rounded-full bg-zinc-100 px-3 py-1 text-xs text-zinc-600">
                 Saved example: real Qloo data from {shortDate(result.savedExample)}. Change anything to run it live.
@@ -733,7 +755,11 @@ export function SponsorFinder() {
               })}
             </div>
 
-            {!localFirst && localSection}
+            {!localFirst && (
+              <div id="local-sponsors" className="scroll-mt-4">
+                {localSection}
+              </div>
+            )}
 
             <details id="agent-details" className="mt-6 rounded-xl border border-zinc-200 bg-white px-5 py-3 text-sm">
               <summary className="cursor-pointer font-medium">How the agent got this</summary>
