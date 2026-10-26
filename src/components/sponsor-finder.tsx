@@ -537,7 +537,8 @@ export function SponsorFinder() {
                     {[...result.artists.map((artist) => artist.name), ...result.genreTags.map((tag) => tag.name)].join(", ")}
                   </span>
                   .{" "}
-                  {result.savedExample ? "Saved example · instant." : `Found in ${(result.tookMs / 1000).toFixed(1)} s.`}
+                  {/* A saved example says so once, in the note below. */}
+                  {result.savedExample ? "" : `Found in ${(result.tookMs / 1000).toFixed(1)} s.`}
                 </p>
                 <p className="mt-1 text-xs text-zinc-500">
                   Scores are our own, out of 100 and never above 95: how each brand compares with the other
@@ -577,7 +578,8 @@ export function SponsorFinder() {
 
             {result.savedExample && (
               <p className="mt-2 inline-block rounded-full bg-zinc-100 px-3 py-1 text-xs text-zinc-600">
-                Saved example: real Qloo data from {shortDate(result.savedExample)}. Change anything to run it live.
+                Saved example · instant. Real Qloo data from {shortDate(result.savedExample)}. Change anything to run it
+                live.
               </p>
             )}
 
