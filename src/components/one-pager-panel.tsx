@@ -103,7 +103,19 @@ export function OnePagerPanel({
 
   return (
     <div className="mt-3 rounded-lg border border-zinc-200 bg-zinc-50 p-4">
-      <p className="text-xs text-zinc-500">
+      {/* The PDF can be made right away; the fields below are optional. */}
+      <div className="flex flex-wrap items-center gap-3">
+        <button
+          type="button"
+          onClick={download}
+          disabled={busy}
+          className="rounded-md bg-zinc-900 px-3 py-1.5 text-sm font-semibold text-white hover:bg-zinc-700 disabled:bg-zinc-400"
+        >
+          {busy ? "Making PDF…" : "Download PDF"}
+        </button>
+        <p className="text-xs text-zinc-600">Ready now, or add your details below first.</p>
+      </div>
+      <p className="mt-3 text-xs text-zinc-500">
         All optional. Blank fields show as [brackets] in the PDF, so you can fill them in later.
         Tick &ldquo;Confirmed&rdquo; only for what is locked in; those go in a &ldquo;Confirmed so far&rdquo; box.
       </p>

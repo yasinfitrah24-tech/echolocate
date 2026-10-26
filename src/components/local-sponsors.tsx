@@ -52,7 +52,7 @@ interface LocalSponsorsProps {
   pitchContext?: PitchContext | null;
   /** False when the form is no longer 21+: no pitch or one-pager for bars then. */
   barsAllowed?: boolean;
-  /** Facts and shared details for "Download one-pager"; null hides the button. */
+  /** Facts and shared details for "Make one-pager"; null hides the button. */
   onePager?: {
     search: SearchFacts;
     details: OnePagerDetails;
@@ -272,7 +272,7 @@ export function LocalSponsors({
                           title={pitchAllowed ? undefined : "Bars need a 21+ event. Search again as 21+."}
                           className="rounded-md border border-zinc-300 bg-white px-3 py-1.5 text-xs font-medium text-zinc-800 hover:bg-zinc-100 disabled:opacity-50"
                         >
-                          Download one-pager
+                          Make one-pager
                         </button>
                       )}
                       {place.website && (

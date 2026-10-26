@@ -1,6 +1,6 @@
 // The one-page sponsor sheet as a real PDF, drawn in the browser.
 // @react-pdf/renderer is large, so this module is only loaded with import()
-// when someone clicks "Download one-pager".
+// when someone clicks "Download PDF".
 
 import { Document, Page, StyleSheet, Text, View, pdf, type Styles } from "@react-pdf/renderer";
 import { pdfSafe, type OnePager } from "@/lib/one-pager";
