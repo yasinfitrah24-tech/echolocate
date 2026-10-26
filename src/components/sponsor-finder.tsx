@@ -339,6 +339,11 @@ export function SponsorFinder() {
         <header className="mb-8">
           <h1 className="text-3xl font-semibold tracking-tight">Echolocate</h1>
           <p className="mt-1 text-lg text-zinc-600">Sponsors for events too small to have a sponsorship team.</p>
+          {/* The approved elevator pitch (16 Oct): what the app does and where Qloo comes in. */}
+          <p className="mt-2 max-w-2xl text-sm text-zinc-600">
+            Pick your music and city, and Echolocate uses Qloo taste data to rank the brands and local shops your
+            crowd likes, then drafts the pitch.
+          </p>
         </header>
 
         <form onSubmit={onSubmit} className="rounded-xl border border-zinc-200 bg-white p-5 sm:p-6">
