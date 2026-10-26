@@ -3,7 +3,7 @@
 // The whole first version of the app on one page: form -> brands -> pitch draft.
 // Rough on purpose; design comes in the 16-22 Oct pass.
 
-import { useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
 import { ADMISSIONS, AUDIENCE_AGES, DEFAULT_ADMISSION, findAdmission } from "@/lib/audience";
 import {
   EMPTY_DETAILS,
@@ -139,6 +139,15 @@ export function SponsorFinder() {
   const [searchedCrowd, setSearchedCrowd] = useState<number | null>(null);
 
   const pitch = usePitch();
+
+  // The results start below the form, out of view on most screens: bring them
+  // into view after each successful search, so a click visibly does something.
+  const resultsRef = useRef<HTMLElement>(null);
+  useEffect(() => {
+    if (searchId === 0) return;
+    const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    resultsRef.current?.scrollIntoView({ behavior: reduceMotion ? "auto" : "smooth", block: "start" });
+  }, [searchId]);
 
   const [onePagerFor, setOnePagerFor] = useState<string | null>(null);
   // Kept across brands, so the organizer types their details once.
@@ -473,7 +482,7 @@ export function SponsorFinder() {
         )}
 
         {result && (
-          <section className="mt-8" aria-live="polite">
+          <section ref={resultsRef} className="mt-8 scroll-mt-4" aria-live="polite">
             {brandCount > 0 && (
               <>
                 <p className="text-sm text-zinc-600">
