@@ -225,7 +225,11 @@ export function LocalSponsors({
                             place.categoryLabel,
                             place.neighborhood,
                             place.rating ? `${place.rating}★` : null,
-                            `${place.distanceKm} km from the search center`,
+                            // A city from the US list is measured from its own point; a typed
+                            // city from the middle of the results, so it does not claim the city center.
+                            data.search.by === "point"
+                              ? `${place.distanceKm} km from the center of ${city}`
+                              : `${place.distanceKm} km from the middle of these places`,
                           ]
                             .filter(Boolean)
                             .join(" · ")}
