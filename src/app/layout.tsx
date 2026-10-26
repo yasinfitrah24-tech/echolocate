@@ -12,9 +12,29 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+const TAGLINE = "Sponsors for events too small to have a sponsorship team.";
+// The approved elevator pitch (16 Oct), used for link previews (Devpost, chat apps).
+const PITCH = `${TAGLINE} Pick your music and city, and Echolocate uses Qloo taste data to rank the brands and local shops your crowd likes, then drafts the pitch.`;
+
 export const metadata: Metadata = {
+  // Makes relative URLs in the preview tags absolute (and an opengraph-image
+  // file in src/app, once there is one).
+  metadataBase: new URL("https://echolocate-topaz.vercel.app"),
   title: "Echolocate",
-  description: "Sponsors for events too small to have a sponsorship team.",
+  description: TAGLINE,
+  openGraph: {
+    title: "Echolocate",
+    description: PITCH,
+    url: "/",
+    siteName: "Echolocate",
+    locale: "en_US",
+    type: "website",
+  },
+  twitter: {
+    card: "summary",
+    title: "Echolocate",
+    description: PITCH,
+  },
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
