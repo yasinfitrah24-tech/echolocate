@@ -84,6 +84,8 @@ export interface OnePager {
   whyHeading: string;
   /** Null for a place Qloo has little taste data for: no score at all. */
   fitScore: number | null;
+  /** True for the single best brand score of the whole search (as on the page). */
+  bestInSearch: boolean;
   reasonText: string;
   scoreNote: string | null;
   event: { label: string; value: string }[];
@@ -113,7 +115,8 @@ export function joinNames(names: string[]): string {
   return `${names.slice(0, -1).join(", ")} and ${names[names.length - 1]}`;
 }
 
-// The PDF uses the built-in Helvetica, which only has WinAnsi glyphs: Latin-1
+// The PDF fonts (Latin subsets of Bricolage Grotesque and Atkinson Hyperlegible,
+// public/fonts) cover WinAnsi text, as the built-in Helvetica did: Latin-1
 // plus curly quotes, dashes, bullets and a few more. Anything else would print
 // as a blank box, so accents outside that set are dropped ("Allē" -> "Alle").
 const WIN_ANSI_EXTRA = new Set([
@@ -210,7 +213,7 @@ function sharedParts(
   if (isConfirmed("date", details.date)) confirmed.push("Date confirmed");
   if (isConfirmed("venue", details.venue)) confirmed.push(place ? "Location confirmed" : "Venue confirmed");
   if (isConfirmed("preRegistered", preRegistered)) confirmed.push(`Pre-registrations: ${preRegistered}`);
-  if (isConfirmed("otherSponsors", otherSponsors)) confirmed.push("Other sponsors confirmed");
+  if (isConfirmed("otherSponsors", otherSponsors)) confirmed.push(`Other sponsors: ${otherSponsors}`);
 
   const code = orBracket(details.discountCode, "CODE");
   const link = orBracket(details.offerLink, "link to your offer");
@@ -339,6 +342,8 @@ export function buildOnePager(
     categoryLabel: category.label,
     whyHeading: `Why ${brand.name} fits this crowd`,
     fitScore: brand.fitScore,
+    bestInSearch:
+      brand.fitScore === Math.max(...categories.flatMap((other) => other.brands.map((item) => item.fitScore))),
     reasonText: brand.reasonText,
     scoreNote:
       "Our own score, never above 95: how strongly this crowd likes the brand in Qloo's taste data compared with other brands, plus its rank in its list.",
@@ -388,6 +393,7 @@ export function buildPlaceOnePager(place: LocalPlace, search: SearchFacts, detai
       ...common,
       whyHeading: `Why ${place.name}`,
       fitScore: null,
+      bestInSearch: false,
       // Distance from the city center only: the event's own location is not known.
       reasonText: `${place.name} is about ${formatKm(place.distanceKm)} from the center of ${city}.`,
       scoreNote: null,
@@ -399,6 +405,7 @@ export function buildPlaceOnePager(place: LocalPlace, search: SearchFacts, detai
     ...common,
     whyHeading: `Why ${place.name} fits this crowd`,
     fitScore: place.fitScore,
+    bestInSearch: false,
     reasonText: place.reasonText,
     scoreNote: `Our own score, never above 95: how strongly this crowd likes the ${noun} in Qloo's taste data compared with other local places, plus its rank in its list.`,
     footer: "Local matches from Qloo taste data, prepared with Echolocate.",

@@ -10,7 +10,7 @@ Click **Try an example** for an instant result from saved real Qloo data.
 
 ![Results for the example event: brands ranked by category, each with a Sponsor Fit Score and the reason from Qloo's data](docs/screenshot-results.png)
 
-![A one-page sponsor sheet for Guayakí, made in the browser. Unknown details are left in square brackets](docs/screenshot-one-pager.png)
+![A one-page sponsor sheet for Urban Outfitters, made in the browser with the organizer's details filled in](docs/screenshot-one-pager.png)
 
 Built for the Qloo Agentic Hackathon.
 
@@ -84,7 +84,7 @@ We also asked an AI model, without Qloo, to name sponsors for the same 10 festiv
 - **The Sponsor Fit Score is ours.** A brand's score says how it compares with the other brands for the same crowd, not how good a match it is in absolute terms. Scores from two different searches should not be compared.
 - **Small towns often have little place data.** Places there may have no score and are sorted by distance.
 - **Big banks stay in the list.** Qloo tags them like any other financial service (Chime, Venmo), so they cannot be filtered by tag.
-- **The PDF uses the built-in Helvetica font.** Accents outside Western European letters are dropped ("Allē" prints as "Alle"), and non-Latin scripts are not supported.
+- **The PDF covers Western European letters only.** Its fonts (Bricolage Grotesque, Atkinson Hyperlegible) are the Latin subsets, so other accents are dropped ("Allē" prints as "Alle"), and non-Latin scripts are not supported.
 - **The demo's limits are kept in memory**, per server instance. They are not exact across a whole deployment.
 - **The saved example is a snapshot** from 16 Oct 2026. Live searches use current data.
 
