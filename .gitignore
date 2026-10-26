@@ -49,3 +49,6 @@ scripts/stage7-raw.json
 
 # private team notes
 CLAUDE.local.md
+
+# Design analysis notes (local only)
+.design-notes/
