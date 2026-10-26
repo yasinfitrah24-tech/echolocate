@@ -87,6 +87,15 @@ function splitNames(text: string): string[] {
     .filter(Boolean);
 }
 
+interface SearchForm {
+  genre: string;
+  city: string;
+  age: string;
+  admission: string;
+  crowdSize: string;
+  includeAlcohol: boolean;
+}
+
 /** The form fields that change the brands, as one comparable string. */
 function searchKey(form: {
   names: string[];
@@ -156,7 +165,15 @@ export function SponsorFinder() {
   const alcoholBlocked = !(findAdmission(admission) ?? DEFAULT_ADMISSION).alcoholAllowed;
   const includeAlcohol = !alcoholBlocked && wantsAlcohol;
 
-  async function findBrands(names: string[], confirmed: ConfirmedArtist[]) {
+  /** The form fields a search reads, as they are now. */
+  function currentForm(): SearchForm {
+    return { genre, city, age, admission, crowdSize, includeAlcohol };
+  }
+
+  // The form is passed in, not read from state: "Try an example" sets the
+  // fields and searches in the same click, before React has re-rendered.
+  async function findBrands(names: string[], confirmed: ConfirmedArtist[], form: SearchForm = currentForm()) {
+    const { genre, city, age, admission, crowdSize, includeAlcohol } = form;
     const key = searchKey({ names, confirmed, genre, city, age, admission });
     const pickedGenre = findGenreByLabel(genre);
     setLoading(true);
@@ -212,7 +229,8 @@ export function SponsorFinder() {
     void findBrands(names, picked);
   }
 
-  function fillExample() {
+  /** Fills the form with the saved example and runs it (answered from the recording, no live Qloo call). */
+  function runExample() {
     setEventName(EXAMPLE.eventName);
     setArtistsText(EXAMPLE.artistsText);
     setPicked([]);
@@ -222,6 +240,15 @@ export function SponsorFinder() {
     setCrowdSize(EXAMPLE.crowdSize);
     setAdmission(EXAMPLE.admission);
     setWantsAlcohol(true);
+    const exampleAdmission = findAdmission(EXAMPLE.admission) ?? DEFAULT_ADMISSION;
+    void findBrands(splitNames(EXAMPLE.artistsText), [], {
+      genre: "",
+      city: EXAMPLE.city,
+      age: EXAMPLE.age,
+      admission: EXAMPLE.admission,
+      crowdSize: EXAMPLE.crowdSize,
+      includeAlcohol: exampleAdmission.alcoholAllowed,
+    });
   }
 
   /** The user confirms which artist a typed name meant. */
@@ -319,7 +346,8 @@ export function SponsorFinder() {
             <h2 className="text-base font-semibold">Your event</h2>
             <button
               type="button"
-              onClick={fillExample}
+              onClick={runExample}
+              disabled={loading}
               className="rounded-md border border-zinc-300 px-3 py-1.5 text-sm font-medium text-zinc-700 hover:bg-zinc-100"
             >
               Try an example
