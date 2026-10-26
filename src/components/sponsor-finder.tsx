@@ -62,6 +62,13 @@ function scrollToId(id: string) {
   document.getElementById(id)?.scrollIntoView({ behavior: reduceMotion ? "auto" : "smooth", block: "start" });
 }
 
+/** Opens "How the agent got this" and brings it into view. */
+function openAgentDetails() {
+  const details = document.getElementById("agent-details");
+  if (details instanceof HTMLDetailsElement) details.open = true;
+  scrollToId("agent-details");
+}
+
 /** "Oct 17" from an ISO date. */
 function shortDate(iso: string): string {
   return new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric" });
@@ -535,25 +542,16 @@ export function SponsorFinder() {
                 <p className="mt-1 text-xs text-zinc-500">
                   Scores are our own, out of 100 and never above 95: how each brand compares with the other
                   brands for this crowd in Qloo&rsquo;s taste data.{" "}
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const details = document.getElementById("agent-details") as HTMLDetailsElement | null;
-                      if (!details) return;
-                      details.open = true;
-                      details.scrollIntoView({ behavior: "smooth", block: "start" });
-                    }}
-                    className="underline hover:text-zinc-800"
-                  >
+                  <button type="button" onClick={openAgentDetails} className="underline hover:text-zinc-800">
                     How it works
                   </button>
                 </p>
               </>
             )}
 
-            {!localFirst && result.input.city && (
-              // Local sponsors sit below every brand category; this gets there in one click.
-              <p className="mt-2 text-sm">
+            {/* Shortcuts to the parts at the bottom of a long page. */}
+            <p className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-sm">
+              {!localFirst && result.input.city && (
                 <a
                   href="#local-sponsors"
                   onClick={(event) => {
@@ -564,8 +562,18 @@ export function SponsorFinder() {
                 >
                   See local sponsors in {result.input.city}
                 </a>
-              </p>
-            )}
+              )}
+              <a
+                href="#agent-details"
+                onClick={(event) => {
+                  event.preventDefault();
+                  openAgentDetails();
+                }}
+                className="text-zinc-700 underline hover:text-zinc-900"
+              >
+                How the agent got this
+              </a>
+            </p>
 
             {result.savedExample && (
               <p className="mt-2 inline-block rounded-full bg-zinc-100 px-3 py-1 text-xs text-zinc-600">
