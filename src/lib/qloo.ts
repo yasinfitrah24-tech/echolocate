@@ -618,7 +618,9 @@ function reasonSentence(
   const things = noun ? `${categoryLabel.toLowerCase()} ${noun}` : categoryLabel.toLowerCase();
   const rankPart =
     source === "general"
-      ? `#${rank} of ${listSize} brands Qloo matched to this crowd.`
+      ? // The general list spans every category, so say so: under "Electronics (1)" a
+        // bare "#4 of 46" read as if there were 46 electronics brands.
+        `#${rank} of ${listSize} brands Qloo matched to this crowd, across all categories.`
       : `#${rank} of ${listSize} ${things} for this crowd.`;
 
   const strong = reasons.filter((reason) => reason.share > 0);
