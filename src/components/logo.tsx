@@ -37,12 +37,9 @@ export function LogoMark({ size = 28, title }: { size?: number; title?: string }
 /** Mark plus the name, set in condensed Archivo. */
 export function Wordmark({ size = 28 }: { size?: number }) {
   return (
-    <span className="inline-flex items-center gap-2">
+    <span className="inline-flex items-center gap-2.5">
       <LogoMark size={size} />
-      <span
-        className="font-display font-extrabold uppercase leading-none tracking-[0.04em]"
-        style={{ fontSize: Math.round(size * 0.72) }}
-      >
+      <span className="font-display uppercase tracking-[0.05em]" style={{ fontSize: Math.round(size * 0.72) }}>
         Echolocate
       </span>
     </span>

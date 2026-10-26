@@ -1,10 +1,11 @@
 "use client";
 
-// The whole first version of the app on one page: form -> brands -> pitch draft.
-// Rough on purpose; design comes in the 16-22 Oct pass.
+// The page under the header: hero and how it works, the event form, then the
+// results (brands by category, local sponsors, pitch drafts, one-pagers and
+// the Qloo call log).
 
 import { useEffect, useRef, useState, type FormEvent } from "react";
-import { ADMISSIONS, AUDIENCE_AGES, DEFAULT_ADMISSION, findAdmission } from "@/lib/audience";
+import { ADMISSIONS, AUDIENCE_AGES, DEFAULT_ADMISSION, findAdmission, findAudienceAge } from "@/lib/audience";
 import {
   EMPTY_DETAILS,
   buildOnePager,
@@ -14,11 +15,27 @@ import {
 } from "@/lib/one-pager";
 import type { ArtistMatch, Brand, BrandCategory, QlooCall } from "@/lib/qloo";
 import { findGenreByLabel } from "@/lib/genres";
+import { AGENT_DETAILS_ID, AgentPanel } from "./agent-panel";
+import { ScoreBadge, SourceTag } from "./badges";
 import { CityCombobox } from "./city-combobox";
 import { GenreCombobox } from "./genre-combobox";
+import { Hero, HowItWorks } from "./intro";
 import { LocalSponsors, type PlacesSearchInfo } from "./local-sponsors";
 import { PitchBox, usePitch, type PitchContext } from "./pitch-draft";
 import { OnePagerPanel } from "./one-pager-panel";
+import {
+  cardClass,
+  cardTitleClass,
+  errorNoticeClass,
+  eyebrowClass,
+  ghostButton,
+  inputClass,
+  labelClass,
+  linkClass,
+  noticeClass,
+  primaryButton,
+  warnNoticeClass,
+} from "./styles";
 
 interface ConfirmedArtist {
   entityId: string;
@@ -64,14 +81,19 @@ function scrollToId(id: string) {
 
 /** Opens "How the agent got this" and brings it into view. */
 function openAgentDetails() {
-  const details = document.getElementById("agent-details");
+  const details = document.getElementById(AGENT_DETAILS_ID);
   if (details instanceof HTMLDetailsElement) details.open = true;
-  scrollToId("agent-details");
+  scrollToId("agent");
 }
 
 /** "Oct 17" from an ISO date. */
 function shortDate(iso: string): string {
   return new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric" });
+}
+
+/** "A, B and C". */
+function joinNames(names: string[]): string {
+  return names.length < 2 ? (names[0] ?? "") : `${names.slice(0, -1).join(", ")} and ${names[names.length - 1]}`;
 }
 
 const AGE_OPTIONS = [
@@ -87,6 +109,10 @@ const EXAMPLE = {
   admission: "all_ages",
   crowdSize: "800",
 };
+
+const EXAMPLE_NOTE = `Instant: a saved search with real Qloo data, for ${
+  findAdmission(EXAMPLE.admission)?.phrase ?? "a show"
+} in ${EXAMPLE.city} with ${joinNames(splitNames(EXAMPLE.artistsText))}.`;
 
 const TOP_PER_CATEGORY = 5;
 
@@ -129,10 +155,6 @@ function searchKey(form: {
     form.admission,
   ]);
 }
-
-const inputClass =
-  "w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 placeholder:text-zinc-400 focus:border-zinc-900 focus:outline-none";
-const labelClass = "mb-1 block text-sm font-medium text-zinc-800";
 
 export function SponsorFinder() {
   const [eventName, setEventName] = useState("");
@@ -322,6 +344,22 @@ export function SponsorFinder() {
     searchedKey !== searchKey({ names: splitNames(artistsText), confirmed: picked, genre, city, age, admission });
 
   const brandCount = result?.categories.reduce((sum, category) => sum + category.brands.length, 0) ?? 0;
+  // The best score of the whole search gets a spot line on its badge.
+  const topScore = result ? Math.max(0, ...result.categories.flatMap((category) => category.brands.map((brand) => brand.fitScore))) : 0;
+
+  /** The poster header: who the crowd are fans of, then the event facts. */
+  const lineUp = result
+    ? [...result.artists.map((artist) => artist.name), ...result.genreTags.map((tag) => tag.name)]
+    : [];
+  const ageLabel = findAudienceAge(result?.input.age)?.label;
+  const eventFacts = result
+    ? [
+        result.input.city,
+        searchedCrowd ? `About ${searchedCrowd.toLocaleString("en-US")} people` : null,
+        ageLabel ? `Mostly ${ageLabel}` : null,
+        findAdmission(result.input.admission)?.label ?? null,
+      ].filter((fact): fact is string => Boolean(fact))
+    : [];
 
   // Small events: local businesses are the likelier sponsors, so they go first.
   const localFirst = searchedCrowd !== null && searchedCrowd > 0 && searchedCrowd <= SMALL_CROWD;
@@ -341,217 +379,211 @@ export function SponsorFinder() {
       }
     />
   ) : (
-    <p className="mt-5 rounded-xl border border-zinc-200 bg-white px-5 py-3 text-sm text-zinc-600">
-      Add a city to see local sponsors on a map.
-    </p>
+    <p className={`mt-8 ${noticeClass}`}>Add a city to see local sponsors on a map.</p>
   );
 
   return (
-    <div className="min-h-screen w-full bg-zinc-50 text-zinc-900">
-      <main className="mx-auto w-full max-w-3xl px-4 py-10 sm:py-14">
-        <header className="mb-8">
-          <h1 className="text-3xl font-semibold tracking-tight">Echolocate</h1>
-          <p className="mt-1 text-lg text-zinc-600">Sponsors for events too small to have a sponsorship team.</p>
-          {/* The approved elevator pitch (16 Oct): what the app does and where Qloo comes in. */}
-          <p className="mt-2 max-w-2xl text-sm text-zinc-600">
-            Pick your music and city, and Echolocate uses Qloo taste data to rank the brands and local shops your
-            crowd likes, then drafts the pitch.
-          </p>
-        </header>
+    <main className="flex-1">
+      <Hero onTryExample={runExample} busy={loading} exampleNote={EXAMPLE_NOTE} />
+      <HowItWorks />
 
-        <form onSubmit={onSubmit} className="rounded-xl border border-zinc-200 bg-white p-5 sm:p-6">
-          <div className="mb-4 flex items-center justify-between gap-3">
-            <h2 className="text-base font-semibold">Your event</h2>
-            <button
-              type="button"
-              onClick={runExample}
-              disabled={loading}
-              className="rounded-md border border-zinc-300 px-3 py-1.5 text-sm font-medium text-zinc-700 hover:bg-zinc-100"
-            >
-              Try an example
-            </button>
+      <section id="your-event" className="scroll-mt-4">
+        <div className="mx-auto grid max-w-[1120px] gap-6 px-4 py-12 sm:px-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,2fr)] lg:gap-12">
+          <div>
+            <h2 className="font-display text-[30px] sm:text-[40px]">Your event</h2>
+            <p className="mt-3 text-ink-2">
+              Start with the kind of music or a few artists. Add a city to see local sponsors on a map.
+            </p>
+            <p className="mt-3 text-sm text-ink-2">
+              No event yet?{" "}
+              <button type="button" onClick={runExample} disabled={loading} className={`${linkClass} disabled:opacity-60`}>
+                Try an example
+              </button>
+            </p>
           </div>
 
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div className="sm:col-span-2">
-              <label htmlFor="genre" className={labelClass}>
-                What kind of music?
-              </label>
-              <GenreCombobox id="genre" className={inputClass} value={genre} onChange={setGenre} />
-            </div>
+          <div>
+            <form onSubmit={onSubmit} className={`${cardClass} p-5 sm:p-6`}>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="sm:col-span-2">
+                  <label htmlFor="genre" className={labelClass}>
+                    What kind of music?
+                  </label>
+                  <GenreCombobox id="genre" className={inputClass} value={genre} onChange={setGenre} />
+                </div>
 
-            <div className="sm:col-span-2">
-              <label htmlFor="artists" className={labelClass}>
-                Artists on your line-up, or artists they sound like{" "}
-                <span className="font-normal text-zinc-500">(optional)</span>
-              </label>
-              <input
-                id="artists"
-                className={inputClass}
-                value={artistsText}
-                onChange={(event) => setArtistsText(event.target.value)}
-                placeholder="Artist names, separated by commas"
-                autoComplete="off"
-              />
-              {picked.length > 0 && (
-                <ul className="mt-2 flex flex-wrap gap-2">
-                  {picked.map((artist) => (
-                    <li
-                      key={artist.entityId}
-                      className="flex items-center gap-1 rounded-full bg-zinc-900 py-1 pl-3 pr-1 text-xs font-medium text-white"
-                    >
-                      {artist.name}
-                      <button
-                        type="button"
-                        onClick={() => removePicked(artist.entityId)}
-                        aria-label={`Remove ${artist.name}`}
-                        className="rounded-full px-1.5 text-zinc-300 hover:text-white"
-                      >
-                        ×
-                      </button>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </div>
+                <div className="sm:col-span-2">
+                  <label htmlFor="artists" className={labelClass}>
+                    Artists on your line-up, or artists they sound like{" "}
+                    <span className="font-normal text-ink-2">(optional)</span>
+                  </label>
+                  <input
+                    id="artists"
+                    className={inputClass}
+                    value={artistsText}
+                    onChange={(event) => setArtistsText(event.target.value)}
+                    placeholder="Artist names, separated by commas"
+                    autoComplete="off"
+                  />
+                  {picked.length > 0 && (
+                    <ul className="mt-2 flex flex-wrap gap-2">
+                      {picked.map((artist) => (
+                        <li
+                          key={artist.entityId}
+                          className="flex items-center gap-1 rounded-chip bg-ink py-1 pr-1 pl-2.5 text-xs font-semibold text-white"
+                        >
+                          {artist.name}
+                          <button
+                            type="button"
+                            onClick={() => removePicked(artist.entityId)}
+                            aria-label={`Remove ${artist.name}`}
+                            className="rounded-chip px-1.5 text-white/70 hover:text-white"
+                          >
+                            ×
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
 
+                <div>
+                  <label htmlFor="event-name" className={labelClass}>
+                    Event name
+                  </label>
+                  <input
+                    id="event-name"
+                    className={inputClass}
+                    value={eventName}
+                    onChange={(event) => setEventName(event.target.value)}
+                    placeholder="e.g. Spring Quad Fest"
+                    autoComplete="off"
+                  />
+                </div>
 
-            <div>
-              <label htmlFor="event-name" className={labelClass}>
-                Event name
-              </label>
-              <input
-                id="event-name"
-                className={inputClass}
-                value={eventName}
-                onChange={(event) => setEventName(event.target.value)}
-                placeholder="e.g. Spring Quad Fest"
-                autoComplete="off"
-              />
-            </div>
+                <div>
+                  <label htmlFor="city" className={labelClass}>
+                    City
+                  </label>
+                  <CityCombobox id="city" className={inputClass} value={city} onChange={setCity} />
+                </div>
 
-            <div>
-              <label htmlFor="city" className={labelClass}>
-                City
-              </label>
-              <CityCombobox id="city" className={inputClass} value={city} onChange={setCity} />
-            </div>
+                <div>
+                  <label htmlFor="age" className={labelClass}>
+                    Audience age
+                  </label>
+                  <select id="age" className={inputClass} value={age} onChange={(event) => setAge(event.target.value)}>
+                    {AGE_OPTIONS.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
 
-            <div>
-              <label htmlFor="age" className={labelClass}>
-                Audience age
-              </label>
-              <select
-                id="age"
-                className={inputClass}
-                value={age}
-                onChange={(event) => setAge(event.target.value)}
+                <div>
+                  <label htmlFor="admission" className={labelClass}>
+                    Admission
+                  </label>
+                  <select
+                    id="admission"
+                    className={inputClass}
+                    value={admission}
+                    onChange={(event) => setAdmission(event.target.value)}
+                  >
+                    {ADMISSIONS.map((option) => (
+                      <option key={option.id} value={option.id}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label htmlFor="crowd" className={labelClass}>
+                    Expected crowd
+                  </label>
+                  <input
+                    id="crowd"
+                    className={inputClass}
+                    value={crowdSize}
+                    onChange={(event) => setCrowdSize(event.target.value.replace(/\D/g, ""))}
+                    placeholder="e.g. 800"
+                    inputMode="numeric"
+                    autoComplete="off"
+                  />
+                </div>
+              </div>
+
+              <label
+                className={`mt-5 flex items-center gap-2 text-sm ${alcoholBlocked ? "text-ink-3" : "text-ink"}`}
               >
-                {AGE_OPTIONS.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div>
-              <label htmlFor="admission" className={labelClass}>
-                Admission
+                <input
+                  type="checkbox"
+                  className="h-4 w-4 accent-spot"
+                  checked={includeAlcohol}
+                  disabled={alcoholBlocked}
+                  onChange={(event) => setWantsAlcohol(event.target.checked)}
+                />
+                Include alcohol brands (beer and spirits)
               </label>
-              <select
-                id="admission"
-                className={inputClass}
-                value={admission}
-                onChange={(event) => setAdmission(event.target.value)}
-              >
-                {ADMISSIONS.map((option) => (
-                  <option key={option.id} value={option.id}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-            </div>
+              {alcoholBlocked && <p className="mt-1 text-xs text-ink-2">Alcohol brands only show for 21+ events.</p>}
 
-            <div>
-              <label htmlFor="crowd" className={labelClass}>
-                Expected crowd
-              </label>
-              <input
-                id="crowd"
-                className={inputClass}
-                value={crowdSize}
-                onChange={(event) => setCrowdSize(event.target.value.replace(/\D/g, ""))}
-                placeholder="e.g. 800"
-                inputMode="numeric"
-                autoComplete="off"
-              />
-            </div>
-          </div>
-
-          <label
-            className={`mt-4 flex items-center gap-2 text-sm ${alcoholBlocked ? "text-zinc-400" : "text-zinc-700"}`}
-          >
-            <input
-              type="checkbox"
-              className="h-4 w-4"
-              checked={includeAlcohol}
-              disabled={alcoholBlocked}
-              onChange={(event) => setWantsAlcohol(event.target.checked)}
-            />
-            Include alcohol brands (beer and spirits)
-          </label>
-          {alcoholBlocked && (
-            <p className="mt-1 text-xs text-zinc-500">
-              Alcohol brands only show for 21+ events.
-            </p>
-          )}
-
-          <button
-            type="submit"
-            disabled={loading}
-            className="mt-5 w-full rounded-md bg-zinc-900 px-4 py-2.5 text-sm font-semibold text-white hover:bg-zinc-700 disabled:cursor-not-allowed disabled:bg-zinc-400 sm:w-auto"
-          >
-            {loading ? "Finding sponsors…" : "Find sponsors"}
-          </button>
-          {loading && (
-            <p role="status" className="mt-2 text-sm text-zinc-600">
-              {step ? STEP_TEXT[step] : "Starting the search…"}
-            </p>
-          )}
-        </form>
-
-        {error && (
-          <p role="alert" className="mt-5 rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
-            {error}
-          </p>
-        )}
-
-        {result && (
-          <section ref={resultsRef} className="mt-8 scroll-mt-4" aria-live="polite">
-            {brandCount > 0 && (
-              <>
-                <p className="text-sm text-zinc-600">
-                  {brandCount} brands in {result.categories.length} categories for fans of{" "}
-                  <span className="font-medium text-zinc-900">
-                    {[...result.artists.map((artist) => artist.name), ...result.genreTags.map((tag) => tag.name)].join(", ")}
+              <button type="submit" disabled={loading} className={`${primaryButton} mt-6 w-full sm:w-auto`}>
+                {loading ? "Finding sponsors…" : "Find sponsors"}
+              </button>
+              {loading && (
+                <p role="status" className="mt-3 flex items-center gap-3 text-sm">
+                  <span className="search-pulse" aria-hidden="true">
+                    <span />
+                    <span />
                   </span>
-                  .{" "}
-                  {/* A saved example says so once, in the note below. */}
-                  {result.savedExample ? "" : `Found in ${(result.tookMs / 1000).toFixed(1)} s.`}
+                  {step ? STEP_TEXT[step] : "Starting the search…"}
                 </p>
-                <p className="mt-1 text-xs text-zinc-500">
-                  Scores are our own, out of 100 and never above 95: how each brand compares with the other
-                  brands for this crowd in Qloo&rsquo;s taste data.{" "}
-                  <button type="button" onClick={openAgentDetails} className="underline hover:text-zinc-800">
-                    How it works
-                  </button>
-                </p>
-              </>
+              )}
+            </form>
+
+            {error && (
+              <p role="alert" className={`mt-4 ${errorNoticeClass}`}>
+                {error}
+              </p>
+            )}
+          </div>
+        </div>
+      </section>
+
+      {result && (
+        <section ref={resultsRef} id="results" className="scroll-mt-4 border-t border-line" aria-live="polite">
+          <div className="mx-auto max-w-[1120px] px-4 py-12 sm:px-6">
+            {searchFacts?.eventName && <p className={eyebrowClass}>{searchFacts.eventName}</p>}
+            {lineUp.length > 0 && (
+              <h2 className="mt-1">
+                <span className="block text-[13px] font-bold tracking-[0.12em] text-ink-2 uppercase">For fans of</span>
+                <span className="font-display mt-1.5 block text-[30px] uppercase sm:text-[44px]">
+                  {lineUp.join(" · ")}
+                </span>
+              </h2>
+            )}
+            {eventFacts.length > 0 && (
+              <ul className="mt-4 flex flex-wrap gap-2" aria-label="Event">
+                {eventFacts.map((fact) => (
+                  <li key={fact} className="rounded-chip border border-field bg-card px-2.5 py-0.5 text-[13px] font-medium">
+                    {fact}
+                  </li>
+                ))}
+              </ul>
             )}
 
-            {/* Shortcuts to the parts at the bottom of a long page. */}
-            <p className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-sm">
+            <div className="mt-4 flex flex-wrap items-baseline gap-x-5 gap-y-2 text-sm">
+              {result.savedExample ? (
+                <SourceTag tone="saved">
+                  Saved example · instant. Real Qloo data from {shortDate(result.savedExample)}. Change anything to
+                  run it live.
+                </SourceTag>
+              ) : (
+                <SourceTag tone="live">Live Qloo data · found in {(result.tookMs / 1000).toFixed(1)} s</SourceTag>
+              )}
+              {/* Shortcuts to the parts at the bottom of a long page. */}
               {!localFirst && result.input.city && (
                 <a
                   href="#local-sponsors"
@@ -559,41 +591,41 @@ export function SponsorFinder() {
                     event.preventDefault();
                     scrollToId("local-sponsors");
                   }}
-                  className="font-medium text-zinc-900 underline hover:text-zinc-700"
+                  className={linkClass}
                 >
                   See local sponsors in {result.input.city}
                 </a>
               )}
               <a
-                href="#agent-details"
+                href={`#${AGENT_DETAILS_ID}`}
                 onClick={(event) => {
                   event.preventDefault();
                   openAgentDetails();
                 }}
-                className="text-zinc-700 underline hover:text-zinc-900"
+                className={linkClass}
               >
                 How the agent got this
               </a>
-            </p>
+            </div>
 
-            {result.savedExample && (
-              <p className="mt-2 inline-block rounded-full bg-zinc-100 px-3 py-1 text-xs text-zinc-600">
-                Saved example · instant. Real Qloo data from {shortDate(result.savedExample)}. Change anything to run it
-                live.
+            {brandCount > 0 && (
+              <p className="mt-3 max-w-[52em] text-[13px] text-ink-2">
+                {brandCount} brands in {result.categories.length} categories. Sponsor Fit Score is our own score, not
+                a Qloo number. It compares each brand with the others for the same crowd, so it only means something
+                inside one search. It never goes above 95.
               </p>
             )}
 
             {formChanged && (
-              <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-md border border-sky-200 bg-sky-50 px-4 py-3 text-sm text-sky-900">
+              <div className={`mt-5 flex flex-wrap items-center justify-between gap-3 ${warnNoticeClass}`}>
                 <p>
-                  You changed the event since this search. Search again to update the brands, pitch and
-                  one-pager.
+                  You changed the event since this search. Search again to update the brands, pitch and one-pager.
                 </p>
                 <button
                   type="button"
                   onClick={() => void findBrands(splitNames(artistsText), picked)}
                   disabled={loading}
-                  className="shrink-0 rounded-md border border-sky-300 bg-white px-3 py-1.5 text-xs font-medium hover:bg-sky-100 disabled:opacity-50"
+                  className={`${ghostButton} shrink-0`}
                 >
                   {loading ? "Searching…" : "Search again"}
                 </button>
@@ -601,7 +633,7 @@ export function SponsorFinder() {
             )}
 
             {result.genreMatch && (
-              <p className="mt-4 rounded-md border border-zinc-200 bg-white px-4 py-3 text-sm text-zinc-700">
+              <p className={`mt-5 ${noticeClass}`}>
                 {result.genreMatch.tag ? (
                   <>
                     We matched &ldquo;{result.genreMatch.query}&rdquo; to Qloo&rsquo;s &ldquo;
@@ -609,22 +641,22 @@ export function SponsorFinder() {
                   </>
                 ) : (
                   <>
-                    We could not find &ldquo;{result.genreMatch.query}&rdquo; in Qloo&rsquo;s genres, so it
-                    was left out. Try one from the list.
+                    We could not find &ldquo;{result.genreMatch.query}&rdquo; in Qloo&rsquo;s genres, so it was left
+                    out. Try one from the list.
                   </>
                 )}
               </p>
             )}
 
             {result.input.cityDropped && (
-              <p className="mt-4 rounded-md border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-                Qloo has no taste data for &ldquo;{result.input.city}&rdquo;, so these brands are matched to
-                the line-up alone. Try the nearest larger city to bring in local favourites.
+              <p className={`mt-5 ${warnNoticeClass}`}>
+                Qloo has no taste data for &ldquo;{result.input.city}&rdquo;, so these brands are matched to the
+                line-up alone. Try the nearest larger city to bring in local favourites.
               </p>
             )}
 
             {brandCount === 0 && (
-              <p className="mt-4 rounded-md border border-zinc-200 bg-white px-4 py-3 text-sm text-zinc-700">
+              <p className={`mt-5 ${noticeClass}`}>
                 {result.artists.length === 0
                   ? `Qloo found no brands for this genre${result.input.city ? ` in ${result.input.city}` : ""}. Try a different genre or add artists.`
                   : "Qloo returned no brands for this line-up. Check the artist names, or add a genre."}
@@ -632,10 +664,11 @@ export function SponsorFinder() {
             )}
 
             {result.unresolved.map((item) => (
-              <div key={item.query} className="mt-4 rounded-md border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+              <div key={item.query} className={`mt-5 ${warnNoticeClass}`}>
                 {item.candidates.length === 0 ? (
                   <p>
-                    We could not find &ldquo;{item.query}&rdquo; in Qloo, so it was left out. Adding a genre helps cover it.
+                    We could not find &ldquo;{item.query}&rdquo; in Qloo, so it was left out. Adding a genre helps
+                    cover it.
                   </p>
                 ) : (
                   <>
@@ -647,7 +680,7 @@ export function SponsorFinder() {
                           type="button"
                           onClick={() => confirmCandidate(item.query, candidate)}
                           disabled={loading}
-                          className="rounded-full border border-amber-300 bg-white px-3 py-1 text-xs font-medium hover:bg-amber-100 disabled:opacity-50"
+                          className={ghostButton}
                         >
                           {candidate.name}
                         </button>
@@ -660,72 +693,74 @@ export function SponsorFinder() {
 
             {localFirst && (
               <>
-                <p className="mt-5 text-sm text-zinc-700">
+                <p className="mt-8 font-semibold">
                   For a crowd this size, local businesses are the likeliest yes. National brands are below.
                 </p>
                 {localSection}
               </>
             )}
 
-            <div className="mt-5 space-y-5">
+            <div className="mt-8 grid items-start gap-5 lg:grid-cols-2">
               {result.categories.map((category) => {
                 const showAll = expanded[category.id] ?? false;
                 const brands = showAll ? category.brands : category.brands.slice(0, TOP_PER_CATEGORY);
                 return (
-                  <div key={category.id} className="rounded-xl border border-zinc-200 bg-white">
-                    <h3 className="border-b border-zinc-200 px-5 py-3 text-sm font-semibold">
-                      {category.label}{" "}
-                      <span className="font-normal text-zinc-500">({category.brands.length})</span>
-                    </h3>
-                    <ul className="divide-y divide-zinc-100">
+                  <div key={category.id} className={cardClass}>
+                    <div className="flex items-baseline justify-between gap-3 border-b border-line px-4 py-3 sm:px-5">
+                      <h3 className={cardTitleClass}>{category.label}</h3>
+                      <span className="text-[13px] text-ink-2">
+                        {category.brands.length} {category.brands.length === 1 ? "brand" : "brands"}
+                      </span>
+                    </div>
+                    <ul>
                       {brands.map((brand) => {
                         const key = `${category.id}:${brand.entityId}`;
                         const open = pitch.pitchFor === key;
                         const sheetOpen = onePagerFor === key;
                         const allowed = brandAllowed(brand);
                         return (
-                          <li key={brand.entityId} className="px-5 py-3">
-                            <div className="flex flex-wrap items-start gap-x-3 gap-y-2 sm:flex-nowrap">
-                              <span
-                                className="mt-0.5 w-10 shrink-0 rounded-md bg-zinc-900 py-1 text-center text-sm font-semibold tabular-nums text-white"
-                                title="Sponsor Fit Score, 0 to 100"
-                              >
-                                {brand.fitScore}
-                              </span>
+                          <li key={brand.entityId} className="border-t border-line px-4 py-3.5 first:border-t-0 sm:px-5">
+                            <div className="flex gap-3">
+                              <ScoreBadge score={brand.fitScore} top={brand.fitScore === topScore} />
                               <div className="min-w-0 flex-1">
-                                <p className="text-sm font-medium">{brand.name}</p>
-                                <p className="mt-0.5 text-sm text-zinc-600">{brand.reasonText}</p>
+                                <p className="font-semibold">{brand.name}</p>
+                                <p className="mt-0.5 text-sm text-ink-2">{brand.reasonText}</p>
                                 {!allowed && (
-                                  <p className="mt-1 text-xs text-zinc-500">
+                                  <p className="mt-1 text-xs text-ink-2">
                                     Alcohol brands need a 21+ event. Search again as 21+.
                                   </p>
                                 )}
-                              </div>
-                              <div className="flex w-full gap-1.5 pl-13 sm:w-auto sm:shrink-0 sm:pl-0">
-                                <button
-                                  type="button"
-                                  onClick={() =>
-                                    pitchContext &&
-                                    pitch.draft(
-                                      key,
-                                      { name: brand.name, categoryLabel: category.label, reasonText: brand.reasonText, kind: "brand" },
-                                      pitchContext,
-                                    )
-                                  }
-                                  disabled={!allowed || pitch.isWriting(key)}
-                                  className="rounded-md border border-zinc-300 px-3 py-1.5 text-xs font-medium text-zinc-800 hover:bg-zinc-100 disabled:opacity-50"
-                                >
-                                  {pitch.isWriting(key) ? "Writing…" : "Draft pitch"}
-                                </button>
-                                <button
-                                  type="button"
-                                  onClick={() => setOnePagerFor(sheetOpen ? null : key)}
-                                  disabled={!allowed}
-                                  aria-expanded={sheetOpen}
-                                  className="rounded-md border border-zinc-300 px-3 py-1.5 text-xs font-medium text-zinc-800 hover:bg-zinc-100 disabled:opacity-50"
-                                >
-                                  Make one-pager
-                                </button>
+                                <div className="mt-2.5 flex flex-wrap gap-1.5">
+                                  <button
+                                    type="button"
+                                    onClick={() =>
+                                      pitchContext &&
+                                      pitch.draft(
+                                        key,
+                                        {
+                                          name: brand.name,
+                                          categoryLabel: category.label,
+                                          reasonText: brand.reasonText,
+                                          kind: "brand",
+                                        },
+                                        pitchContext,
+                                      )
+                                    }
+                                    disabled={!allowed || pitch.isWriting(key)}
+                                    className={ghostButton}
+                                  >
+                                    {pitch.isWriting(key) ? "Writing…" : "Draft pitch"}
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => setOnePagerFor(sheetOpen ? null : key)}
+                                    disabled={!allowed}
+                                    aria-expanded={sheetOpen}
+                                    className={ghostButton}
+                                  >
+                                    Make one-pager
+                                  </button>
+                                </div>
                               </div>
                             </div>
 
@@ -755,7 +790,7 @@ export function SponsorFinder() {
                       <button
                         type="button"
                         onClick={() => setExpanded({ ...expanded, [category.id]: !showAll })}
-                        className="w-full border-t border-zinc-200 px-5 py-2.5 text-left text-xs font-medium text-zinc-600 hover:bg-zinc-50"
+                        className="w-full border-t border-line px-4 py-2.5 text-left text-xs font-semibold text-ink-2 hover:bg-paper hover:text-ink sm:px-5"
                       >
                         {showAll ? "Show fewer" : `Show all ${category.brands.length}`}
                       </button>
@@ -771,59 +806,17 @@ export function SponsorFinder() {
               </div>
             )}
 
-            <details id="agent-details" className="mt-6 rounded-xl border border-zinc-200 bg-white px-5 py-3 text-sm">
-              <summary className="cursor-pointer font-medium">How the agent got this</summary>
-              <ul className="mt-3 space-y-1.5 text-zinc-600">
-                {result.calls.map((call) => (
-                  <li key={call.label} className="flex flex-wrap justify-between gap-x-4">
-                    <span>
-                      Qloo <code className="text-xs">{call.endpoint}</code> · {call.label}
-                    </span>
-                    <span className="tabular-nums">
-                      {call.error ? "failed" : `${call.resultCount} ${call.endpoint === "/v2/insights" ? "brands" : "results"}`} ·{" "}
-                      {call.saved ? "saved" : `${(call.ms / 1000).toFixed(1)} s`}
-                      {call.retries > 0 ? ` · retried ${call.retries}x` : ""}
-                    </span>
-                  </li>
-                ))}
-                {placesInfo?.calls.map((call, index) => (
-                  <li key={`place-${index}`} className="flex flex-wrap justify-between gap-x-4">
-                    <span>
-                      Qloo <code className="text-xs">{call.endpoint}</code> · {call.label}
-                    </span>
-                    <span className="tabular-nums">
-                      {call.error ? "failed" : `${call.resultCount} places`} ·{" "}
-                      {call.saved ? "saved" : `${(call.ms / 1000).toFixed(1)} s`}
-                      {call.retries > 0 ? ` · retried ${call.retries}x` : ""}
-                    </span>
-                  </li>
-                ))}
-              </ul>
-              {placesInfo && (
-                <p className="mt-3 text-xs text-zinc-500">
-                  {placesInfo.search.by === "point"
-                    ? placesInfo.search.widened
-                      ? `Local places: fewer than 6 close by, so the search was widened once to ${placesInfo.search.radiusKm} km around the city.`
-                      : `Local places: searched within ${placesInfo.search.radiusKm} km of the city, based on its size.`
-                    : "Local places: searched by city name, because this city is not in our US city list."}
-                </p>
-              )}
-              <p className="mt-3 text-xs text-zinc-500">
-                The Sponsor Fit Score is our own score out of 100, and it never goes above 95. Each brand
-                is compared with the other brands for this crowd: mostly how strongly the crowd likes it in
-                Qloo&rsquo;s taste data, plus where it ranks in its list. Local places are compared with
-                other local places, and places Qloo has little taste data for get no score.
-              </p>
-              {result.input.alcoholBlocked && (
-                <p className="mt-2 text-xs text-zinc-500">
-                  Beer, wine and spirits brands are left out because this is not a 21+ event.
-                </p>
-              )}
-            </details>
-          </section>
-        )}
-      </main>
-    </div>
+            <AgentPanel
+              calls={result.calls}
+              places={placesInfo}
+              brandCount={brandCount}
+              savedExample={result.savedExample !== null}
+              alcoholBlocked={result.input.alcoholBlocked}
+            />
+          </div>
+        </section>
+      )}
+    </main>
   );
 }
 

@@ -5,8 +5,8 @@
 import { QlooError } from "./qloo";
 
 export const LIVE_PAUSED = "Live search is paused right now. Use Try an example.";
-const QLOO_BUSY = "Qloo is busy right now. Try again in a minute, or use Try an example.";
-const QLOO_DOWN = "Qloo didn't answer in time. Try again in a minute, or use Try an example.";
+const QLOO_BUSY = "Qloo is busy right now. Your event details are kept. Try again in a minute, or use Try an example.";
+const QLOO_DOWN = "Qloo didn't answer in time. Your event details are kept. Try again in a minute, or use Try an example.";
 const UNKNOWN = "Something went wrong. Try again, or use Try an example.";
 
 /** Logs the real error and returns what the browser may see. */

@@ -165,7 +165,7 @@ export function Combobox({
         <ul
           id={listId}
           role="listbox"
-          className="absolute z-[1000] mt-1 max-h-72 w-full overflow-auto rounded-md border border-zinc-200 bg-white py-1 text-sm shadow-lg"
+          className="absolute z-[1000] mt-1 max-h-72 w-full overflow-auto rounded-control border border-field bg-card py-1 text-sm"
         >
           {suggestions.map((option, index) => (
             <li
@@ -179,14 +179,14 @@ export function Combobox({
                 pick(option);
               }}
               onMouseEnter={() => setActive(index)}
-              className={`cursor-pointer px-3 py-2 ${index === active ? "bg-zinc-100" : ""}`}
+              className={`cursor-pointer px-3 py-2 ${index === active ? "bg-spot-tint" : ""}`}
             >
               {option.label}
             </li>
           ))}
         </ul>
       )}
-      {note && !open && <p className="mt-1 text-xs text-zinc-500">{note}</p>}
+      {note && !open && <p className="mt-1 text-xs text-ink-2">{note}</p>}
     </div>
   );
 }

@@ -4,6 +4,8 @@
 // one open draft at a time per list, keyed by row.
 
 import { useEffect, useRef, useState } from "react";
+import { SourceTag } from "./badges";
+import { errorNoticeClass, ghostButton } from "./styles";
 
 export interface PitchResponse {
   subject: string;
@@ -121,6 +123,22 @@ export function usePitch() {
   return { pitchFor, isWriting, pitch, error, copied, draft, copy, reset };
 }
 
+/** Word spellings that plain capitalising gets wrong. */
+const MODEL_WORDS: Record<string, string> = { deepseek: "DeepSeek", gpt: "GPT", glm: "GLM", oss: "OSS" };
+
+/**
+ * A model id as people read it: "deepseek/deepseek-v4.1-flash" becomes
+ * "DeepSeek V4.1 Flash". The id itself is still shown, in small type.
+ */
+export function modelName(id: string): string {
+  const name = (id.split("/").pop() ?? id).replace(/:.*$/, "");
+  const words = name
+    .split(/[-_\s]+/)
+    .filter(Boolean)
+    .map((word) => MODEL_WORDS[word.toLowerCase()] ?? (/^v?\d/i.test(word) ? word.toUpperCase() : word[0].toUpperCase() + word.slice(1)));
+  return words.join(" ") || id;
+}
+
 /** The error or the finished draft, shown under the row it belongs to. */
 export function PitchBox({
   pitch,
@@ -135,30 +153,37 @@ export function PitchBox({
 }) {
   if (error) {
     return (
-      <p role="alert" className="mt-3 rounded-md bg-red-50 px-3 py-2 text-sm text-red-800">
+      <p role="alert" className={`mt-3 ${errorNoticeClass}`}>
         {error}
       </p>
     );
   }
   if (!pitch) return null;
   return (
-    <div className="mt-3 rounded-lg border border-zinc-200 bg-zinc-50 p-4">
+    <div className="mt-3 rounded-card border border-l-4 border-line border-l-spot bg-card px-4 py-4 sm:px-5">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <p className="text-xs text-zinc-500">
-          {pitch.source === "ai" ? `Written by AI (${pitch.model})` : "Template draft"}
+        <p className="text-xs text-ink-2">
+          {pitch.source === "ai" ? (
+            <SourceTag tone="ai">
+              Written by AI{pitch.model ? ` (${modelName(pitch.model)})` : ""}
+            </SourceTag>
+          ) : (
+            <SourceTag tone="template">Template draft</SourceTag>
+          )}
           {" · edit the parts in [brackets] before sending"}
         </p>
-        <button
-          type="button"
-          onClick={onCopy}
-          className="rounded-md border border-zinc-300 bg-white px-2.5 py-1 text-xs font-medium hover:bg-zinc-100"
-        >
+        <button type="button" onClick={onCopy} className={ghostButton}>
           {copied ? "Copied" : "Copy email"}
         </button>
       </div>
-      {pitch.note && <p className="mt-2 text-xs text-zinc-600">{pitch.note}</p>}
-      <p className="mt-3 text-sm font-semibold">{pitch.subject}</p>
-      <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-zinc-800">{pitch.body}</p>
+      {pitch.source === "ai" && pitch.model && (
+        <p className="mt-1 text-[11px] text-ink-3">
+          Model id: <code className="font-mono">{pitch.model}</code>
+        </p>
+      )}
+      {pitch.note && <p className="mt-2 text-xs text-ink-2">{pitch.note}</p>}
+      <p className="mt-3 font-bold">{pitch.subject}</p>
+      <p className="mt-2 text-[15px] leading-relaxed whitespace-pre-wrap">{pitch.body}</p>
     </div>
   );
 }

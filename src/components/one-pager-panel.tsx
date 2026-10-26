@@ -12,6 +12,7 @@ import {
   type OnePagerDetails,
   type Paper,
 } from "@/lib/one-pager";
+import { errorNoticeClass, primaryButtonSmall, smallInputClass, smallSelectClass } from "./styles";
 
 type TextField = {
   [K in keyof OnePagerDetails]: OnePagerDetails[K] extends string ? K : never;
@@ -41,9 +42,6 @@ const FIELDS: { key: TextField; label: string; placeholder: string; confirm?: Co
   { key: "organizer", label: "Your name", placeholder: "e.g. Sam Lee" },
   { key: "contact", label: "Email or phone", placeholder: "e.g. sam@example.edu" },
 ];
-
-const inputClass =
-  "w-full rounded-md border border-zinc-300 bg-white px-2.5 py-1.5 text-sm text-zinc-900 placeholder:text-zinc-400 focus:border-zinc-900 focus:outline-none";
 
 function slug(text: string): string {
   return text
@@ -102,20 +100,20 @@ export function OnePagerPanel({
   }
 
   return (
-    <div className="mt-3 rounded-lg border border-zinc-200 bg-zinc-50 p-4">
+    <div className="mt-3 rounded-card border border-line bg-paper p-4">
       {/* The PDF can be made right away; the fields below are optional. */}
       <div className="flex flex-wrap items-center gap-3">
         <button
           type="button"
           onClick={download}
           disabled={busy}
-          className="rounded-md bg-zinc-900 px-3 py-1.5 text-sm font-semibold text-white hover:bg-zinc-700 disabled:bg-zinc-400"
+          className={primaryButtonSmall}
         >
           {busy ? "Making PDF…" : "Download PDF"}
         </button>
-        <p className="text-xs text-zinc-600">Ready now, or add your details below first.</p>
+        <p className="text-xs text-ink-2">Ready now, or add your details below first.</p>
       </div>
-      <p className="mt-3 text-xs text-zinc-500">
+      <p className="mt-3 text-xs text-ink-2">
         All optional. Blank fields show as [brackets] in the PDF, so you can fill them in later.
         Tick &ldquo;Confirmed&rdquo; only for what is locked in; those go in a &ldquo;Confirmed so far&rdquo; box.
       </p>
@@ -129,17 +127,17 @@ export function OnePagerPanel({
           return (
             <div key={field.key}>
               <div className="flex items-center justify-between gap-2">
-                <label htmlFor={`one-pager-${field.key}`} className="text-xs font-medium text-zinc-700">
+                <label htmlFor={`one-pager-${field.key}`} className="text-xs font-semibold text-ink">
                   {label}
                 </label>
                 {confirm && (
                   <label
-                    className={`flex items-center gap-1.5 text-xs ${empty ? "text-zinc-400" : "text-zinc-700"}`}
+                    className={`flex items-center gap-1.5 text-xs ${empty ? "text-ink-3" : "text-ink"}`}
                     title={empty ? "Fill this in first" : undefined}
                   >
                     <input
                       type="checkbox"
-                      className="h-3.5 w-3.5"
+                      className="h-3.5 w-3.5 accent-spot"
                       checked={details.confirmed[confirm] && !empty}
                       disabled={empty}
                       onChange={(event) =>
@@ -155,7 +153,7 @@ export function OnePagerPanel({
               </div>
               <input
                 id={`one-pager-${field.key}`}
-                className={`${inputClass} mt-1`}
+                className={`${smallInputClass} mt-1`}
                 value={details[field.key]}
                 maxLength={DETAIL_MAX_LENGTH}
                 placeholder={field.placeholder}
@@ -168,13 +166,13 @@ export function OnePagerPanel({
       </div>
 
       <fieldset className="mt-4">
-        <legend className="text-xs font-medium text-zinc-700">What the sponsor gets</legend>
+        <legend className="text-xs font-semibold text-ink">What the sponsor gets</legend>
         <div className="mt-1.5 grid gap-1.5 sm:grid-cols-2">
           {BENEFITS.map((benefit) => (
-            <label key={benefit.id} className="flex items-center gap-2 text-sm text-zinc-700">
+            <label key={benefit.id} className="flex items-center gap-2 text-sm text-ink">
               <input
                 type="checkbox"
-                className="h-4 w-4"
+                className="h-4 w-4 accent-spot"
                 checked={details.benefits[benefit.id]}
                 onChange={(event) =>
                   onDetailsChange({
@@ -189,10 +187,10 @@ export function OnePagerPanel({
         </div>
       </fieldset>
 
-      <label className="mt-3 flex items-center gap-2 text-sm text-zinc-700">
+      <label className="mt-3 flex items-center gap-2 text-sm text-ink">
         <input
           type="checkbox"
-          className="h-4 w-4"
+          className="h-4 w-4 accent-spot"
           checked={details.exclusivity}
           onChange={(event) => onDetailsChange({ ...details, exclusivity: event.target.checked })}
         />
@@ -202,7 +200,7 @@ export function OnePagerPanel({
       <div className="mt-4 flex flex-wrap items-center gap-3">
         <select
           aria-label="Paper size"
-          className="rounded-md border border-zinc-300 bg-white px-2.5 py-1.5 text-sm"
+          className={smallSelectClass}
           value={details.paper}
           onChange={(event) => onDetailsChange({ ...details, paper: event.target.value as Paper })}
         >
@@ -213,14 +211,14 @@ export function OnePagerPanel({
           type="button"
           onClick={download}
           disabled={busy}
-          className="rounded-md bg-zinc-900 px-3 py-1.5 text-sm font-semibold text-white hover:bg-zinc-700 disabled:bg-zinc-400"
+          className={primaryButtonSmall}
         >
           {busy ? "Making PDF…" : "Download PDF"}
         </button>
       </div>
 
       {error && (
-        <p role="alert" className="mt-3 rounded-md bg-red-50 px-3 py-2 text-sm text-red-800">
+        <p role="alert" className={`mt-3 ${errorNoticeClass}`}>
           {error}
         </p>
       )}

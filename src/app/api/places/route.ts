@@ -118,6 +118,8 @@ export async function POST(request: Request) {
         barsIncluded: admission.alcoholAllowed,
         // From the US city list; null for a typed city that is not in it.
         cityPopulation: usCity?.population ?? null,
+        // The point the search radius and the distances are measured from (map ring).
+        cityPoint: usCity ? { lat: usCity.lat, lon: usCity.lon } : null,
       },
       ...result,
       savedExample: example && result.calls.every((call) => call.saved) ? savedAt : null,
