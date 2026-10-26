@@ -5,7 +5,7 @@
 
 import type { QlooCall } from "@/lib/qloo";
 import type { PlacesSearchInfo } from "./local-sponsors";
-import { cardClass, cardTitleClass } from "./styles";
+import { cardClass } from "./styles";
 
 /** The <details> element; opened from the links in the results header. */
 export const AGENT_DETAILS_ID = "agent-details";
@@ -17,14 +17,14 @@ function count(n: number, word: string): string {
 function CallRow({ call, unit }: { call: QlooCall; unit: string }) {
   return (
     <tr className="border-t border-line align-top">
-      <td className="py-2 pr-3 pl-4 sm:pl-5">
+      <td className="py-2 pr-3 pl-5 md:pl-7">
         <code className="font-mono text-xs">{call.endpoint}</code>
       </td>
       <td className="py-2 pr-3">{call.label}</td>
       <td className="py-2 pr-3 whitespace-nowrap tabular-nums">
         {call.error ? "failed" : `${call.resultCount} ${unit}`}
       </td>
-      <td className="py-2 pr-4 whitespace-nowrap tabular-nums sm:pr-5">
+      <td className="py-2 pr-5 whitespace-nowrap tabular-nums md:pr-7">
         {call.saved ? "saved" : `${(call.ms / 1000).toFixed(1)} s`}
         {call.retries > 0 ? ` · retried ${call.retries}x` : ""}
       </td>
@@ -57,28 +57,28 @@ export function AgentPanel({
     .join(" · ");
 
   return (
-    <section id="agent" className={`mt-8 scroll-mt-4 ${cardClass}`} aria-labelledby="agent-title">
-      <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 px-4 pt-3.5 sm:px-5">
-        <h3 id="agent-title" className={cardTitleClass}>
+    <section id="agent" className={`mt-14 scroll-mt-4 md:mt-20 ${cardClass}`} aria-labelledby="agent-title">
+      <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 px-5 pt-5 md:px-7">
+        <h3 id="agent-title" className="font-display text-[26px] md:text-[30px]">
           How the agent got this
         </h3>
-        <p className="font-semibold tabular-nums">{summary}</p>
+        <p className="font-bold tabular-nums">{summary}</p>
       </div>
-      <p className="px-4 pt-1 text-[13px] text-ink-2 sm:px-5">
+      <p className="px-5 pt-1 text-sm text-ink-3 md:px-7">
         {savedExample
           ? "Saved example: answered from a recording of real Qloo answers, so no live calls were made."
           : "Live: every call below was made for this search."}
       </p>
 
-      <details id={AGENT_DETAILS_ID} className="mt-3 border-t border-line">
-        <summary className="cursor-pointer px-4 py-2.5 text-sm font-semibold hover:bg-paper sm:px-5">
+      <details id={AGENT_DETAILS_ID} className="mt-4 border-t border-line">
+        <summary className="cursor-pointer rounded-b-card px-5 py-3.5 text-[15px] font-bold hover:bg-accent-tint md:px-7">
           Show every call and how the score works
         </summary>
         <div className="overflow-x-auto">
-          <table className="w-full border-collapse text-left text-[13px]">
+          <table className="w-full border-collapse text-left text-sm">
             <thead>
-              <tr className="border-t border-line text-xs text-ink-2">
-                <th scope="col" className="py-2 pr-3 pl-4 font-bold sm:pl-5">
+              <tr className="border-t border-line text-[13px] text-ink-3">
+                <th scope="col" className="py-2 pr-3 pl-5 font-bold md:pl-7">
                   Qloo endpoint
                 </th>
                 <th scope="col" className="py-2 pr-3 font-bold">
@@ -87,7 +87,7 @@ export function AgentPanel({
                 <th scope="col" className="py-2 pr-3 font-bold">
                   Results
                 </th>
-                <th scope="col" className="py-2 pr-4 font-bold sm:pr-5">
+                <th scope="col" className="py-2 pr-5 font-bold md:pr-7">
                   Time
                 </th>
               </tr>
@@ -102,7 +102,7 @@ export function AgentPanel({
             </tbody>
           </table>
         </div>
-        <div className="space-y-2 border-t border-line px-4 py-3 text-xs text-ink-2 sm:px-5">
+        <div className="space-y-2 border-t border-line px-5 py-4 text-[13px] text-ink-3 md:px-7">
           {places && (
             <p>
               {places.search.by === "point"

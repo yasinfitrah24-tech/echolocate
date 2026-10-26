@@ -1,54 +1,105 @@
 @import "tailwindcss";
 
-/* Echolocate theme ("Show flyer"): ink and one spot colour on warm paper,
-   flat print style with 1 px lines and no shadows. Light only: the map tiles
-   and the PDF are light too. Components use the utilities these tokens make
-   (bg-paper, text-ink-2, border-line, bg-spot, rounded-card, ...). */
+/* Echolocate theme ("Soundcheck"): a soundcheck-day gig poster. Sun-yellow
+   hero panel, tangerine echo rings, chunky 2 px ink outlines, big condensed
+   type. Light only: the map tiles and the PDF are light too. Components use
+   the utilities these tokens make (bg-paper, text-ink-2, border-ink,
+   bg-accent, rounded-card, ...). */
 @theme {
-  --color-paper: #f6f2eb;
+  --color-paper: #fffbf5;
   --color-card: #ffffff;
-  --color-ink: #1c1915;
-  /* Secondary text: 6.6:1 on paper. */
-  --color-ink-2: #5c554d;
-  /* Small notes, on card only (4.7:1). */
-  --color-ink-3: #7a7268;
-  /* Dividers (decorative). */
-  --color-line: #ddd5c9;
-  /* Input and button borders: at least 3:1 on card and paper. */
-  --color-field: #8e857a;
-  /* Main buttons with white text (4.85:1) and large accents. */
-  --color-spot: #d7265e;
-  /* Links and small accent text (6.5:1 on paper). */
-  --color-spot-ink: #a8164a;
-  --color-spot-tint: #fbe4eb;
+  /* Text, all 2 px outlines and the focus ring: 17:1 on paper, 11.3:1 on sun. */
+  --color-ink: #1e1430;
+  /* Secondary text: 9.5:1 on paper. */
+  --color-ink-2: #4a3f57;
+  /* Meta, hints, counts: 5.7:1 on paper. */
+  --color-ink-3: #6b6177;
+  /* Row dividers only (decorative). */
+  --color-line: #eadfd3;
+  /* 1.5 px borders of idle inputs: 3.6:1 on paper. */
+  --color-field: #8a8094;
+  /* Tangerine: a fill only (button, rings, logo ring), never text (3:1 on paper). Ink text on it is 5.6:1. */
+  --color-accent: #ff5a1f;
+  /* Links and small accent text are ink, underlined. */
+  --color-accent-ink: #1e1430;
+  /* Selected options, normal score badges, source tags. Ink on it is 14.7:1. */
+  --color-accent-tint: #ffeaa8;
+  /* Hero panel and the best score. */
+  --color-sun: #ffc83d;
 
   /* Local place categories, on the map and the list. White text on each is 5.9:1 or more. */
-  --color-cafe: #a24b1c;
-  --color-clothing: #1b6b73;
-  --color-bar: #7d2338;
+  --color-cafe: #8b4513;
+  --color-clothing: #5b3cc4;
+  --color-bar: #0b7253;
 
-  --color-ok: #1f7a4a;
-  --color-warn: #8a5300;
-  --color-warn-tint: #fdf2df;
-  --color-error: #b3261e;
-  --color-error-tint: #fdecea;
+  --color-ok: #1c6e37;
+  --color-ok-tint: #e2f3e7;
+  --color-warn: #855400;
+  --color-warn-tint: #fff0c7;
+  /* The only red on the page, for errors. */
+  --color-error: #be1e2d;
+  --color-error-tint: #fde6e6;
 
-  --radius-card: 4px;
-  --radius-control: 3px;
-  --radius-chip: 2px;
+  /* Cards and the map. Inputs, badges, tags and options use rounded-field; buttons and chips rounded-full. */
+  --radius-card: 18px;
+  --radius-field: 12px;
+  --radius-hero: 28px;
+
+  /* Only on the main button and the best score badge. */
+  --shadow-hard: 3px 3px 0 var(--color-ink);
+
+  --animate-echo: echo 1.8s ease-out infinite;
+  --animate-hero-echo: hero-echo 6s cubic-bezier(0.2, 0.6, 0.35, 1) infinite;
+
+  @keyframes echo {
+    0% {
+      transform: scale(0.25);
+      opacity: 1;
+    }
+    100% {
+      transform: scale(1);
+      opacity: 0;
+    }
+  }
+
+  @keyframes hero-echo {
+    0% {
+      transform: scale(0.12);
+      opacity: 0;
+    }
+    12% {
+      opacity: 1;
+    }
+    100% {
+      transform: scale(1);
+      opacity: 0;
+    }
+  }
 }
 
 @theme inline {
-  /* Archivo comes from next/font/local (src/app/fonts.ts), no Google Fonts.
-     The variable already lists the fallbacks. */
-  --font-sans: var(--font-archivo);
+  /* Both fonts come from next/font/local (src/app/fonts.ts), no Google Fonts.
+     The variables already list the fallbacks. */
+  --font-sans: var(--font-atkinson);
+  --font-display: var(--font-bricolage);
 }
 
-/* Poster type for the wordmark, headings and the line-up: condensed Archivo. */
+/* Poster type for the wordmark, headings and card titles: Bricolage at 80% width. */
 @utility font-display {
+  font-family: var(--font-bricolage);
+  font-stretch: 80%;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  line-height: 0.95;
+}
+
+/* The line-up in the results header is a little narrower still. */
+@utility font-lineup {
+  font-family: var(--font-bricolage);
   font-stretch: 75%;
   font-weight: 800;
-  line-height: 0.95;
+  letter-spacing: -0.01em;
+  line-height: 1;
 }
 
 @layer base {
@@ -56,7 +107,7 @@
     color-scheme: light;
   }
 
-  /* In-page links (How it works, Use your own event) glide, unless motion is reduced. */
+  /* In-page links (Use your own event) glide, unless motion is reduced. */
   @media (prefers-reduced-motion: no-preference) {
     :root {
       scroll-behavior: smooth;
@@ -66,88 +117,49 @@
   body {
     background: var(--color-paper);
     color: var(--color-ink);
+    font-size: 17px;
+    line-height: 1.55;
   }
 
   /* One focus ring for every control. */
   :focus-visible {
-    outline: 2px solid var(--color-spot);
-    outline-offset: 2px;
+    outline: 3px solid var(--color-ink);
+    outline-offset: 3px;
   }
 }
 
-/* Map tiles in muted colour, so the place markers and the search ring stand out. */
-.places-map .leaflet-tile-pane {
-  filter: grayscale(0.8) sepia(0.12);
-}
-
-/* Decorative rings behind the hero (aria-hidden): one slow ripple when the
-   page loads. */
-.hero-rings {
-  animation: hero-rings-in 2.4s cubic-bezier(0.2, 0.7, 0.2, 1) 0.2s 1 both;
-  transform-box: fill-box;
-  transform-origin: center;
-}
-
-@keyframes hero-rings-in {
-  from {
-    opacity: 0;
-    transform: scale(0.85);
-  }
-  to {
-    opacity: 1;
-    transform: scale(1);
-  }
-}
-
-/* Next to the step text while a Qloo search runs: a dot with two rings
-   going out. */
-.search-pulse {
-  position: relative;
-  display: inline-block;
+/* Checkboxes: 22 px, ink outline, tangerine with an ink tick when checked. */
+.check {
+  appearance: none;
   flex: none;
   width: 22px;
   height: 22px;
+  border: 2px solid var(--color-ink);
+  border-radius: 5px;
+  background: var(--color-card);
+  cursor: pointer;
 }
 
-.search-pulse::after {
-  content: "";
-  position: absolute;
-  inset: 7px;
-  border-radius: 50%;
-  background: var(--color-ink);
+.check:checked {
+  background: var(--color-accent)
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M3.5 8.5l3 3 6-7' fill='none' stroke='%231e1430' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E")
+    center / 15px no-repeat;
 }
 
-.search-pulse > span {
-  position: absolute;
-  inset: 0;
-  border: 2px solid var(--color-spot);
-  border-radius: 50%;
-  animation: search-ping 1.6s cubic-bezier(0, 0, 0.2, 1) infinite;
+.check:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
 }
 
-.search-pulse > span:nth-child(2) {
-  animation-delay: 0.5s;
+/* Map tiles in muted colour, so the pins and the search ring stand out. */
+.places-map .leaflet-tile-pane {
+  filter: saturate(0.55);
 }
 
-@keyframes search-ping {
-  from {
-    opacity: 1;
-    transform: scale(0.35);
-  }
-  to {
-    opacity: 0;
-    transform: scale(1.25);
-  }
-}
-
+/* Echo rings (hero and loader) stand still when motion is reduced; the hero
+   keeps its static pose from the inline styles. */
 @media (prefers-reduced-motion: reduce) {
-  .hero-rings,
-  .search-pulse > span {
-    animation: none;
-  }
-
-  .search-pulse > span {
-    opacity: 0.35;
-    transform: scale(0.9);
+  [data-echo-ring] {
+    animation: none !important;
   }
 }

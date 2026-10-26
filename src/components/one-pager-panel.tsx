@@ -100,7 +100,7 @@ export function OnePagerPanel({
   }
 
   return (
-    <div className="mt-3 rounded-card border border-line bg-paper p-4">
+    <div className="mt-4 rounded-card border-2 border-ink bg-paper p-5">
       {/* The PDF can be made right away; the fields below are optional. */}
       <div className="flex flex-wrap items-center gap-3">
         <button
@@ -111,9 +111,9 @@ export function OnePagerPanel({
         >
           {busy ? "Making PDF…" : "Download PDF"}
         </button>
-        <p className="text-xs text-ink-2">Ready now, or add your details below first.</p>
+        <p className="text-sm text-ink-2">Ready now, or add your details below first.</p>
       </div>
-      <p className="mt-3 text-xs text-ink-2">
+      <p className="mt-3 text-sm text-ink-3">
         All optional. Blank fields show as [brackets] in the PDF, so you can fill them in later.
         Tick &ldquo;Confirmed&rdquo; only for what is locked in; those go in a &ldquo;Confirmed so far&rdquo; box.
       </p>
@@ -127,17 +127,17 @@ export function OnePagerPanel({
           return (
             <div key={field.key}>
               <div className="flex items-center justify-between gap-2">
-                <label htmlFor={`one-pager-${field.key}`} className="text-xs font-semibold text-ink">
+                <label htmlFor={`one-pager-${field.key}`} className="text-sm font-bold text-ink">
                   {label}
                 </label>
                 {confirm && (
                   <label
-                    className={`flex items-center gap-1.5 text-xs ${empty ? "text-ink-3" : "text-ink"}`}
+                    className={`flex items-center gap-2 text-sm ${empty ? "text-ink-3" : "text-ink"}`}
                     title={empty ? "Fill this in first" : undefined}
                   >
                     <input
                       type="checkbox"
-                      className="h-3.5 w-3.5 accent-spot"
+                      className="check"
                       checked={details.confirmed[confirm] && !empty}
                       disabled={empty}
                       onChange={(event) =>
@@ -166,13 +166,13 @@ export function OnePagerPanel({
       </div>
 
       <fieldset className="mt-4">
-        <legend className="text-xs font-semibold text-ink">What the sponsor gets</legend>
+        <legend className="text-sm font-bold text-ink">What the sponsor gets</legend>
         <div className="mt-1.5 grid gap-1.5 sm:grid-cols-2">
           {BENEFITS.map((benefit) => (
-            <label key={benefit.id} className="flex items-center gap-2 text-sm text-ink">
+            <label key={benefit.id} className="flex items-center gap-2.5 text-[15px] text-ink">
               <input
                 type="checkbox"
-                className="h-4 w-4 accent-spot"
+                className="check"
                 checked={details.benefits[benefit.id]}
                 onChange={(event) =>
                   onDetailsChange({
@@ -187,10 +187,10 @@ export function OnePagerPanel({
         </div>
       </fieldset>
 
-      <label className="mt-3 flex items-center gap-2 text-sm text-ink">
+      <label className="mt-4 flex items-center gap-2.5 text-[15px] text-ink">
         <input
           type="checkbox"
-          className="h-4 w-4 accent-spot"
+          className="check"
           checked={details.exclusivity}
           onChange={(event) => onDetailsChange({ ...details, exclusivity: event.target.checked })}
         />

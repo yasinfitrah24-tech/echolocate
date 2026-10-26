@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { archivo } from "./fonts";
+import { atkinson, bricolage } from "./fonts";
 import "./globals.css";
 
 const TAGLINE = "Sponsors for events too small to have a sponsorship team.";
@@ -29,7 +29,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="en" className={`${archivo.variable} h-full antialiased`}>
+    <html lang="en" className={`${bricolage.variable} ${atkinson.variable} h-full antialiased`}>
       <body className="flex min-h-full flex-col bg-paper font-sans text-ink">{children}</body>
     </html>
   );

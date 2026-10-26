@@ -2,22 +2,22 @@
 
 // Leaflet + OpenStreetMap map of local sponsors. Leaflet touches `window` when
 // it loads, so this file must only be loaded with next/dynamic and ssr: false
-// (see local-sponsors.tsx). Circle markers are used so no marker image files
-// are needed.
+// (see local-sponsors.tsx). No marker image files are needed.
 //
-// Places with taste data are filled with their category colour; places Qloo
-// has little taste data for are hollow grey rings. For a city from the US list,
-// a dashed ring shows the area that was really searched, around the point the
-// distances are measured from.
+// Places with taste data are round stickers in their category colour with
+// their number in the list; places Qloo has little taste data for are small
+// hollow rings. For a city from the US list, a dashed ring shows the area
+// that was really searched, around the point the distances are measured from.
 
 import "leaflet/dist/leaflet.css";
-import { useEffect } from "react";
-import { Circle, CircleMarker, MapContainer, Popup, TileLayer, Tooltip, useMap } from "react-leaflet";
+import { divIcon } from "leaflet";
+import { useEffect, useMemo } from "react";
+import { Circle, CircleMarker, MapContainer, Marker, Popup, TileLayer, Tooltip, useMap } from "react-leaflet";
 import type { LocalPlace } from "@/lib/qloo";
 import { placeColor } from "./badges";
 
-const INK = "#1c1915";
-const LITTLE_DATA_RING = "#7a7268";
+const INK = "#1e1430";
+const LITTLE_DATA_RING = "#77726b";
 
 export interface SearchArea {
   lat: number;
@@ -27,6 +27,8 @@ export interface SearchArea {
 
 interface PlacesMapProps {
   places: LocalPlace[];
+  /** Number in the list for each place with a score, shown on its pin. */
+  numbers: Map<string, number>;
   center: { lat: number; lon: number };
   /** The searched circle; null for a city searched by name. */
   searchArea: SearchArea | null;
@@ -58,13 +60,60 @@ function price(level: number | null): string | null {
   return level && level > 0 ? "$".repeat(Math.min(level, 4)) : null;
 }
 
-export default function PlacesMap({ places, center, searchArea, selectedId, onSelect }: PlacesMapProps) {
+/** A round sticker: category colour, white rim, white number. */
+function pinIcon(color: string, number: number, selected: boolean) {
+  const size = selected ? 34 : 28;
+  return divIcon({
+    className: "",
+    iconSize: [size, size],
+    iconAnchor: [size / 2, size / 2],
+    tooltipAnchor: [0, -size / 2],
+    popupAnchor: [0, -size / 2],
+    html: `<span style="display:grid;place-items:center;width:${size}px;height:${size}px;border-radius:50%;background:${color};border:2px solid #fff;box-shadow:0 1px 3px rgba(30,20,48,.45);color:#fff;font:700 ${selected ? 15 : 13}px/1 var(--font-atkinson),sans-serif">${number}</span>`,
+  });
+}
+
+function PlacePopup({ place }: { place: LocalPlace }) {
+  const details = [place.categoryLabel, place.rating ? `${place.rating}★` : null, price(place.priceLevel)]
+    .filter(Boolean)
+    .join(" · ");
+  return (
+    <Popup>
+      <div className="text-sm">
+        <p className="font-bold">{place.name}</p>
+        <p className="text-ink-2">{details}</p>
+        {place.address && <p className="mt-1">{place.address}</p>}
+        <p className="mt-1">
+          {place.fitScore === null ? "Little taste data, no score" : `Sponsor Fit Score ${place.fitScore}`}
+        </p>
+        {place.website && (
+          <a href={place.website} target="_blank" rel="noopener noreferrer">
+            Website
+          </a>
+        )}
+      </div>
+    </Popup>
+  );
+}
+
+export default function PlacesMap({ places, numbers, center, searchArea, selectedId, onSelect }: PlacesMapProps) {
+  // One icon per pin and state, so markers are not rebuilt on every render.
+  const icons = useMemo(() => {
+    const result = new Map<string, ReturnType<typeof divIcon>>();
+    for (const place of places) {
+      const number = numbers.get(place.entityId);
+      if (number === undefined) continue;
+      result.set(place.entityId, pinIcon(placeColor(place.categoryId), number, place.entityId === selectedId));
+    }
+    return result;
+  }, [places, numbers, selectedId]);
+
   return (
     <MapContainer
       center={[center.lat, center.lon]}
       zoom={12}
       scrollWheelZoom={false}
-      className="places-map h-80 w-full sm:h-96 lg:h-[460px]"
+      className="places-map h-[280px] w-full md:h-[440px]"
     >
       <TileLayer
         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
@@ -77,7 +126,7 @@ export default function PlacesMap({ places, center, searchArea, selectedId, onSe
             center={[searchArea.lat, searchArea.lon]}
             radius={searchArea.radiusKm * 1000}
             interactive={false}
-            pathOptions={{ color: INK, opacity: 0.6, weight: 1.5, dashArray: "6 6", fill: false }}
+            pathOptions={{ color: INK, opacity: 0.85, weight: 2, dashArray: "7 7", fill: false }}
           />
           <CircleMarker
             center={[searchArea.lat, searchArea.lon]}
@@ -89,41 +138,33 @@ export default function PlacesMap({ places, center, searchArea, selectedId, onSe
       )}
       {places.map((place) => {
         const selected = place.entityId === selectedId;
-        const details = [place.categoryLabel, place.rating ? `${place.rating}★` : null, price(place.priceLevel)]
-          .filter(Boolean)
-          .join(" · ");
-        return (
+        const icon = icons.get(place.entityId);
+        const tooltip = (
+          <Tooltip direction="top" offset={[0, -4]}>
+            {place.name} · {place.fitScore === null ? "little taste data" : `score ${place.fitScore}`}
+          </Tooltip>
+        );
+        return icon ? (
+          <Marker
+            key={place.entityId}
+            position={[place.lat, place.lon]}
+            icon={icon}
+            zIndexOffset={selected ? 1000 : 0}
+            eventHandlers={{ click: () => onSelect(place.entityId) }}
+          >
+            {tooltip}
+            <PlacePopup place={place} />
+          </Marker>
+        ) : (
           <CircleMarker
             key={place.entityId}
             center={[place.lat, place.lon]}
-            radius={place.littleData ? (selected ? 9 : 6) : selected ? 11 : 7}
-            pathOptions={
-              place.littleData
-                ? { color: LITTLE_DATA_RING, weight: selected ? 3 : 2.5, fillColor: "#ffffff", fillOpacity: 1 }
-                : { color: "#ffffff", weight: 2, fillColor: placeColor(place.categoryId), fillOpacity: selected ? 1 : 0.9 }
-            }
+            radius={selected ? 9 : 6}
+            pathOptions={{ color: LITTLE_DATA_RING, weight: selected ? 3 : 2, fillColor: "#ffffff", fillOpacity: 1 }}
             eventHandlers={{ click: () => onSelect(place.entityId) }}
           >
-            <Tooltip direction="top" offset={[0, -6]}>
-              {place.name} · {place.fitScore === null ? "little taste data" : `score ${place.fitScore}`}
-            </Tooltip>
-            <Popup>
-              <div className="text-sm">
-                <p className="font-semibold">{place.name}</p>
-                <p className="text-ink-2">{details}</p>
-                {place.address && <p className="mt-1">{place.address}</p>}
-                <p className="mt-1">
-                  {place.fitScore === null
-                    ? "Little taste data, no score"
-                    : `Sponsor Fit Score ${place.fitScore}`}
-                </p>
-                {place.website && (
-                  <a href={place.website} target="_blank" rel="noopener noreferrer">
-                    Website
-                  </a>
-                )}
-              </div>
-            </Popup>
+            {tooltip}
+            <PlacePopup place={place} />
           </CircleMarker>
         );
       })}

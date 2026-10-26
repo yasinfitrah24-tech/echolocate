@@ -5,7 +5,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { SourceTag } from "./badges";
-import { errorNoticeClass, ghostButton } from "./styles";
+import { errorNoticeClass, primaryButtonSmall } from "./styles";
 
 export interface PitchResponse {
   subject: string;
@@ -153,37 +153,35 @@ export function PitchBox({
 }) {
   if (error) {
     return (
-      <p role="alert" className={`mt-3 ${errorNoticeClass}`}>
+      <p role="alert" className={`mt-4 ${errorNoticeClass}`}>
         {error}
       </p>
     );
   }
   if (!pitch) return null;
   return (
-    <div className="mt-3 rounded-card border border-l-4 border-line border-l-spot bg-card px-4 py-4 sm:px-5">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <p className="text-xs text-ink-2">
-          {pitch.source === "ai" ? (
-            <SourceTag tone="ai">
-              Written by AI{pitch.model ? ` (${modelName(pitch.model)})` : ""}
-            </SourceTag>
-          ) : (
-            <SourceTag tone="template">Template draft</SourceTag>
+    <div className="mt-4 overflow-hidden rounded-card border-2 border-ink bg-card">
+      <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 border-b border-line px-5 py-4 md:px-6">
+        <h4 className="font-display text-2xl">Pitch email</h4>
+        <SourceTag>{pitch.source === "ai" ? `Written by AI${pitch.model ? ` (${modelName(pitch.model)})` : ""}` : "Template draft"}</SourceTag>
+      </div>
+      <div className="px-5 py-5 md:px-6">
+        <p className="text-sm text-ink-3">
+          Edit the parts in [brackets] before sending.
+          {pitch.source === "ai" && pitch.model && (
+            <>
+              {" "}
+              Model id: <span className="font-mono text-[13px]">{pitch.model}</span>
+            </>
           )}
-          {" · edit the parts in [brackets] before sending"}
         </p>
-        <button type="button" onClick={onCopy} className={ghostButton}>
+        {pitch.note && <p className="mt-1 text-sm text-ink-2">{pitch.note}</p>}
+        <p className="mt-4 font-bold">{pitch.subject}</p>
+        <p className="mt-3 whitespace-pre-wrap">{pitch.body}</p>
+        <button type="button" onClick={onCopy} className={`mt-5 ${primaryButtonSmall}`}>
           {copied ? "Copied" : "Copy email"}
         </button>
       </div>
-      {pitch.source === "ai" && pitch.model && (
-        <p className="mt-1 text-[11px] text-ink-3">
-          Model id: <code className="font-mono">{pitch.model}</code>
-        </p>
-      )}
-      {pitch.note && <p className="mt-2 text-xs text-ink-2">{pitch.note}</p>}
-      <p className="mt-3 font-bold">{pitch.subject}</p>
-      <p className="mt-2 text-[15px] leading-relaxed whitespace-pre-wrap">{pitch.body}</p>
     </div>
   );
 }

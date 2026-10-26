@@ -8,15 +8,18 @@ import dynamic from "next/dynamic";
 import { useEffect, useState } from "react";
 import { buildPlaceOnePager, placeNoun, type OnePagerDetails, type SearchFacts } from "@/lib/one-pager";
 import type { LocalPlace, QlooCall } from "@/lib/qloo";
-import { ScoreBadge, placeColor } from "./badges";
+import { EchoLoader, ScoreBadge, placeColor } from "./badges";
 import { OnePagerPanel } from "./one-pager-panel";
 import { PitchBox, usePitch, type PitchContext } from "./pitch-draft";
-import { cardClass, cardTitleClass, ghostButton } from "./styles";
+import { cardClass, errorNoticeClass, ghostButton, linkClass, noticeClass, sectionTitleClass } from "./styles";
 
 const PlacesMap = dynamic(() => import("./places-map"), {
   ssr: false,
-  loading: () => <div className="h-80 w-full bg-paper motion-safe:animate-pulse sm:h-96 lg:h-[460px]" />,
+  loading: () => <div className="h-[280px] w-full bg-card motion-safe:animate-pulse md:h-[440px]" />,
 });
+
+/** Border and corners of the map box. */
+const mapFrame = "rounded-[14px] border-2 border-ink";
 
 export interface PlacesSearchInfo {
   places: LocalPlace[];
@@ -120,50 +123,47 @@ export function LocalSponsors({
     data?.input.cityPoint && data.search.by === "point" && data.search.radiusKm
       ? { ...data.input.cityPoint, radiusKm: data.search.radiusKm }
       : null;
+  // Pins on the map carry the place's number in the list, for places with a score.
+  const pinNumbers = new Map(
+    shown.filter((place) => !place.littleData).map((place, index) => [place.entityId, index + 1] as const),
+  );
+
+  const tasteData = data?.places.some((place) => !place.littleData) ?? false;
+  const subtitle = !data
+    ? "Local businesses near the event. Easier to sign than national brands, often for in-kind deals."
+    : `${data.places.length} ${data.places.length === 1 ? "place" : "places"} ${
+        data.search.by === "point" ? `within ${data.search.radiusKm} km of the center of ${city}` : `in ${city}`
+      }. ${
+        // A taste claim only when at least one place has taste data.
+        tasteData ? "Local businesses this crowd already goes to." : "Local businesses near the event."
+      } Easier to sign than national brands, often for in-kind deals.`;
 
   return (
-    <section className={`mt-8 ${cardClass}`} aria-labelledby="local-title">
-      <div className="border-b border-line px-4 py-3.5 sm:px-5">
-        <div className="flex flex-wrap items-baseline justify-between gap-x-3">
-          <h3 id="local-title" className={cardTitleClass}>
-            Local sponsors near {city}
-          </h3>
-          {data && (
-            <span className="text-[13px] text-ink-2">
-              {data.places.length} {data.places.length === 1 ? "place" : "places"}
-            </span>
-          )}
-        </div>
-        <p className="mt-1 text-[13px] text-ink-2">
-          {/* A taste claim only when at least one place has taste data. */}
-          {data?.places.some((place) => !place.littleData)
-            ? "Local businesses this crowd already goes to. Easier to sign than national brands, often for in-kind deals."
-            : "Local businesses near the event. Easier to sign than national brands, often for in-kind deals."}
-        </p>
-      </div>
+    <section className="mt-14 md:mt-20" aria-labelledby="local-title">
+      <h2 id="local-title" className={sectionTitleClass}>
+        Local sponsors
+      </h2>
+      <p className="mt-3 max-w-[52em] text-ink-2">{subtitle}</p>
 
       {loading && (
-        <div>
-          <div className="h-80 w-full bg-paper motion-safe:animate-pulse sm:h-96" />
+        <div className="mt-8">
+          <div className={`h-[280px] w-full ${mapFrame} bg-card motion-safe:animate-pulse md:h-[440px]`} />
           {/* Shown exactly while /api/places runs; no timer. */}
-          <p role="status" className="flex items-center gap-3 px-4 py-3 text-sm sm:px-5">
-            <span className="search-pulse" aria-hidden="true">
-              <span />
-              <span />
-            </span>
+          <p role="status" className="mt-4 flex items-center gap-3 text-ink-2">
+            <EchoLoader />
             Finding local places…
           </p>
         </div>
       )}
 
       {error && (
-        <p role="alert" className="px-4 py-3 text-sm text-error sm:px-5">
+        <p role="alert" className={`mt-8 ${errorNoticeClass}`}>
           {error}
         </p>
       )}
 
       {data && data.places.length === 0 && (
-        <p className="px-4 py-3 text-sm text-ink-2 sm:px-5">
+        <p className={`mt-8 ${noticeClass}`}>
           {data.input.cityPopulation === null || data.input.cityPopulation < SMALL_CITY
             ? `No local places found for this crowd in ${city}. Try a bigger nearby city.`
             : "Qloo has few places for this crowd here. Try another genre."}
@@ -173,51 +173,49 @@ export function LocalSponsors({
       {data && data.center && data.places.length > 0 && (
         <>
           {data.places.every((place) => place.littleData) && (
-            <p className="border-b border-line px-4 py-2.5 text-sm text-ink-2 sm:px-5">
+            <p className={`mt-6 ${noticeClass}`}>
               Qloo has little taste data for places here, so these are sorted by distance.
             </p>
           )}
 
-          <div className="lg:grid lg:grid-cols-[minmax(0,5fr)_minmax(0,6fr)]">
+          <div className="mt-8 grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
             {/* The map stays in view next to a long list on wide screens. */}
-            <div className="border-b border-line lg:border-r lg:border-b-0">
-              <div className="lg:sticky lg:top-0">
+            <div className="lg:sticky lg:top-4">
+              <div className={`overflow-hidden ${mapFrame}`}>
                 <PlacesMap
                   places={shown}
+                  numbers={pinNumbers}
                   center={data.center}
                   searchArea={searchArea}
                   selectedId={selectedId}
                   onSelect={setSelectedId}
                 />
-                <ul className="flex flex-wrap gap-x-4 gap-y-1.5 px-4 py-3 text-[13px] text-ink-2 sm:px-5" aria-label="Map key">
-                  {categories.map(([id, label]) => (
-                    <li key={id} className="flex items-center gap-1.5">
-                      <span
-                        aria-hidden="true"
-                        className="h-[11px] w-[11px] rounded-full"
-                        style={{ backgroundColor: placeColor(id) }}
-                      />
-                      {label}
-                    </li>
-                  ))}
-                  {data.places.some((place) => place.littleData) && (
-                    <li className="flex items-center gap-1.5">
-                      <span aria-hidden="true" className="h-[11px] w-[11px] rounded-full border-2 border-ink-3 bg-card" />
-                      Little taste data, no score
-                    </li>
-                  )}
-                  {searchArea && (
-                    <li className="flex items-center gap-1.5">
-                      <span aria-hidden="true" className="w-4 border-t-2 border-dashed border-ink" />
-                      Area searched ({searchArea.radiusKm} km)
-                    </li>
-                  )}
-                </ul>
               </div>
+              <ul className="mt-3 flex flex-wrap gap-x-4 gap-y-1.5 text-[13px] text-ink-2" aria-label="Map key">
+                {categories.map(([id, label]) => (
+                  <li key={id} className="flex items-center gap-1.5">
+                    <span aria-hidden="true" className="size-[11px] rounded-full" style={{ backgroundColor: placeColor(id) }} />
+                    {label}
+                  </li>
+                ))}
+                {data.places.some((place) => place.littleData) && (
+                  <li className="flex items-center gap-1.5">
+                    <span aria-hidden="true" className="size-[11px] rounded-full border-2 border-[#77726b] bg-card" />
+                    Little data, no score
+                  </li>
+                )}
+                {searchArea && (
+                  <li className="flex items-center gap-1.5">
+                    <span aria-hidden="true" className="w-4 border-t-2 border-dashed border-ink" />
+                    {searchArea.radiusKm} km search
+                  </li>
+                )}
+                <li>Pin numbers follow the list.</li>
+              </ul>
             </div>
 
-            <div>
-              <div className="flex flex-wrap gap-2 border-b border-line px-4 py-3 sm:px-5">
+            <div className={cardClass}>
+              <div className="flex flex-wrap gap-2 border-b border-line px-5 py-4">
                 {[["all", "All"] as const, ...categories].map(([id, label]) => (
                   <button
                     key={id}
@@ -227,12 +225,12 @@ export function LocalSponsors({
                       setShowAll(false);
                     }}
                     aria-pressed={filter === id}
-                    className={`flex items-center gap-1.5 rounded-chip border px-2.5 py-1 text-xs font-semibold ${
-                      filter === id ? "border-spot-ink bg-spot-tint text-ink" : "border-field bg-card text-ink hover:bg-paper"
+                    className={`flex items-center gap-1.5 rounded-full px-3 py-1 text-[13px] font-bold ${
+                      filter === id ? "border-2 border-ink bg-accent-tint" : "border-[1.5px] border-field bg-card hover:border-ink"
                     }`}
                   >
                     {id !== "all" && (
-                      <span aria-hidden="true" className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: placeColor(id) }} />
+                      <span aria-hidden="true" className="size-2.5 rounded-full" style={{ backgroundColor: placeColor(id) }} />
                     )}
                     {label}
                   </button>
@@ -249,43 +247,52 @@ export function LocalSponsors({
                   return (
                     <li
                       key={place.entityId}
-                      className={`border-t border-line px-4 py-3.5 first:border-t-0 sm:px-5 ${
-                        selected ? "bg-paper shadow-[inset_3px_0_0_var(--color-spot)]" : "hover:bg-paper/60"
+                      className={`border-t border-line px-5 py-4 first:border-t-0 ${
+                        selected ? "bg-accent-tint/50 shadow-[inset_4px_0_0_var(--color-accent)]" : "hover:bg-paper"
                       }`}
                     >
                       <button
                         type="button"
                         onClick={() => setSelectedId(place.entityId)}
                         aria-pressed={selected}
-                        className="flex w-full min-w-0 items-start gap-3 rounded-control text-left"
+                        className="flex w-full min-w-0 items-start gap-3.5 rounded-field text-left"
                       >
-                        <ScoreBadge
-                          score={place.fitScore}
-                          color={place.fitScore === null ? undefined : placeColor(place.categoryId)}
-                        />
+                        <ScoreBadge score={place.fitScore} size="small" />
                         <span className="min-w-0 flex-1">
-                          <span className="block font-semibold">{place.name}</span>
-                          <span className="mt-0.5 block text-[13px] text-ink-2">
-                            {[
-                              place.categoryLabel,
-                              place.neighborhood,
-                              place.rating ? `${place.rating}★` : null,
-                              // A city from the US list is measured from its own point; a typed
-                              // city from the middle of the results, so it does not claim the city center.
-                              data.search.by === "point"
-                                ? `${place.distanceKm} km from the center of ${city}`
-                                : `${place.distanceKm} km from the middle of these places`,
-                            ]
-                              .filter(Boolean)
-                              .join(" · ")}
+                          <span className="block font-bold">
+                            {pinNumbers.has(place.entityId) && (
+                              <span className="font-normal text-ink-3">{pinNumbers.get(place.entityId)}. </span>
+                            )}
+                            {place.name}
                           </span>
-                          <span className="mt-1 block text-sm text-ink-2">
+                          <span className="mt-0.5 flex items-baseline gap-1.5 text-sm text-ink-2">
+                            <span
+                              aria-hidden="true"
+                              className={`size-2.5 shrink-0 self-center rounded-full ${place.littleData ? "border-2 border-[#77726b] bg-card" : ""}`}
+                              style={place.littleData ? undefined : { backgroundColor: placeColor(place.categoryId) }}
+                            />
+                            <span>
+                              {[
+                                place.categoryLabel,
+                                place.neighborhood,
+                                place.rating ? `${place.rating}★` : null,
+                                // A city from the US list is measured from its own point; a typed
+                                // city from the middle of the results, so it does not claim the city center.
+                                data.search.by === "point"
+                                  ? `${place.distanceKm} km from the center of ${city}`
+                                  : `${place.distanceKm} km from the middle of these places`,
+                              ]
+                                .filter(Boolean)
+                                .join(" · ")}
+                            </span>
+                          </span>
+                          <span className="mt-1 block text-[15px] text-ink-2">
                             {place.littleData ? "Nearby · little taste data" : place.reasonText}
                           </span>
                         </span>
                       </button>
-                      {/* Not indented on phones, so the three buttons stay on one line. */}
-                      <div className="mt-2.5 flex flex-wrap gap-1.5 sm:pl-[52px]">
+                      {/* Not indented on phones, so the buttons stay on one line. */}
+                      <div className="mt-3 flex flex-wrap gap-2 sm:pl-[56px]">
                         {pitchContext && (
                           <button
                             type="button"
@@ -346,30 +353,26 @@ export function LocalSponsors({
               </ul>
 
               {shown.length > LIST_SIZE && (
-                <button
-                  type="button"
-                  onClick={() => setShowAll(!showAll)}
-                  className="w-full border-t border-line px-4 py-2.5 text-left text-xs font-semibold text-ink-2 hover:bg-paper hover:text-ink sm:px-5"
-                >
-                  {showAll ? "Show fewer" : `Show all ${shown.length}`}
-                </button>
+                <div className="border-t border-line px-5 py-4">
+                  <button type="button" onClick={() => setShowAll(!showAll)} className={`${linkClass} text-[15px]`}>
+                    {showAll ? "Show fewer" : `Show all ${shown.length} places`}
+                  </button>
+                </div>
               )}
+
+              <p className="border-t border-line px-5 py-3 text-[13px] text-ink-3">
+                {data.savedExample
+                  ? `${data.calls.length} saved Qloo place searches.`
+                  : `${data.calls.length} Qloo place searches in ${(data.tookMs / 1000).toFixed(1)} s.`}
+                {data.search.widened ? " Widened once, because few places were closer." : ""}
+                {data.droppedDuplicates > 0 &&
+                  ` ${data.droppedDuplicates} repeat chain ${data.droppedDuplicates === 1 ? "branch" : "branches"} hidden.`}
+                {data.droppedFar > 0 &&
+                  ` ${data.droppedFar} ${data.droppedFar === 1 ? "place" : "places"} far outside the city hidden.`}
+                {!data.input.barsIncluded && " Bars only show for 21+ events."}
+              </p>
             </div>
           </div>
-
-          <p className="border-t border-line px-4 py-2.5 text-xs text-ink-2 sm:px-5">
-            {data.search.by === "point"
-              ? `Within ${data.search.radiusKm} km of ${city}${data.search.widened ? " (widened, few places closer)" : ""}. `
-              : ""}
-            {data.savedExample
-              ? `${data.calls.length} saved Qloo place searches.`
-              : `${data.calls.length} Qloo place searches in ${(data.tookMs / 1000).toFixed(1)} s.`}
-            {data.droppedDuplicates > 0 &&
-              ` ${data.droppedDuplicates} repeat chain ${data.droppedDuplicates === 1 ? "branch" : "branches"} hidden.`}
-            {data.droppedFar > 0 &&
-              ` ${data.droppedFar} ${data.droppedFar === 1 ? "place" : "places"} far outside the city hidden.`}
-            {!data.input.barsIncluded && " Bars only show for 21+ events."}
-          </p>
         </>
       )}
     </section>
