@@ -85,7 +85,7 @@ function facts(input: PitchInput): string[] {
       ? `Sponsor: ${input.brand.name}, a local ${placeNoun(input.brand.categoryLabel)}`
       : `Brand: ${input.brand.name} (${input.brand.categoryLabel})`,
     input.brand.nearbyKm !== null
-      ? `No taste match: Qloo has little taste data for this business. Distance: about ${formatKm(input.brand.nearbyKm)} from the center of ${input.city ?? "the city"}. Do not say or suggest that the crowd likes it. Do not mention Qloo, taste data, scores, or anything you do not know about this business.`
+      ? `No taste match: Qloo has little taste data for this business. Distance: about ${formatKm(input.brand.nearbyKm)} from the center of ${input.city ?? "the city"}. The distance is from the city center, not from the event: do not say the business is close to the event or the crowd. Do not say or suggest that the crowd likes it. Do not mention Qloo, taste data, scores, or anything you do not know about this business.`
       : `Why it fits, from Qloo taste data: ${input.brand.reasonText}`,
   ];
   if (input.brand.kind === "place" && input.brand.nearbyKm === null) {
