@@ -85,7 +85,7 @@ function facts(input: PitchInput): string[] {
       ? `Sponsor: ${input.brand.name}, a local ${placeNoun(input.brand.categoryLabel)}`
       : `Brand: ${input.brand.name} (${input.brand.categoryLabel})`,
     input.brand.nearbyKm !== null
-      ? `No taste match: Qloo has little taste data for this business. Distance: about ${formatKm(input.brand.nearbyKm)} from the center of ${input.city ?? "the city"}. Do not say or suggest that the crowd likes it.`
+      ? `No taste match: Qloo has little taste data for this business. Distance: about ${formatKm(input.brand.nearbyKm)} from the center of ${input.city ?? "the city"}. Do not say or suggest that the crowd likes it. Do not mention Qloo, taste data, scores, or anything you do not know about this business.`
       : `Why it fits, from Qloo taste data: ${input.brand.reasonText}`,
   ];
   if (input.brand.kind === "place" && input.brand.nearbyKm === null) {
@@ -199,7 +199,7 @@ function numbersIn(text: string): string[] {
 
 /** Fit verdicts the pitch may not make; it states the rank and its source instead. */
 const FIT_VERDICTS =
-  /\b(strong fit|perfect fit|great fit|great match|strong match|perfect match|ideal partner|ideal fit)\b/i;
+  /\b(strong fit|perfect fit|great fit|great match|strong match|perfect match|ideal partner|ideal fit|excellent fit|good fit|natural fit|excellent match)\b/i;
 
 /**
  * Null when the AI draft keeps to the facts, else why not. Checked: every
