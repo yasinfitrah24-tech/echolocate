@@ -23,7 +23,9 @@ export function SiteHeader() {
         </Link>
         <a
           href={REPO_URL}
-          aria-label="Echolocate on GitHub"
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label="Echolocate on GitHub (opens in a new tab)"
           className="grid size-11 place-items-center rounded-full text-ink hover:bg-accent-tint"
         >
           <GitHubMark />
