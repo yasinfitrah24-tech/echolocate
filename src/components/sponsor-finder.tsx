@@ -58,6 +58,8 @@ interface BrandsResponse {
   genreMatch: { query: string; tag: { id: string; name: string } | null } | null;
   unresolved: { query: string; candidates: ArtistMatch[] }[];
   categories: BrandCategory[];
+  /** Brands Qloo returned that the server rules removed. */
+  dropped?: { alcohol: number; advocacy: number; institutions: number };
   calls: QlooCall[];
   /** When the saved example was recorded; null for a live search. */
   savedExample: string | null;
@@ -102,18 +104,40 @@ const AGE_OPTIONS = [
   ...AUDIENCE_AGES.map((option) => ({ value: option.id as string, label: option.label })),
 ];
 
-const EXAMPLE = {
-  eventName: "Spring Quad Fest",
-  artistsText: "Phoebe Bridgers, boygenius, Clairo",
-  city: "Austin, TX",
-  age: "24_and_younger",
-  admission: "all_ages",
-  crowdSize: "800",
-};
+// The saved examples, answered from real Qloo data recorded earlier
+// (src/lib/demo-recording.ts). The form values must match
+// scripts/record-demo.mjs exactly, or the search runs live.
+const EXAMPLES = {
+  // A big campus show with known artists.
+  campus: {
+    eventName: "Spring Quad Fest",
+    genre: "",
+    artistsText: "Phoebe Bridgers, boygenius, Clairo",
+    city: "Austin, TX",
+    age: "24_and_younger",
+    admission: "all_ages",
+    crowdSize: "800",
+  },
+  // The case Echolocate is built for: local bands not in Qloo, so genre only,
+  // a small crowd, a smaller city, 21+.
+  bar: {
+    eventName: "Basement Thursdays",
+    genre: "Indie rock",
+    artistsText: "",
+    city: "Athens, GA",
+    age: "24_and_younger",
+    admission: "21_plus",
+    crowdSize: "150",
+  },
+} as const;
+
+type ExampleId = keyof typeof EXAMPLES;
 
 const EXAMPLE_NOTE = `Instant: a saved search with real Qloo data, for ${
-  findAdmission(EXAMPLE.admission)?.phrase ?? "a show"
-} in ${EXAMPLE.city} with ${joinNames(splitNames(EXAMPLE.artistsText))}. No sign-up.`;
+  findAdmission(EXAMPLES.campus.admission)?.phrase ?? "a show"
+} in ${EXAMPLES.campus.city} with ${joinNames(splitNames(EXAMPLES.campus.artistsText))}. No sign-up.`;
+
+const SMALL_EXAMPLE_LABEL = `Or try a small one: a ${EXAMPLES.bar.crowdSize}-person 21+ bar gig in ${EXAMPLES.bar.city}, local bands, genre only`;
 
 const TOP_PER_CATEGORY = 5;
 
@@ -265,24 +289,25 @@ export function SponsorFinder() {
     void findBrands(names, picked);
   }
 
-  /** Fills the form with the saved example and runs it (answered from the recording, no live Qloo call). */
-  function runExample() {
-    setEventName(EXAMPLE.eventName);
-    setArtistsText(EXAMPLE.artistsText);
+  /** Fills the form with a saved example and runs it (answered from the recording, no live Qloo call). */
+  function runExample(id: ExampleId = "campus") {
+    const example = EXAMPLES[id];
+    setEventName(example.eventName);
+    setArtistsText(example.artistsText);
     setPicked([]);
-    setGenre("");
-    setCity(EXAMPLE.city);
-    setAge(EXAMPLE.age);
-    setCrowdSize(EXAMPLE.crowdSize);
-    setAdmission(EXAMPLE.admission);
+    setGenre(example.genre);
+    setCity(example.city);
+    setAge(example.age);
+    setCrowdSize(example.crowdSize);
+    setAdmission(example.admission);
     setWantsAlcohol(true);
-    const exampleAdmission = findAdmission(EXAMPLE.admission) ?? DEFAULT_ADMISSION;
-    void findBrands(splitNames(EXAMPLE.artistsText), [], {
-      genre: "",
-      city: EXAMPLE.city,
-      age: EXAMPLE.age,
-      admission: EXAMPLE.admission,
-      crowdSize: EXAMPLE.crowdSize,
+    const exampleAdmission = findAdmission(example.admission) ?? DEFAULT_ADMISSION;
+    void findBrands(splitNames(example.artistsText), [], {
+      genre: example.genre,
+      city: example.city,
+      age: example.age,
+      admission: example.admission,
+      crowdSize: example.crowdSize,
       includeAlcohol: exampleAdmission.alcoholAllowed,
     });
   }
@@ -385,15 +410,25 @@ export function SponsorFinder() {
 
   return (
     <main className="flex-1">
-      <Hero onTryExample={runExample} busy={loading} exampleNote={EXAMPLE_NOTE} />
+      <Hero
+        onTryExample={() => runExample("campus")}
+        onTrySmallExample={() => runExample("bar")}
+        smallExampleLabel={SMALL_EXAMPLE_LABEL}
+        busy={loading}
+        exampleNote={EXAMPLE_NOTE}
+      />
       <HowItWorks />
 
       <section id="your-event" className="mx-auto max-w-[1312px] scroll-mt-4 px-5 pt-14 md:px-16 md:pt-24">
         <h2 className={sectionTitleClass}>Use your own event</h2>
         <p className="mt-3 text-ink-2">
           Start with the kind of music or a few artists. Add a city to see local sponsors on a map. No event yet?{" "}
-          <button type="button" onClick={runExample} disabled={loading} className={`${linkClass} disabled:opacity-60`}>
+          <button type="button" onClick={() => runExample("campus")} disabled={loading} className={`${linkClass} disabled:opacity-60`}>
             Try an example
+          </button>{" "}
+          or{" "}
+          <button type="button" onClick={() => runExample("bar")} disabled={loading} className={`${linkClass} disabled:opacity-60`}>
+            a small 21+ bar gig
           </button>
         </p>
 
@@ -816,12 +851,117 @@ export function SponsorFinder() {
             places={placesInfo}
             brandCount={brandCount}
             savedExample={result.savedExample !== null}
-            alcoholBlocked={result.input.alcoholBlocked}
+            decisions={agentDecisions(result, placesInfo, brandCount, localFirst ? searchedCrowd : null)}
           />
         </section>
       )}
     </main>
   );
+}
+
+function plural(n: number, one: string, many = `${one}s`): string {
+  return `${n} ${n === 1 ? one : many}`;
+}
+
+/**
+ * What the agent decided for this search, in plain words, from the answers it
+ * got: which Qloo entities and tags it used, what it asked, what it adapted
+ * when an answer was empty or thin, what the rules removed, and how the pitch
+ * is checked. Shown under "How the agent got this".
+ */
+function agentDecisions(
+  result: BrandsResponse,
+  places: PlacesSearchInfo | null,
+  brandCount: number,
+  smallCrowd: number | null,
+): string[] {
+  const out: string[] = [];
+  const { input } = result;
+  const ageLabel = findAudienceAge(input.age)?.label;
+
+  if (result.artists.length > 0) {
+    out.push(
+      `Looked up the line-up in Qloo and used ${plural(result.artists.length, "artist")} with an exact name match: ${joinNames(result.artists.map((artist) => artist.name))}.`,
+    );
+  }
+  for (const item of result.unresolved) {
+    out.push(
+      item.candidates.length > 0
+        ? `Left out "${item.query}": Qloo had no exact match, so it asks you to pick the right artist instead of guessing.`
+        : `Left out "${item.query}": Qloo does not know this artist, so the genre has to cover it.`,
+    );
+  }
+  if (result.genreMatch) {
+    out.push(
+      result.genreMatch.tag
+        ? `Looked up the genre "${result.genreMatch.query}" in Qloo and used its "${result.genreMatch.tag.name}" tag.`
+        : `Found no Qloo genre for "${result.genreMatch.query}", so it was left out.`,
+    );
+  } else if (result.genreTags.length > 0) {
+    out.push(
+      `Used Qloo's "${joinNames(result.genreTags.map((tag) => tag.name))}" genre tag directly, from our checked list, with no lookup.`,
+    );
+  }
+
+  const brandRequests = result.calls.filter((call) => call.endpoint === "/v2/insights").length;
+  out.push(
+    `Asked Qloo which brands fans of this music like${input.city && !input.cityDropped ? ` in ${input.city}` : ""}${
+      ageLabel ? `, mostly ${ageLabel}` : ""
+    }: one list across all categories and one per sponsor category (${plural(brandRequests, "request")}).`,
+  );
+  if (input.cityDropped) {
+    out.push(`Qloo had no taste data for ${input.city}, so it asked again for the line-up alone.`);
+  }
+
+  const dropped = result.dropped ?? { alcohol: 0, advocacy: 0, institutions: 0 };
+  if (input.alcoholBlocked) {
+    out.push(
+      `Not a 21+ event: skipped the beer and spirits lists${
+        dropped.alcohol > 0 ? ` and removed ${plural(dropped.alcohol, "brand")} Qloo tags as alcohol` : ""
+      }.`,
+    );
+  } else if (input.includeAlcohol) {
+    out.push("A 21+ event: added Qloo's beer and spirits lists.");
+  }
+  const removed = [
+    dropped.advocacy > 0 ? plural(dropped.advocacy, "advocacy group") : null,
+    dropped.institutions > 0
+      ? `${plural(dropped.institutions, "institution")} (sports teams, universities, museums or news outlets)`
+      : null,
+  ].filter(Boolean);
+  if (removed.length > 0) out.push(`Removed ${removed.join(" and ")}: they do not sponsor small shows.`);
+  out.push(`Scored the ${plural(brandCount, "brand")} left against each other, each with the reason from Qloo's data.`);
+
+  if (places) {
+    const kinds = places.input.barsIncluded ? "cafes, clothing stores and bars" : "cafes and clothing stores";
+    const city = places.input.city;
+    if (places.search.by === "point") {
+      out.push(
+        places.search.widened
+          ? `Searched ${kinds} near ${city}, found fewer than 6 close by, and widened the search once to ${places.search.radiusKm} km.`
+          : `Searched ${kinds} within ${places.search.radiusKm} km of the center of ${city}, a radius set by the city's size.`,
+      );
+    } else {
+      out.push(`${city} is not in our US city list, so it searched ${kinds} by city name and dropped places far from the rest.`);
+    }
+    if (!places.input.barsIncluded) out.push("Left out bars: not a 21+ event.");
+    const little = places.places.filter((place) => place.littleData).length;
+    if (little > 0) {
+      out.push(
+        `${little} of ${plural(places.places.length, "place")} have little Qloo taste data: listed without a score, nearest first. Their pitch never claims the crowd likes them.`,
+      );
+    }
+    if (places.droppedDuplicates > 0) {
+      out.push(`Hid ${plural(places.droppedDuplicates, "repeat chain branch", "repeat chain branches")}.`);
+    }
+  }
+  if (smallCrowd !== null) {
+    out.push(`A crowd of ${smallCrowd} is small, so local businesses are shown before national brands.`);
+  }
+  out.push(
+    "For each pitch email, the AI writes only from these facts. A fixed check throws a draft away for the template if it adds a number, calls a local place a venue, or claims a strong or perfect fit.",
+  );
+  return out;
 }
 
 type SearchOutcome = { ok: true; data: BrandsResponse } | { ok: false; error: string };

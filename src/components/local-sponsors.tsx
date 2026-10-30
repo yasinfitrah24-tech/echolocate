@@ -25,6 +25,9 @@ export interface PlacesSearchInfo {
   places: LocalPlace[];
   calls: QlooCall[];
   search: { by: "point" | "city"; radiusKm: number | null; widened: boolean };
+  input: { city: string; barsIncluded: boolean };
+  droppedFar: number;
+  droppedDuplicates: number;
   /** When the saved example was recorded; null for a live search. */
   savedExample: string | null;
   tookMs: number;

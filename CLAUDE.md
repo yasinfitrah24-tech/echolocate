@@ -25,8 +25,8 @@ Built for the Qloo Agentic Hackathon (Devpost). Rule from the organizers: if the
 - `src/lib/audience.ts` — audience age groups + admission. Safe to import from client components.
 - `src/lib/pitch.ts` — pitch email (DeepSeek or template).
 - Routes: `src/app/api/artists`, `brands`, `pitch`, `places` (all POST JSON except artists).
-- UI: `src/components/sponsor-finder.tsx` (form, results header, brands, pitch), `intro.tsx` (hero with "Try an example", how it works), `site-chrome.tsx` (header, footer), `local-sponsors.tsx` (map + list + filters, fetches `/api/places`), `places-map.tsx` (Leaflet), `agent-panel.tsx` ("How the agent got this": summary + call table), `pitch-draft.tsx` (shared pitch box), `badges.tsx` (score badge, best-fit pill, source tag, echo loader, place colours), `logo.tsx`, `styles.ts` (shared class names), `combobox.tsx` + `city-combobox.tsx` + `genre-combobox.tsx`, `one-pager-panel.tsx` + `one-pager-pdf.tsx` (PDF via `@react-pdf/renderer`, loaded with `import()`). Favicon: `src/app/icon.svg`.
-- `src/lib/one-pager.ts` (one-pager text), `genres.ts` (curated genres + Qloo tag ids, `src/data/music-genres.json`), `us-cities.ts` (server lookup in `public/data/us-cities.json`, Census data), `demo-recording.ts` (saved "Try an example" Qloo answers, `src/data/demo/qloo-recording.json`), `rate-limit.ts` (per-IP limits, 600 live calls/day, `QLOO_LIVE=off`).
+- UI: `src/components/sponsor-finder.tsx` (form, results header, brands, pitch), `intro.tsx` (hero with "Try an example", how it works), `site-chrome.tsx` (header, footer), `local-sponsors.tsx` (map + list + filters, fetches `/api/places`), `places-map.tsx` (Leaflet), `agent-panel.tsx` ("How the agent got this": summary, "What the agent decided" built by `agentDecisions()` in `sponsor-finder.tsx`, every Qloo request with its parameters), `pitch-draft.tsx` (shared pitch box), `badges.tsx` (score badge, best-fit pill, source tag, echo loader, place colours), `logo.tsx`, `styles.ts` (shared class names), `combobox.tsx` + `city-combobox.tsx` + `genre-combobox.tsx`, `one-pager-panel.tsx` + `one-pager-pdf.tsx` (PDF via `@react-pdf/renderer`, loaded with `import()`). Favicon: `src/app/icon.svg`.
+- `src/lib/one-pager.ts` (one-pager text), `genres.ts` (curated genres + Qloo tag ids, `src/data/music-genres.json`), `us-cities.ts` (server lookup in `public/data/us-cities.json`, Census data), `demo-recording.ts` (saved example Qloo answers, `src/data/demo/qloo-recording.json`: two examples, `campus` (Austin, 800, artists) and `bar` (Athens, GA, 150, 21+, genre only), recorded with `scripts/record-demo.mjs <id>`; their form values in `EXAMPLES` in `sponsor-finder.tsx` must match the script exactly), `rate-limit.ts` (per-IP limits, 600 live calls/day, `QLOO_LIVE=off`).
 
 ## Design ("Soundcheck", 26 Oct)
 - A soundcheck-day gig poster: sun-yellow hero panel, tangerine echo rings, chunky 2 px ink outlines, big condensed type. Light only. Replaced the first theme ("Show flyer") the same day.
@@ -54,6 +54,12 @@ Built for the Qloo Agentic Hackathon (Devpost). Rule from the organizers: if the
 - Tag shapes differ: `/search` → `tags[].tag_id`, `/v2/insights` → `tags[].id`. Brand tags are layered: broad (`wine_and_spirits`), product (`wine_and_spirits:beer`), sub (`...:spirits:vodka`). Filter with broad or product level.
 - Youngest age group is `24_and_younger`; there is no "21 and younger".
 - Artist search can match the wrong name ("Wishy" → "Wish You Were Here"), so the UI asks the user to confirm when the name is not exact. Genre is the fallback.
+
+## Judging (Official Rules section 6, read 30 Oct)
+- Stage one is pass/fail: fits "Agents, but with taste" and uses the Qloo API. The project must work as an agentic tool, so keep the agent's decisions visible ("What the agent decided") and named in the README ("Why this is an agent").
+- Stage two, equal weight: Technological Implementation (depth of Qloo use), Design, Potential Impact (credible, specific, shown in the demo), Quality of the Idea. Judges may judge from the text, images and video alone, and may use automated AI analysis.
+- Qloo's kit (github.com/qloo/qloo-hackathon-kit, docs/SUBMISSION.md) asks for: problem statement, Qloo tools used and why, a request-to-result explanation, demo, setup from a clean environment, and limits including what a result does not establish. The README covers each.
+- The server returns `dropped` counts (alcohol, advocacy, institutions) from `getSponsorBrands`; show counts only, never the names of advocacy groups.
 
 ## Product rules (do not break these)
 - Audience age and admission are separate. **Alcohol brands (any `wine_and_spirits` tag) and bars only for 21+ events**, enforced in the server, not only the UI.

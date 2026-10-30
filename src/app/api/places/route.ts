@@ -17,7 +17,7 @@ import { DEFAULT_ADMISSION, findAdmission, findAudienceAge } from "@/lib/audienc
 import { getLocalSponsors, type GenreTag } from "@/lib/qloo";
 import { publicQlooFailure } from "@/lib/public-errors";
 import { findUsCity, placeRadiusKm } from "@/lib/us-cities";
-import { isSavedExample, savedAt } from "@/lib/demo-recording";
+import { savedExampleAt } from "@/lib/demo-recording";
 import { blockLiveSearch } from "@/lib/rate-limit";
 
 const MAX_SIGNALS = 8;
@@ -87,14 +87,14 @@ export async function POST(request: Request) {
   const usCity = findUsCity(city);
 
   // Exact match, like /api/brands: the saved answers are for these exact values.
-  const example = isSavedExample("places", {
+  const exampleAt = savedExampleAt("places", {
     artists: artists.map((artist) => artist.id),
     genreTags: tags.map((tag) => tag.id),
     city,
     age: audience?.id ?? null,
     admission: admission.id,
   });
-  if (!example) {
+  if (!exampleAt) {
     const blocked = blockLiveSearch(request, "places");
     if (blocked) return blocked;
   }
@@ -122,7 +122,7 @@ export async function POST(request: Request) {
         cityPoint: usCity ? { lat: usCity.lat, lon: usCity.lon } : null,
       },
       ...result,
-      savedExample: example && result.calls.every((call) => call.saved) ? savedAt : null,
+      savedExample: exampleAt && result.calls.every((call) => call.saved) ? exampleAt : null,
       tookMs: Date.now() - started,
     });
   } catch (error) {

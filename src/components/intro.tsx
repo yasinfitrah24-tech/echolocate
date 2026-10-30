@@ -34,10 +34,15 @@ function HeroRings() {
 
 export function Hero({
   onTryExample,
+  onTrySmallExample,
+  smallExampleLabel,
   busy,
   exampleNote,
 }: {
   onTryExample: () => void;
+  /** The second saved example: a small 21+ show, genre only. */
+  onTrySmallExample: () => void;
+  smallExampleLabel: string;
   busy: boolean;
   /** What the saved example is, shown under the buttons. */
   exampleNote: string;
@@ -66,7 +71,19 @@ export function Hero({
               Use your own event ↓
             </a>
           </div>
-          <p className="max-w-[40em] text-sm">{exampleNote}</p>
+          <div className="flex max-w-[40em] flex-col gap-2 text-sm">
+            <p>{exampleNote}</p>
+            <p>
+              <button
+                type="button"
+                onClick={onTrySmallExample}
+                disabled={busy}
+                className="text-left font-bold underline decoration-2 underline-offset-[3px] hover:decoration-accent disabled:opacity-60"
+              >
+                {smallExampleLabel} →
+              </button>
+            </p>
+          </div>
         </div>
       </div>
     </section>

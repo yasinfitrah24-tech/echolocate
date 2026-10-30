@@ -1,7 +1,8 @@
 "use client";
 
-// "How the agent got this": a one-line summary that is always visible, and
-// every Qloo call behind the results in a table that opens.
+// "How the agent got this": a summary that is always visible, the decisions
+// the agent took for this search (in plain words), and every Qloo request
+// behind the results, with its parameters, in a table that opens.
 
 import type { QlooCall } from "@/lib/qloo";
 import type { PlacesSearchInfo } from "./local-sponsors";
@@ -14,13 +15,29 @@ function count(n: number, word: string): string {
   return `${n} ${word}${n === 1 ? "" : "s"}`;
 }
 
+/** The request as Qloo received it: path and query parameters, one per line. The key is never in it. */
+function RequestText({ call }: { call: QlooCall }) {
+  const lines = Object.entries(call.params).map(([key, value]) => `  ${key}=${value}`);
+  return (
+    <details className="mt-1">
+      <summary className="cursor-pointer text-[13px] font-bold text-ink-2 hover:text-ink">Request</summary>
+      <pre className="mt-1 overflow-x-auto rounded-field bg-paper px-3 py-2 font-mono text-xs leading-relaxed whitespace-pre-wrap break-all">
+        {`GET ${call.endpoint}\n${lines.join("\n")}`}
+      </pre>
+    </details>
+  );
+}
+
 function CallRow({ call, unit }: { call: QlooCall; unit: string }) {
   return (
     <tr className="border-t border-line align-top">
       <td className="py-2 pr-3 pl-5 md:pl-7">
         <code className="font-mono text-xs">{call.endpoint}</code>
       </td>
-      <td className="py-2 pr-3">{call.label}</td>
+      <td className="py-2 pr-3">
+        {call.label}
+        <RequestText call={call} />
+      </td>
       <td className="py-2 pr-3 whitespace-nowrap tabular-nums">
         {call.error ? "failed" : `${call.resultCount} ${unit}`}
       </td>
@@ -37,7 +54,7 @@ export function AgentPanel({
   places,
   brandCount,
   savedExample,
-  alcoholBlocked,
+  decisions,
 }: {
   /** Brand search calls. */
   calls: QlooCall[];
@@ -45,7 +62,8 @@ export function AgentPanel({
   places: PlacesSearchInfo | null;
   brandCount: number;
   savedExample: boolean;
-  alcoholBlocked: boolean;
+  /** What the agent decided for this search, in order. */
+  decisions: string[];
 }) {
   const callCount = calls.length + (places?.calls.length ?? 0);
   const summary = [
@@ -70,9 +88,26 @@ export function AgentPanel({
           : "Live: every call below was made for this search."}
       </p>
 
-      <details id={AGENT_DETAILS_ID} className="mt-4 border-t border-line">
+      <div className="mt-4 border-t border-line px-5 py-4 md:px-7">
+        <h4 className="font-bold">What the agent decided</h4>
+        <ol className="mt-2 space-y-1.5">
+          {decisions.map((decision, index) => (
+            <li key={decision} className="flex gap-3 text-[15px]">
+              <span
+                aria-hidden="true"
+                className="grid size-6 shrink-0 place-items-center rounded-full border-2 border-ink bg-accent-tint text-xs font-bold"
+              >
+                {index + 1}
+              </span>
+              <span className="pt-px">{decision}</span>
+            </li>
+          ))}
+        </ol>
+      </div>
+
+      <details id={AGENT_DETAILS_ID} className="border-t border-line">
         <summary className="cursor-pointer rounded-b-card px-5 py-3.5 text-[15px] font-bold hover:bg-accent-tint md:px-7">
-          Show every call and how the score works
+          Show every Qloo request and how the score works
         </summary>
         <div className="overflow-x-auto">
           <table className="w-full border-collapse text-left text-sm">
@@ -103,22 +138,13 @@ export function AgentPanel({
           </table>
         </div>
         <div className="space-y-2 border-t border-line px-5 py-4 text-[13px] text-ink-3 md:px-7">
-          {places && (
-            <p>
-              {places.search.by === "point"
-                ? places.search.widened
-                  ? `Local places: fewer than 6 close by, so the search was widened once to ${places.search.radiusKm} km around the city.`
-                  : `Local places: searched within ${places.search.radiusKm} km of the city, based on its size.`
-                : "Local places: searched by city name, because this city is not in our US city list."}
-            </p>
-          )}
           <p>
             The Sponsor Fit Score is our own score out of 100, and it never goes above 95. Each brand is compared
             with the other brands for this crowd: mostly how strongly the crowd likes it in Qloo&rsquo;s taste data,
             plus where it ranks in its list. Local places are compared with other local places, and places Qloo has
-            little taste data for get no score.
+            little taste data for get no score. A score is not a promise that a sponsor says yes.
           </p>
-          {alcoholBlocked && <p>Beer, wine and spirits brands are left out because this is not a 21+ event.</p>}
+          <p>Nothing personal is sent to Qloo: only artist names, a genre, the city and an age group.</p>
         </div>
       </details>
     </section>

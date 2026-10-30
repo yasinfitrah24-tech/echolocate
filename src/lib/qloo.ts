@@ -34,13 +34,14 @@ const NOT_SPONSOR_TAGS = [
   "urn:tag:genre:brand:entertainment:media:news_and_politics",
 ];
 
-/** Advocacy groups and big institutions come back as "brands". Not sponsors. */
-function notASponsor(tagIds: string[]): boolean {
-  return tagIds.some(
-    (id) =>
-      id.startsWith(NGO_TAG_PREFIX) ||
-      NOT_SPONSOR_TAGS.some((tag) => id === tag || id.startsWith(`${tag}:`)),
-  );
+/** Advocacy groups (NGOs) come back as "brands". Not sponsors. */
+function isAdvocacyGroup(tagIds: string[]): boolean {
+  return tagIds.some((id) => id.startsWith(NGO_TAG_PREFIX));
+}
+
+/** Sports teams, universities, museums and news outlets. Not sponsors of a small show. */
+function isInstitution(tagIds: string[]): boolean {
+  return tagIds.some((id) => NOT_SPONSOR_TAGS.some((tag) => id === tag || id.startsWith(`${tag}:`)));
 }
 const ALCOHOL_TAG_PREFIX = "urn:tag:genre:brand:wine_and_spirits";
 
@@ -154,6 +155,11 @@ export interface SponsorBrandsResult {
    * are for the line-up alone. Seen with small places such as "Indio, CA".
    */
   cityDropped: boolean;
+  /**
+   * Brands Qloo returned that the server rules removed, counted once per
+   * brand: alcohol (not a 21+ event), advocacy groups, institutions.
+   */
+  dropped: { alcohol: number; advocacy: number; institutions: number };
 }
 
 export class QlooError extends Error {
@@ -810,11 +816,25 @@ export async function getSponsorBrands(
 
   // Filter first, then number: "#3 of 38" counts only brands we show, so the
   // rank in the reason, the pitch, the one-pager and the score all agree.
+  // Brands the rules remove, by entity id, so a brand in two lists counts once.
+  const droppedIds = { alcohol: new Set<string>(), advocacy: new Set<string>(), institutions: new Set<string>() };
   const shown = (entities: Json[]) =>
     entities.filter((entity) => {
       const tagIds = brandTagIds(entity);
-      if (notASponsor(tagIds)) return false;
-      return includeAlcohol || !tagIds.some((id) => id.startsWith(ALCOHOL_TAG_PREFIX));
+      const id = String(entity.entity_id ?? entity.name ?? "");
+      if (isAdvocacyGroup(tagIds)) {
+        droppedIds.advocacy.add(id);
+        return false;
+      }
+      if (isInstitution(tagIds)) {
+        droppedIds.institutions.add(id);
+        return false;
+      }
+      if (!includeAlcohol && tagIds.some((tag) => tag.startsWith(ALCOHOL_TAG_PREFIX))) {
+        droppedIds.alcohol.add(id);
+        return false;
+      }
+      return true;
     });
 
   const generalShown = shown(general);
@@ -881,7 +901,16 @@ export async function getSponsorBrands(
     top.reasonText += ` Top pick among ${category.label.toLowerCase()} brands, a smaller fit for this crowd than the top ${strongest.label.toLowerCase()} brands.`;
   }
 
-  return { categories: result, calls, cityDropped };
+  return {
+    categories: result,
+    calls,
+    cityDropped,
+    dropped: {
+      alcohol: droppedIds.alcohol.size,
+      advocacy: droppedIds.advocacy.size,
+      institutions: droppedIds.institutions.size,
+    },
+  };
 }
 
 // ---------- 3. Local sponsors (places) ----------

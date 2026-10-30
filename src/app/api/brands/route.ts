@@ -23,7 +23,7 @@ import {
   type Admission,
   type AudienceAge,
 } from "@/lib/audience";
-import { isSavedExample, savedAt } from "@/lib/demo-recording";
+import { savedExampleAt } from "@/lib/demo-recording";
 import { findGenreByTagId } from "@/lib/genres";
 import { blockLiveSearch } from "@/lib/rate-limit";
 import { publicQlooFailure } from "@/lib/public-errors";
@@ -138,7 +138,7 @@ export async function POST(request: Request) {
   // not limited. Everything else is a live search and counts. Exact match on
   // purpose: Qloo is asked with these exact strings, in this order, so any
   // change (even letter case) needs a live call.
-  const example = isSavedExample("brands", {
+  const exampleAt = savedExampleAt("brands", {
     artistNames,
     artists: confirmed.map((artist) => artist.entityId),
     genreTagId: curated?.tagId ?? null,
@@ -148,7 +148,7 @@ export async function POST(request: Request) {
     admission: admission.id,
     includeAlcohol,
   });
-  if (!example) {
+  if (!exampleAt) {
     const blocked = blockLiveSearch(request, "search");
     if (blocked) return blocked;
   }
@@ -194,7 +194,7 @@ export async function POST(request: Request) {
         };
       }
 
-      const { categories, calls: brandCalls, cityDropped } = await getSponsorBrands({
+      const { categories, calls: brandCalls, cityDropped, dropped } = await getSponsorBrands({
         artists,
         genreTags: usedTags,
         city: city ?? undefined,
@@ -221,8 +221,9 @@ export async function POST(request: Request) {
           genreMatch: genre && !curated ? { query: genre, tag: usedTags[0] ?? null } : null,
           unresolved,
           categories,
+          dropped,
           calls,
-          savedExample: example && calls.every((call) => call.saved) ? savedAt : null,
+          savedExample: exampleAt && calls.every((call) => call.saved) ? exampleAt : null,
           tookMs: Date.now() - started,
         },
       };

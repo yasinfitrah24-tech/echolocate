@@ -1,25 +1,31 @@
-// The "Try an example" search, answered from saved real Qloo responses
-// (src/data/demo/qloo-recording.json), so it is instant and costs no Qloo
+// The "Try an example" searches, answered from saved real Qloo responses
+// (src/data/demo/qloo-recording.json), so they are instant and cost no Qloo
 // calls during judging. Server only; import it from the API routes.
 //
 // Only the raw Qloo answers are saved. Scores, reasons and the alcohol rule
 // still run on them, so changes to that code apply without recording again.
 // The file is in a public repo, so each answer keeps only the fields
-// src/lib/qloo.ts reads.
+// src/lib/qloo.ts reads. Answers are keyed by their Qloo request, so several
+// examples share one file.
 //
-// To record again (8 Qloo calls; dev only):
-//   PowerShell:  $env:QLOO_RECORD="1"; npm run dev
-//   then:        node scripts/record-demo.mjs
+// To record one example again (8-11 Qloo calls; dev only), see
+// scripts/record-demo.mjs.
 
 import { readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import recording from "@/data/demo/qloo-recording.json";
 import { setQlooCache } from "@/lib/qloo";
 
-interface Recording {
-  savedAt: string | null;
-  /** Normalized route input that the recording covers, per route. */
+interface SavedExample {
+  /** "campus", "bar": the same ids as EXAMPLES in sponsor-finder.tsx and scripts/record-demo.mjs. */
+  id: string;
+  savedAt: string;
+  /** Normalized route input the example covers, per route. */
   requests: Record<string, string>;
+}
+
+interface Recording {
+  examples: SavedExample[];
   responses: Record<string, unknown>;
 }
 
@@ -28,10 +34,10 @@ const RECORDING_FILE = join(process.cwd(), "src", "data", "demo", "qloo-recordin
 /** Record mode: every live Qloo answer is written to the file instead of replayed. */
 export const RECORDING = process.env.QLOO_RECORD === "1" && process.env.NODE_ENV !== "production";
 
-const saved = recording as Recording;
+/** In record mode, the example the route inputs are saved under. */
+const RECORD_ID = process.env.QLOO_RECORD_EXAMPLE?.trim() || "campus";
 
-/** When the saved example was recorded, or null when nothing is saved. */
-export const savedAt: string | null = RECORDING ? null : saved.savedAt;
+const saved = recording as unknown as Recording;
 
 // ---------- keep only what qloo.ts reads ----------
 
@@ -111,7 +117,7 @@ function readFile(): Recording {
   try {
     return JSON.parse(readFileSync(RECORDING_FILE, "utf8")) as Recording;
   } catch {
-    return { savedAt: null, requests: {}, responses: {} };
+    return { examples: [], responses: {} };
   }
 }
 
@@ -122,7 +128,6 @@ function readFile(): Recording {
 function update(change: (current: Recording) => void): void {
   const current = readFile();
   change(current);
-  current.savedAt = new Date().toISOString();
   writeFileSync(RECORDING_FILE, `${JSON.stringify(current, null, 1)}\n`);
 }
 
@@ -141,14 +146,24 @@ setQlooCache(
 );
 
 /**
- * True when this route input is the saved example, so it makes no live Qloo
- * calls and does not count against the demo limits. In record mode it notes
- * the input as the example instead.
+ * When this route input is one of the saved examples: the time it was
+ * recorded. Such a search makes no live Qloo calls and does not count against
+ * the demo limits. Null for any other input. In record mode it notes the input
+ * under RECORD_ID instead and returns null.
  */
-export function isSavedExample(route: "brands" | "places", input: Record<string, unknown>): boolean {
+export function savedExampleAt(route: "brands" | "places", input: Record<string, unknown>): string | null {
   if (RECORDING) {
-    update((current) => (current.requests[route] = stable(input)));
-    return false;
+    update((current) => {
+      let example = current.examples.find((item) => item.id === RECORD_ID);
+      if (!example) {
+        example = { id: RECORD_ID, savedAt: "", requests: {} };
+        current.examples.push(example);
+      }
+      example.requests[route] = stable(input);
+      example.savedAt = new Date().toISOString();
+    });
+    return null;
   }
-  return saved.requests[route] === stable(input);
+  const key = stable(input);
+  return saved.examples.find((example) => example.requests[route] === key)?.savedAt ?? null;
 }
