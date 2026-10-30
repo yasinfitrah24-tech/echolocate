@@ -8,7 +8,7 @@
 /** The ring mark alone. `dot` is ink on light backgrounds, paper on dark ones. */
 export function LogoMark({ size = 28, dot = "var(--color-ink)" }: { size?: number | string; dot?: string }) {
   return (
-    <svg width={size} height={size} viewBox="0 0 48 48" aria-hidden="true">
+    <svg width={size} height={size} viewBox="0 0 48 48" aria-hidden="true" style={{ overflow: "visible" }}>
       <circle cx="24" cy="24" r="19" fill="none" stroke="var(--color-accent)" strokeWidth="10" />
       <circle cx="24" cy="24" r="5.5" fill={dot} />
     </svg>
@@ -23,7 +23,9 @@ export function Wordmark({ size = 30 }: { size?: number }) {
       <svg
         viewBox="0 0 48 48"
         aria-hidden="true"
-        style={{ display: "inline", height: "0.56em", width: "0.56em", verticalAlign: "baseline", margin: "0 0.02em" }}
+        // The ring touches the viewBox edge; overflow keeps its antialiased bottom
+        // edge from being cut off.
+        style={{ display: "inline", height: "0.56em", width: "0.56em", verticalAlign: "baseline", margin: "0 0.02em", overflow: "visible" }}
       >
         <circle cx="24" cy="24" r="19" fill="none" stroke="var(--color-accent)" strokeWidth="10" />
         <circle cx="24" cy="24" r="5.5" fill="currentColor" />

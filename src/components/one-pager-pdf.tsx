@@ -97,19 +97,21 @@ const styles = StyleSheet.create({
   scoreRow: { flexDirection: "row", gap: 9 },
   badge: { width: 40, height: 40, borderRadius: 8, alignItems: "center", justifyContent: "center" },
   badgeText: { fontFamily: DISPLAY, fontWeight: 800, fontSize: 17, lineHeight: 1 },
+  // A View around the text: padding on a react-pdf Text box sits unevenly,
+  // so the pill is centered here instead.
   pill: {
     alignSelf: "flex-start",
     backgroundColor: C.sun,
     borderWidth: 1,
     borderColor: C.ink,
     borderRadius: 8,
-    paddingHorizontal: 5,
-    paddingVertical: 1,
-    fontSize: 6.5,
-    fontWeight: 700,
-    marginTop: 2,
-    marginBottom: 2,
+    paddingHorizontal: 6,
+    paddingTop: 1,
+    paddingBottom: 2.5,
+    marginTop: 3,
+    marginBottom: 3,
   },
+  pillText: { fontSize: 6.5, fontWeight: 700, lineHeight: 1 },
   checks: { flexDirection: "row", flexWrap: "wrap", rowGap: 5 },
   check: { width: "50%", flexDirection: "row", gap: 5, paddingRight: 6 },
   kv: { flexDirection: "row", paddingVertical: 2.2, borderBottomWidth: 0.75, borderBottomColor: C.line },
@@ -271,7 +273,11 @@ export function OnePagerDocument({ sheet }: { sheet: OnePager }) {
                 <T style={styles.bold}>
                   {sheet.fitScore !== null ? "Sponsor Fit Score (out of 100)" : "No score: Qloo has little taste data here"}
                 </T>
-                {sheet.bestInSearch && <T style={styles.pill}>Best fit in this search</T>}
+                {sheet.bestInSearch && (
+                  <View style={styles.pill}>
+                    <T style={styles.pillText}>Best fit in this search</T>
+                  </View>
+                )}
                 <Reason text={sheet.reasonText} />
               </View>
             </View>

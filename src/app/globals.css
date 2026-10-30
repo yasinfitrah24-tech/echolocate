@@ -151,6 +151,55 @@
   opacity: 0.45;
 }
 
+/* Selects open the same list as the City and Genre suggestions (ink outline,
+   pale yellow highlight) where the browser supports a styled picker; others
+   keep their own. */
+@supports (appearance: base-select) {
+  select,
+  ::picker(select) {
+    appearance: base-select;
+  }
+
+  select {
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+  }
+
+  select::picker-icon {
+    color: var(--color-ink);
+  }
+
+  ::picker(select) {
+    margin-top: 6px;
+    padding: 6px 0;
+    border: 2px solid var(--color-ink);
+    border-radius: var(--radius-field);
+    background: var(--color-card);
+  }
+
+  select option {
+    padding: 8px 14px;
+    color: var(--color-ink);
+    cursor: pointer;
+  }
+
+  select option::checkmark {
+    display: none;
+  }
+
+  select option:checked {
+    font-weight: 700;
+  }
+
+  select option:hover,
+  select option:focus-visible {
+    outline: none;
+    background: var(--color-accent-tint);
+    font-weight: 700;
+  }
+}
+
 /* Map tiles in muted colour, so the pins and the search ring stand out. */
 .places-map .leaflet-tile-pane {
   filter: saturate(0.55);
