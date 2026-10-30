@@ -1,18 +1,29 @@
-![Echolocate: sponsors for events too small to have a sponsorship team](docs/banner.png)
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/logo-dark.png">
+    <img src="docs/logo-light.png" alt="Echolocate" width="360">
+  </picture>
+</p>
 
-# Echolocate
+<h3 align="center">Sponsors for events too small to have a sponsorship team.</h3>
 
-**Sponsors for events too small to have a sponsorship team.**
+<p align="center">Your event isn't in Qloo, but the music on your line-up is. Echolocate asks Qloo which brands and local shops your crowd likes, then drafts the pitch and a one-page sponsor sheet.</p>
+
+<p align="center">
+  <a href="https://echolocate-topaz.vercel.app/">Live demo</a> ·
+  <a href="https://youtu.be/S9hfe2OjMYE">Video</a> ·
+  <a href="#how-the-agent-works">How it works</a> ·
+  <a href="backtest/results.md">Backtest</a> ·
+  <a href="#run-it-locally">Setup</a>
+</p>
+
+## About
 
 Echolocate finds sponsors for small events (campus shows, community gigs) by asking Qloo which brands and local businesses the event's crowd already likes, then drafts the pitch email and a one-page sponsor sheet.
 
 Most events are small. In 2024, Eventbrite creators alone hosted nearly 5 million events and issued 270 million tickets ([Eventbrite Form 10-K](https://www.sec.gov/Archives/edgar/data/1475115/000147511525000026/eb-20241231.htm)), about 55 tickets per event. Big tours have sponsorship teams; events this size don't, and they have no sponsor history to copy.
 
-**Live demo:** https://echolocate-topaz.vercel.app/
-
-**Demo video (1 min):** https://youtu.be/S9hfe2OjMYE
-
-> Your event isn't in Qloo, but the music on your line-up is. Your line-up and city in; ranked sponsors, a pitch email and a one-page sponsor sheet out.
+**Live demo:** https://echolocate-topaz.vercel.app/ · **Demo video (1 min):** https://youtu.be/S9hfe2OjMYE
 
 ### Try it in 60 seconds (no sign-up)
 
