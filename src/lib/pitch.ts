@@ -61,6 +61,18 @@ function placeNoun(categoryLabel: string): string {
   return categoryLabel.toLowerCase().replace(/s$/, "");
 }
 
+/** "Indie rock" -> "indie rock" inside a sentence; "R&B / Soul", "EDM", "K-pop", "Latin" stay as they are. */
+function genreInText(label: string): string {
+  if (["Latin", "Americana"].includes(label)) return label;
+  return /^[A-Z][a-z]/.test(label) ? label[0].toLowerCase() + label.slice(1) : label;
+}
+
+/** Who "this crowd" is: fans of the artists, else fans of the genre. Said the same way by the model and the template. */
+function crowdPhrase(input: { artists: string[]; genre: string | null }): string {
+  if (input.artists.length > 0) return `fans of ${joinNames(input.artists)}`;
+  return input.genre ? `fans of ${genreInText(input.genre)}` : "fans of this kind of music";
+}
+
 function joinNames(names: string[]): string {
   if (names.length <= 1) return names[0] ?? "";
   return `${names.slice(0, -1).join(", ")} and ${names[names.length - 1]}`;
@@ -88,6 +100,9 @@ function facts(input: PitchInput): string[] {
   if (input.admission) lines.push(`Admission (who is allowed in): ${input.admission.phrase}`);
   if (input.artists.length > 0) lines.push(`Line-up: ${joinNames(input.artists)}`);
   if (input.genre) lines.push(`Genre: ${input.genre}`);
+  // Without artists there is no line-up to name; the model once wrote "fans of
+  // the <event name> line-up" (30 Oct), so the crowd is spelled out here.
+  lines.push(`Who this crowd is: ${crowdPhrase(input)}`);
   if (input.organizer) lines.push(`Organizer (sender): ${input.organizer}`);
   return lines;
 }
@@ -100,11 +115,11 @@ Rules:
 - Admission (who is allowed in, e.g. all ages, 18+, 21+) and audience age (who mostly comes) are different facts. Name them separately and exactly as given; never use one for the other.
 - Write only the body: no greeting line ("Hi ...") and no sign-off or name at the end. Those are added for you.
 - When a detail you need is missing, leave a placeholder in square brackets, such as [date].
-- Lead with why this brand fits this crowd, using the ranking given, and say it comes from Qloo taste data. Describe the "this crowd" as fans of the line-up.
+- Lead with why this brand fits this crowd, using the ranking given, and say it comes from Qloo taste data. Describe "this crowd" exactly as the "Who this crowd is" fact says; never call the event name a line-up.
 - Do not judge the fit yourself: no "strong fit", "perfect fit", "great match", "ideal partner" or similar. State the rank and its source (Qloo) and let the reader judge.
 - Offer one or two concrete ways to take part, written as options in square brackets for the organizer to edit.
 - If the sponsor is a local business, lead with in-kind options, such as [a discount for our attendees] or [your products at our table].
-- For a local business, write its distance only as "about X km from the center of [city]", with the number and city from the facts. Never write "near the venue", "proximity to the venue", "down the road" or anything about the venue; the venue location is not known.
+- For a local business, mention its distance only when the facts give one, and then only as "about X km from the center of [city]", with the number and city from the facts. Never write a distance placeholder. Never write "near the venue", "proximity to the venue", "down the road" or anything about the venue; the venue location is not known.
 - If the facts say "No taste match", do not mention Qloo or taste data and do not say or suggest that the crowd likes the business. Lead with its distance, the crowd size and age, and what the sponsor gets.
 - End with one clear ask: a 15-minute call.
 - Under 170 words. Plain, friendly and specific. No hype, no emojis, no exclamation marks.
@@ -123,10 +138,10 @@ function templateBody(input: PitchInput): string {
     input.artists.length > 0
       ? ` The line-up is ${joinNames(input.artists)}.`
       : input.genre
-        ? ` It is ${/^[aeiou]/i.test(input.genre) ? "an" : "a"} ${input.genre} show.`
+        ? ` It is ${/^[aeiou]/i.test(input.genre) ? "an" : "a"} ${genreInText(input.genre)} show.`
         : "";
 
-  const crowd = input.artists.length > 0 ? "fans of this line-up" : "fans of this kind of music";
+  const crowd = input.artists.length > 0 ? "fans of this line-up" : crowdPhrase(input);
   const local = input.brand.kind === "place";
   const yours = local ? `your ${placeNoun(input.brand.categoryLabel)}` : "your brand";
   const offer = local
