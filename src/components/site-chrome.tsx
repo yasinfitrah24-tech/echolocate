@@ -41,7 +41,7 @@ export function SiteFooter() {
       <div className="mx-auto flex max-w-[1312px] flex-wrap justify-between gap-x-6 gap-y-2 px-5 py-6 text-sm text-ink-3 md:px-16">
         <p>Echolocate · Built for the Qloo Agentic Hackathon</p>
         <p className="flex flex-wrap gap-x-4">
-          <span>Taste data by Qloo</span>
+          <span>Taste data by Qloo</span>{" "}
           <span>Map © OpenStreetMap contributors</span>
         </p>
       </div>

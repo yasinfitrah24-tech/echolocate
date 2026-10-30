@@ -75,10 +75,10 @@ Every Qloo call is listed in the app under "How the agent got this", with its re
    - Advocacy groups that come back as "brands" are dropped, and so are big institutions that will not sponsor a small show: sports teams, universities, museums and news outlets (by their Qloo tags).
    - Qloo's audience segments (`urn:audience`) are never used or shown.
 5. **Score and reason.** The Sponsor Fit Score is our own score, not a Qloo number. It is never above 95.
-   - **Brands** are compared with the other brands for the same crowd. Score = 40 + 55 × (0.8 × the brand's affinity percentile among all brands of the search + 0.2 × its rank in its list). Every category is in one pool, so a weak category's #1 does not look perfect, and it gets a note saying the category is a smaller fit.
+   - **Brands** are compared with the other brands for the same crowd. Score = 40 + 55 × (0.8 × the brand's affinity percentile among all brands of the search + 0.2 × a rank score that is 1 for #1 and drops by 1/50 per place down the cross-category list, or 1/15 in a category list). Every category is in one pool, so a weak category's #1 does not look perfect, and it gets a note saying the category is a smaller fit.
    - **Local places** are scored the same way, against the other places of the search, but only places Qloo has taste data for take part. With fewer than 5 such places, they use a fixed scale instead (80% affinity, 20% rank). When Qloo has little taste data for a place (its affinity sits at Qloo's default value), the place gets no score. It is listed after the scored places, nearest first, as "Nearby · little taste data". Its pitch email talks about being nearby, the crowd and the offer, and never says the crowd likes the place.
 
-   The reason starts from the rank. It names an artist only when that artist's share of Qloo's explainability is clearly higher than the others'.
+   The reason starts from the rank. It names an artist only when that artist's share of Qloo's explainability is at least 3 percentage points above an equal split between the artists and genre behind the match (at least 36.3% when three artists share it).
 6. **Local places.** `GET /v2/insights` with:
    - `filter.type=urn:entity:place`
    - `filter.tags` (cafe, clothing store, bar)
@@ -107,11 +107,11 @@ We call the Qloo REST API from Next.js server routes. The `qloo mcp` server in Q
 
 From the saved campus example (the API key is never part of a request or a log):
 
-1. `GET /search?query=Clairo&types=urn:entity:artist&take=3` returns 3 results; the exact match "Clairo" is used. The same for Phoebe Bridgers and boygenius.
+1. `GET /search?query=Clairo&types=urn:entity:artist&take=3` returns 3 results; the exact match "Clairo" is used. Phoebe Bridgers (3 results) and boygenius (2 results) are matched the same way.
 2. `GET /v2/insights?filter.type=urn:entity:brand&signal.interests.entities=<the 3 artist IDs>&signal.location.query=Austin, TX&signal.demographics.age=24_and_younger&feature.explainability=true&take=50` returns 50 brands.
 3. Two more calls of the same kind, with `filter.tags=urn:tag:genre:brand:food_and_beverage:drinks` and with `filter.tags=urn:tag:genre:brand:financial_services`, return 15 brands each. Beer and spirits are not asked for: the event is all ages.
 4. Rules on the server remove 5 of the brands Qloo returned: 3 advocacy groups, 1 news outlet and 1 drinks brand that Qloo tags as alcohol. 75 brands are left.
-5. Urban Outfitters is #1 of the 46 brands left in the cross-category list. Explainability splits its match 37% Clairo, 34% Phoebe Bridgers and 30% boygenius, so the reason says "Leans toward Clairo fans". Its Sponsor Fit Score is 95, the best in this search.
+5. Urban Outfitters is #1 of the 46 brands left in the cross-category list. Explainability splits its match about 37% Clairo, 34% Phoebe Bridgers and 30% boygenius (rounded), so the reason says "Leans toward Clairo fans". Its Sponsor Fit Score is 95, the best in this search.
 6. "Draft pitch" sends the rank, the reason and the event details to the language model, and the code check above decides whether its draft is used.
 
 Every request of a search, with its parameters, is shown in the app under "How the agent got this", then "Show every Qloo request".
@@ -128,7 +128,7 @@ Every request of a search, with its parameters, is shown in the app under "How t
 
 Qloo picks the sponsors: which brands and local places, in what order, and why. The language model only writes the email from the facts it is given, and it may not add numbers, prices, dates or sponsors of its own. Without Qloo there is no list and nothing to pitch.
 
-We also asked an AI model, without Qloo, to name sponsors for the same 10 festivals. It scored higher (41% of real sponsors in its top 10, against 25% for Qloo). But it also named 9 of the 10 festivals from the line-up and city alone, so it was largely remembering past sponsors. A campus show or a community gig has no sponsor history to remember, and that is the case Echolocate is built for. Full results: [backtest-llm/results.md](backtest-llm/results.md).
+We also asked an AI model, without Qloo, to name sponsors for the same 10 festivals. It scored higher (41% of real sponsors in its top 10, against 25% for Qloo). But it also named 9 of the 10 festivals from the line-up and city alone, so it was largely remembering past sponsors. A campus show or a community gig has no sponsor history to remember, and that is the case Echolocate is built for. Full results: [backtest-llm/results.md](backtest-llm/results.md). Score it again from the saved replies (no API calls): `node backtest-llm/run.mjs --score`.
 
 ## What we tested
 
@@ -175,7 +175,7 @@ Open http://localhost:3000.
   - `QLOO_API_KEY` for live searches,
   - for written pitches (optional): an OpenRouter key as `LLM_API_KEY` (or `OPENROUTER_API_KEY`) and `LLM_MODEL`, any OpenRouter model id (a free `:free` model works for testing; set a paid one later, no code change). Or `DEEPSEEK_API_KEY` for DeepSeek's own API (`DEEPSEEK_MODEL` defaults to `deepseek-flash`). If the model hits its rate limit or fails, the pitch falls back to the template.
 
-`npm run lint` checks the code. `npx tsc --noEmit` checks types.
+`npm run lint` checks the code. Run `npm run build` (or `npx next typegen`) once, then `npx tsc --noEmit` checks types.
 
 ### Limits on the public demo
 
