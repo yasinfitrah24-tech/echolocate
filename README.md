@@ -10,12 +10,12 @@ Echolocate finds sponsors for small events (campus shows, community gigs) by ask
 
 ### Try it in 60 seconds (no sign-up)
 
-1. Click **Try an example** (a campus show in Austin, TX, 800 people), or the link under it for **a small 21+ bar gig in Athens, GA** (150 people, local bands, genre only). Both are answered instantly from saved, real Qloo answers.
+1. Click **Try an example**: a 150-person 21+ bar gig in Athens, GA with local bands Qloo doesn't know, so it searches by genre. Local sponsors come first, on a map. The link under it runs a bigger campus show in Austin, TX (800 people, with Phoebe Bridgers, boygenius and Clairo), where the reasons name the artists. Both are answered instantly from saved, real Qloo answers.
 2. Scan the brands by category: each has a Sponsor Fit Score and the reason from Qloo's data.
 3. Click **Draft pitch** on any brand or local place, then **Make one-pager** and **Download PDF**.
 4. Scroll to **How the agent got this**: the decisions the agent took, and every Qloo request with its parameters.
 
-![Results for the example event: brands ranked by category, each with a Sponsor Fit Score and the reason from Qloo's data](docs/screenshot-results.png)
+![Results for the small example, a 150-person 21+ bar gig in Athens, GA: local sponsors first, on a map with the radius that was searched, each with a Sponsor Fit Score and the reason from Qloo's data](docs/screenshot-results.png)
 
 ![A one-page sponsor sheet for Urban Outfitters, made in the browser with the organizer's details filled in](docs/screenshot-one-pager.png)
 
@@ -163,9 +163,9 @@ Open http://localhost:3000.
 ### Limits on the public demo
 
 So that one visitor cannot use up the Qloo quota:
-- 6 live searches per IP per 10 minutes, and 20 per day,
+- 15 live searches per IP per 10 minutes, and 60 per day,
 - 600 live Qloo calls per day in total,
-- the saved example never counts.
+- the saved examples never count.
 
 **To pause all live searches** (the example keeps working), set the environment variable `QLOO_LIVE=off`:
 - **Vercel:** Project → Settings → Environment Variables, add `QLOO_LIVE` = `off`, then redeploy. Remove it and redeploy to switch live search back on.

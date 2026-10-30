@@ -5,7 +5,7 @@
 // - Per day: at most DAILY_LIVE_CALLS live Qloo calls.
 // - QLOO_LIVE=off (env var, e.g. in Vercel) pauses live searches; the saved
 //   example keeps working.
-// The saved "Try an example" search never counts.
+// The saved example searches never count.
 //
 // Counts live in memory, so on Vercel each server instance keeps its own.
 // Good enough for a demo; a shared limit would need a store like Redis.
@@ -19,17 +19,21 @@ const DAY = 24 * 60 * MINUTE;
 
 export const DAILY_LIVE_CALLS = 600;
 
+// Loose enough that a judge can test freely: the rules ask for the demo to be
+// usable without restriction, and Qloo confirmed (Devpost forum, 26 Oct) that
+// hackathon requests are free through judging. DAILY_LIVE_CALLS still guards
+// the key's quota against runaway traffic.
 const LIMITS = {
   // One search = /api/brands; the map's /api/places call follows each one.
   search: [
-    { max: 6, windowMs: 10 * MINUTE },
-    { max: 20, windowMs: DAY },
+    { max: 15, windowMs: 10 * MINUTE },
+    { max: 60, windowMs: DAY },
   ],
   places: [
-    { max: 12, windowMs: 10 * MINUTE },
-    { max: 40, windowMs: DAY },
+    { max: 30, windowMs: 10 * MINUTE },
+    { max: 120, windowMs: DAY },
   ],
-  pitch: [{ max: 10, windowMs: 10 * MINUTE }],
+  pitch: [{ max: 20, windowMs: 10 * MINUTE }],
 } as const;
 
 type Bucket = keyof typeof LIMITS;

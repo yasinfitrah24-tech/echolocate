@@ -34,15 +34,16 @@ function HeroRings() {
 
 export function Hero({
   onTryExample,
-  onTrySmallExample,
-  smallExampleLabel,
+  onTryOtherExample,
+  otherExampleLabel,
   busy,
   exampleNote,
 }: {
+  /** The main saved example: the small show Echolocate is built for. */
   onTryExample: () => void;
-  /** The second saved example: a small 21+ show, genre only. */
-  onTrySmallExample: () => void;
-  smallExampleLabel: string;
+  /** The other saved example: a bigger show with known artists. */
+  onTryOtherExample: () => void;
+  otherExampleLabel: string;
   busy: boolean;
   /** What the saved example is, shown under the buttons. */
   exampleNote: string;
@@ -76,11 +77,11 @@ export function Hero({
             <p>
               <button
                 type="button"
-                onClick={onTrySmallExample}
+                onClick={onTryOtherExample}
                 disabled={busy}
                 className="text-left font-bold underline decoration-2 underline-offset-[3px] hover:decoration-accent disabled:opacity-60"
               >
-                {smallExampleLabel} →
+                {otherExampleLabel} →
               </button>
             </p>
           </div>

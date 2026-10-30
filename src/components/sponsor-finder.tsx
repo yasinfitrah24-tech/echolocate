@@ -133,11 +133,10 @@ const EXAMPLES = {
 
 type ExampleId = keyof typeof EXAMPLES;
 
-const EXAMPLE_NOTE = `Instant: a saved search with real Qloo data, for ${
-  findAdmission(EXAMPLES.campus.admission)?.phrase ?? "a show"
-} in ${EXAMPLES.campus.city} with ${joinNames(splitNames(EXAMPLES.campus.artistsText))}. No sign-up.`;
+// The small bar gig comes first: it is the case Echolocate is built for.
+const EXAMPLE_NOTE = `Instant: a saved search with real Qloo data, for a ${EXAMPLES.bar.crowdSize}-person 21+ bar gig in ${EXAMPLES.bar.city}. Local bands Qloo doesn't know, so it searches by genre. No sign-up.`;
 
-const SMALL_EXAMPLE_LABEL = `Or try a small one: a ${EXAMPLES.bar.crowdSize}-person 21+ bar gig in ${EXAMPLES.bar.city}, local bands, genre only`;
+const OTHER_EXAMPLE_LABEL = `Or a bigger one: an ${EXAMPLES.campus.crowdSize}-person campus show in ${EXAMPLES.campus.city} with ${joinNames(splitNames(EXAMPLES.campus.artistsText))}`;
 
 const TOP_PER_CATEGORY = 5;
 
@@ -290,7 +289,7 @@ export function SponsorFinder() {
   }
 
   /** Fills the form with a saved example and runs it (answered from the recording, no live Qloo call). */
-  function runExample(id: ExampleId = "campus") {
+  function runExample(id: ExampleId) {
     const example = EXAMPLES[id];
     setEventName(example.eventName);
     setArtistsText(example.artistsText);
@@ -411,9 +410,9 @@ export function SponsorFinder() {
   return (
     <main className="flex-1">
       <Hero
-        onTryExample={() => runExample("campus")}
-        onTrySmallExample={() => runExample("bar")}
-        smallExampleLabel={SMALL_EXAMPLE_LABEL}
+        onTryExample={() => runExample("bar")}
+        onTryOtherExample={() => runExample("campus")}
+        otherExampleLabel={OTHER_EXAMPLE_LABEL}
         busy={loading}
         exampleNote={EXAMPLE_NOTE}
       />
@@ -423,12 +422,12 @@ export function SponsorFinder() {
         <h2 className={sectionTitleClass}>Use your own event</h2>
         <p className="mt-3 text-ink-2">
           Start with the kind of music or a few artists. Add a city to see local sponsors on a map. No event yet?{" "}
-          <button type="button" onClick={() => runExample("campus")} disabled={loading} className={`${linkClass} disabled:opacity-60`}>
-            Try an example
+          <button type="button" onClick={() => runExample("bar")} disabled={loading} className={`${linkClass} disabled:opacity-60`}>
+            Try a small 21+ bar gig
           </button>{" "}
           or{" "}
-          <button type="button" onClick={() => runExample("bar")} disabled={loading} className={`${linkClass} disabled:opacity-60`}>
-            a small 21+ bar gig
+          <button type="button" onClick={() => runExample("campus")} disabled={loading} className={`${linkClass} disabled:opacity-60`}>
+            a campus show
           </button>
         </p>
 
